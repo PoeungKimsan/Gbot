@@ -1,0 +1,100 @@
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Caches / tooling -----------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.cache/
+.pyre/
+.pytype/
+.venv/
+venv/
+.gradle/
+out/
+
+# --- Environment / secrets -------------------------------------------------
+.env
+.env.*
+config/*.env
+!config/prod.env.example
+config/control.token
+*.token
+secrets/
+
+# --- SQLite journals / local state ----------------------------------------
+# The production database lives outside the repo, but ignore stray local ones.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+*.journal
+
+# --- Market data / analytics artifacts ------------------------------------
+*.parquet
+*.feather
+*.arrow
+data/raw/
+data/cache/
+
+# --- Web dashboard --------------------------------------------------------
+web/node_modules/
+web/dist/
+web/.vite/
+web/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- OS / editor ----------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.orig
+*.rej
+
+# --- Logs / runtime scratch -----------------------------------------------
+*.log
+logs/
+tmp/
+*.pid

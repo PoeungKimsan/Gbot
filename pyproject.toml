@@ -1,0 +1,76 @@
+[project]
+name = "xauusd-lab"
+version = "0.0.0"
+description = "Research lab for an automated XAUUSD trading engine: OANDA feed, ICT strategy, pessimistic fills, hash-chained SQLite journal."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic>=2",
+    "pyarrow",
+    "aiohttp",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "python-dotenv",
+    "PyYAML",
+    "numpy",
+    "tzdata",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "hypothesis",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["engine/src/engine", "api"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["engine/tests"]
+addopts = "--strict-markers"
+asyncio_mode = "auto"
+markers = [
+    "posix_only: POSIX-only test. Automatically skipped on Windows (see engine/tests/conftest.py).",
+    "slow: Long-running or resource-heavy test. Exclude with '-m \"not slow\"'.",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["engine/src", "api"]
+extend-exclude = ["web", "node_modules"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RUF",    # ruff-specific
+    "N",      # pep8-naming
+    "S",      # flake8-bandit
+    "ANN",    # flake8-annotations
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate (commented-out code)
+    "TID",    # flake8-tidy-imports
+]
+
+[tool.ruff.lint.per-file-ignores]
+"engine/tests/**/*.py" = [
+    "S101",    # asserts are the point of tests
+    "ANN201",  # test functions return None implicitly
+    "ANN202",  # private test helpers return None implicitly
+    "ANN001",  # fixture/argument types are inferred from the signature
+    "ANN204",  # __init__ needs no return annotation
+]
