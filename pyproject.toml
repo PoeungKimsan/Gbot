@@ -87,3 +87,12 @@ select = [
     # JournalExhaustedError would read as a bug rather than a deliberate state.
     "N818",
 ]
+# BelowMinimumTradeSize is a *condition*, not an *Error*: a below-minimum position is a
+# declined opportunity (small account, wide stop) rather than a defect in the input, and
+# a caller must be able to tell the two apart. Renaming it would read as a bug.
+# Same reasoning as JournalExhausted above.
+"engine/src/engine/risk/*.py" = ["N818"]
+# The reporting tests deliberately perturb the process's global RNG to prove the
+# bootstrap interval is a function of its seed and nothing else. That perturbation
+# is the test.
+"engine/tests/metrics/**/*.py" = ["S311"]

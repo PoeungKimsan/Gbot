@@ -381,3 +381,90 @@ an explicit skip pointing at the gate CLI, and the two host-coupled logic tests 
 version through the A28 parameter. The floors, the rejection table, the bypass-env test and the
 gate CLI are unchanged, and `test_host_sqlite_library_meets_the_gate` still asserts on hosts
 that do meet a baseline.
+
+---
+
+## Phase 3 (Risk, Metrics & Reporting)
+
+**A60 — `config/risk.yaml` holds exactly two numbers.** `risk_per_trade` (sizing) and
+`daily_loss_limit_r` (kill-switch) are the only values Phase 3 reads. A third knob would be a
+placeholder for a policy that does not exist yet, which is how configuration files accrue dead
+weight. Every value is quoted, and an unquoted `0.01` is refused at load time.
+
+**A61 — One unit is one troy ounce; sizing invents no contract multiplier.** Quantities come
+from `InstrumentSpec.trade_units_precision` (5 for XAU_USD) and are checked against
+`minimum_trade_size` (1). The notional is `units * price`, the same formula
+`engine.domain.positions.Position.notional` uses — verified by test rather than assumed, so a
+future instrument with a real contract multiplier cannot be silently mis-sized.
+
+**A62 — Units floor, with ROUND_FLOOR, and a below-minimum result is a *condition* not an
+error.** Rounding to *nearest* could commit more of the account than the fraction allowed;
+flooring can only leave budget unused. That direction is property-tested over arbitrary
+equity/stop/fraction triples. `BelowMinimumTradeSize` is deliberately not `...Error` — it is a
+declined opportunity (small account, wide stop), and N818 is suppressed for `risk/*` with the
+same reasoning recorded for `JournalExhausted`.
+
+**A63 — The trading day is anchored to 17:00 New York *wall clock* and is calendar-based.**
+The day is `[17:00 D, 17:00 D+1)` in `America/New_York`, named by the date it starts, and
+half-open so the 17:00 instant itself belongs to the new day. It is deliberately *not*
+DST-fixed: 17:00 local is 22:00 UTC in January and 21:00 UTC in July, so the day containing
+the spring-forward is 23 real hours and the one containing the fall-back is 25. Weekends and
+holidays are ignored — that is the session layer's business, and dropping a Saturday's loss
+would be worse than counting it.
+
+**A64 — Realized PnL accumulates; unrealized PnL is a mark that replaces.** Recording an open
+mark of 120 and then 35 leaves the day at 35, not 155. Total = realized + unrealized, which is
+what equity actually is.
+
+**A65 — The kill-switch latches, and only the day rollover clears it.** `evaluate()` and
+`reset()` are the same rollover check, so a mid-loss request to resume trading is refused by
+construction rather than by an `if` someone could later delete. A profitable trade, or five,
+does not clear it either.
+
+**A66 — The kill-switch persists through an injected sink, not a database import.** AGENTS.md
+section 3 forbids cross-layer imports, and `risk` importing `engine.journal` would be exactly
+that. So `risk` depends only on `domain`: it submits `RISK_KILLSWITCH` events to an `EventSink`
+protocol, and restores from an iterable of `DomainEvent`s someone else read out of the journal.
+The tests wire a real `JournalWriter` (submit through the bounded queue, read back through a
+read-only connection, stop, restart) — precisely the adapter the runtime phase will own.
+
+**A67 — A restart reconciles the latch against the current trading day, silently.** A latch set
+for a day that ended while the process was down is cleared in memory without journalling a
+re-arm: the rollover is what would have cleared it, and re-journalling a transition nobody was
+alive to observe would make the journal lie about when the engine re-armed.
+
+**A68 — Restore ignores foreign events and tolerates malformed rows.** A caller may hand
+`KillSwitch.restore()` every event in the journal; only `RISK_KILLSWITCH` rows are folded, and a
+row whose trading day will not parse is skipped rather than guessed at.
+
+**A69 — Only *realized* loss trips the switch.** The tracker carries unrealized marks, but the
+latch is evaluated on realized R. Tripping on an intraday mark-to-market drawdown would stop
+the engine while its stops are still doing the work, which turns a normal holding period into a
+forced flat.
+
+**A70 — Exits are always allowed while tripped.** Blocking an exit is how a stop becomes a
+blow-up. `adjudicate()` therefore permits `OrderRole.EXIT` unconditionally, cancels resting
+*entries* (a resting limit is an armed entry, so cancelling it is the point), and blocks
+submissions that never reached the venue.
+
+**A71 — `metrics/` is float-free by omission, deliberately.** `FLOAT_FREE_PACKAGES` does not
+list it, so `performance.py` may hold floats: AGENTS.md 2.1 permits them at the
+display/serialization boundary, and a report is that boundary. `risk/` joining the tree *did*
+switch that package from skipping to enforcing, which is the point of the scan.
+
+**A72 — Decimal becomes float exactly once, in `metrics.performance._finite`.** Everything
+after that conversion is float arithmetic. No other module converts, and no float crosses back
+into an engine computation: the report is the sink.
+
+**A73 — Profit factor is `None` when there are no losses, never `Infinity`.** An undefined
+ratio printed as `inf` is a value no consumer can act on. The same applies to win rate and
+expectancy on an empty dataset, which report `None` rather than `0.0` masquerading as a
+measured result.
+
+**A74 — The bootstrap uses a private generator, a fixed seed, and linear-interpolated
+percentiles.** `random.Random(BOOTSTRAP_SEED)` means the interval is a function of the trades
+and the seed, never of the process's global RNG state — asserted by a test that perturbs the
+global generator first. 10,000 resamples and the 2.5th/97.5th percentiles are the usual
+defaults; the seed is pinned for the life of the report format so historical numbers do not
+shift under a re-read. Below 30 trades the interval is not computed at all, and the point
+estimates are still reported.

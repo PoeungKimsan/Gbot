@@ -122,7 +122,42 @@ connections). Dependencies flow inward toward `domain/`.
 
 ## 4. Current State
 
-> **CURRENT ACTIVE PHASE: Phase 2 (Domain, Journal & Execution) — COMPLETE**
+> **CURRENT ACTIVE PHASE: Phase 3 (Risk, Metrics & Reporting)**
+
+Phase 3 scope, and only Phase 3 scope:
+
+- `risk/`: `config.py` + `decimal_yaml.py` (Decimal-only config loading), `sizing.py`
+  (fixed-fractional position sizing), `drawdown.py` (per-trading-day realized and
+  unrealized PnL anchored to 17:00 America/New_York), and `killswitch.py` (latching
+  daily-loss kill-switch whose state is persisted as journal events).
+- `metrics/`: `performance.py` — the single module where floats are permitted, because
+  it is the reporting boundary and produces no number any other module consumes.
+
+**Phase 3 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `risk/decimal_yaml.py` | a float in a config file is refused at load time, never coerced |
+| `risk/sizing.py` | units floor to `trade_units_precision`; a below-minimum order is refused; realised loss never exceeds the risked amount |
+| `risk/drawdown.py` | the trading day is anchored to 17:00 New York wall clock and stays correct across DST transitions |
+| `risk/killswitch.py` | tripping latches; the latch survives a process restart through journal events; resting limits are cancelled and new entries blocked until the next day's rollover |
+| `metrics/performance.py` | bootstrap CI is byte-reproducible for a fixed seed; `N < 30` returns `INSUFFICIENT_DATA` with no bounds |
+
+Note that `risk/` joining the tree switches the Phase 0 float-free invariant from
+*skipping* to *enforcing* for that package: `engine/tests/test_invariants.py` stops
+skipping `risk/` and starts failing on any float literal or `float()` call under it.
+`metrics/` is deliberately **not** in that set (AGENTS.md 2.1 permits floats at the
+display/serialization boundary, and a report is that boundary).
+
+**Not in Phase 3:** the runtime supervisor wiring (nothing in `runtime/` constructs a
+`KillSwitch` or reads `config/risk.yaml` yet), `publisher/`, the web dashboard, the
+FastAPI service, and systemd units.
+
+*Update this section before starting any new phase.*
+
+---
+
+### Phase 2 (Domain, Journal & Execution) — COMPLETE
 
 Phase 2 scope, and only Phase 2 scope:
 
@@ -131,8 +166,6 @@ Phase 2 scope, and only Phase 2 scope:
 - `journal/`: the append-only schema, the SHA-256 hash chain with `verify_chain()`, and the
   thread-isolated `writer.py` consuming a bounded `queue.Queue(maxsize=10000)`.
 - `execution/`: the deterministic pessimistic `simulator.py`.
-
-**Phase 2 outcomes and the invariants that now have machine coverage:**
 
 | Module | Invariant enforced by tests |
 | --- | --- |
@@ -143,12 +176,6 @@ Phase 2 scope, and only Phase 2 scope:
 | `journal/schema.py` | hash chain detects any tampering; UPDATE/DELETE triggers fire |
 | `journal/writer.py` | `put_nowait` only; SQLite never runs on the event loop; group commits |
 | `execution/simulator.py` | buys on ask, stops trigger on a touch, intra-bar ambiguity resolves against the trade |
-
-**Not in Phase 2:** the runtime supervisor wiring, `publisher/`, the web dashboard, the
-FastAPI service, and systemd units. The writer is complete and tested, but nothing in
-`runtime/` submits to it yet.
-
-*Update this section before starting any new phase.*
 
 ---
 

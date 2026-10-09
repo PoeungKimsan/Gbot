@@ -1,0 +1,13 @@
+# Risk policy (engine.risk).
+#
+# Every numeric value is quoted so it parses into an exact Decimal. An unquoted
+# 0.01 would be a binary float, and engine.risk.decimal_yaml refuses such a file
+# at load time. Never relax these to bare numbers.
+
+# Fraction of equity risked per trade. This is one R, and every R multiple in the
+# engine is measured against it.
+risk_per_trade: "0.01"
+
+# Daily loss limit, in R. Reaching -3R for the trading day trips the kill-switch,
+# which latches until the day rolls over at 17:00 America/New_York.
+daily_loss_limit_r: "3"
