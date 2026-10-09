@@ -44,24 +44,7 @@ jobs:
         run: uv run python -c "import sqlite3, sys; print(f'python={sys.version.split()[0]} sqlite={sqlite3.sqlite_version} tuple={sqlite3.sqlite_version_info}')"
 
       - name: Test
-        run: |
-          set -o pipefail
-          uv run pytest -q --tb=line -rf 2>&1 | tee pytest.log
-        shell: bash
-
-      # TEMPORARY diagnostic: job logs require a GitHub login, and the suite
-      # fails on the runners while passing locally. Step logs are mirrored into
-      # run annotations, which are visible on the public run page. Remove once
-      # the runner-only failure is identified.
-      - name: Annotate test failures
-        if: failure()
-        shell: bash
-        run: |
-          echo "::notice title=interpreter::$(uv run python -c 'import sqlite3, sys; print(sys.version.split()[0], "sqlite=" + sqlite3.sqlite_version)')"
-          grep -E '^FAILED' pytest.log | head -10 | while read -r line; do
-            echo "::error title=test failure::$line"
-          done
-          echo "::notice title=summary::$(grep -E '[0-9]+ (failed|passed)' pytest.log | tail -1)"
+        run: uv run pytest
 
   lint:
     name: lint (ubuntu-latest)

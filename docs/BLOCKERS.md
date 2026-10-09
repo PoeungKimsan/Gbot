@@ -27,7 +27,9 @@ package manager reports as installed.
 No blockers recorded.
 
 GitHub Actions runners are deliberately **not** gated in CI. Their `libsqlite3`
-(3.45.1 on ubuntu-latest, ~3.43–3.50.4 on macos-latest) is below every accepted
-baseline, so running the gate in CI would block before the suite starts. The
-gate runs on the host that actually runs the engine; CI keeps an informational
-"Report loaded SQLite" step instead. See ASSUMPTIONS.md A58.
+(3.45.1 on ubuntu-latest, 3.49.1 on macos- and windows-latest) is below every
+accepted baseline, so running the gate in CI would block before the suite
+starts. The gate runs on the host that actually runs the engine; CI keeps an
+informational "Report loaded SQLite" step instead, and the host-asserting tests
+in `engine/tests/runtime/test_gates.py` skip there rather than red-lighting a
+host the gate already blocks. See ASSUMPTIONS.md A58 and A59.

@@ -370,3 +370,14 @@ therefore runs there (`uv run python -m engine.runtime.gates`, recording blocker
 `docs/BLOCKERS.md`) and CI keeps only the informational "Report loaded SQLite" step, so a
 runner's library version stays visible in the log. This supersedes the gate step added in
 A32. Restore that step if a runner image ever ships SQLite >= 3.51.3.
+
+**A59 — The gate's host-coupled tests skip on a blocked host instead of failing.** Until now
+`engine/tests/runtime/test_gates.py` asserted the *live* host's library against the floor, so
+every GitHub runner failed 3 of 614 tests (run #5: `3 failed, 611 passed`; ubuntu links SQLite
+3.45.1, macos and windows 3.49.1, on Pythons 3.12.3/3.12.10 rather than this host's 3.12.14). A
+host below every floor is a *blocked host*, not a code bug — the gate records it in
+`docs/BLOCKERS.md` and stops the engine with exit 78 — so the suite now reports that state as
+an explicit skip pointing at the gate CLI, and the two host-coupled logic tests take an injected
+version through the A28 parameter. The floors, the rejection table, the bypass-env test and the
+gate CLI are unchanged, and `test_host_sqlite_library_meets_the_gate` still asserts on hosts
+that do meet a baseline.
