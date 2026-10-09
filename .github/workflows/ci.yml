@@ -58,13 +58,17 @@ jobs:
   web:
     name: web (ubuntu-latest)
     # No dashboard yet: this job stays dormant until web/package.json exists.
-    if: ${{ hashFiles('web/package.json') != '' }}
+    # hashFiles() must live on step-level `if:` conditions — GitHub rejects it
+    # in a job-level `if:` with "Unrecognized function", which fails the whole
+    # workflow at parse time rather than skipping this job.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        if: hashFiles('web/package.json') != ''
         with:
           node-version: "20"
       - name: Install and build
+        if: hashFiles('web/package.json') != ''
         run: npm ci && npm run build
         working-directory: web
