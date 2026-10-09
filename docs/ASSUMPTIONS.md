@@ -218,3 +218,75 @@ spending runner minutes. Harmless to drop if full per-push history is wanted.
 
 The 6 skips are the parametrized float-package cases for the six packages Phase 0 does not
 create (A12). They become enforcing as soon as those packages exist.
+
+---
+
+## Phase 1 (Market Data, Feed & News Infrastructure)
+
+**A35 — The six float-free packages gained `feed` and `news`.** Phase 1 puts real price
+arithmetic in both: `feed` parses OANDA prices and `news` computes spread ratios and a rolling
+ATR. Leaving them outside the scan would let a float enter at the ingest boundary or the
+breaker. Scan the same way as Phase 0 — by AST, so prose mentioning `float(` is not flagged.
+
+**A36 — `asyncio` boundary floats are confined and documented.** `feed/oanda_client`
+computes every duration as an exact `Decimal` and converts to a `timedelta` through
+`dt.timedelta(microseconds=int(...))`. The single unavoidable float is
+`duration.total_seconds()` inside the default sleeper, which `asyncio.sleep` requires. That
+function is the only one, and every test injects a sleeper, so the float never reaches engine
+arithmetic and never appears in a test.
+
+**A37 — Jitter is integer-derived.** `_uniform_jitter` draws from
+`random.Random().randrange(...)` and divides Decimals, so no float is ever formed. A
+`# noqa: S311` records that this randomness is explicitly not a security decision — it only
+spreads reconnect attempts so many workers do not retry in lockstep.
+
+**A38 — Backoff delays are measured in connection attempts, and the terminal state is always
+`FAILED`.** `max_attempts` counts connection attempts (not sleeps), so a run with *n* scripts
+and budget *n* uses exactly *n* connections and performs *n-1* backoffs. `STALE_FEED` is
+transient and observable through `on_state_change`; when the budget runs out the stream reports
+`FAILED` so a supervisor never mistakes a stale feed for a clean exit.
+
+**A39 — Staleness is strictly greater than the window.** The phase says "> 10s", so the
+detector treats exactly 10s as alive and 10s *plus one microsecond* as stale. Both edges are
+pinned by tests, and the heartbeat interval (5s) and threshold (10s) live as module constants
+rather than being scattered.
+
+**A40 — A quote-only quiet market is not stale.** Quotes quiet but heartbeats flowing is a
+normal idle market; only both quiet together trips staleness. Before the first heartbeat ever
+arrives, heartbeats are treated as quiet so the quote side alone can decide.
+
+**A41 — The session anchor is wall-clock, and the tests encode the consequence.** New York is
+UTC-5 in winter and UTC-4 in summer, so the 17:00 close is 22:00 UTC in January and 21:00 UTC
+in July. `bucket_start` floors on absolute UTC seconds and is therefore DST-immune; only
+`SessionAnchor` knows about wall clock. A session's 24 wall-clock hours span a *23-hour* UTC
+delta across a spring-forward, which is why the anchor can never be expressed as a fixed UTC
+hour.
+
+**A42 — Reconciliation tolerance is one pip, and a pip is 0.0001 for gold.** OANDA's XAU_USD
+quotes at 0.01 but defines a pip as 0.0001, so the tolerance is derived from the loaded
+`InstrumentSpec.pip` and not from the display tick. A difference of *exactly* one pip is
+agreement; anything strictly greater is reported. Mid-side values are compared too.
+
+**A43 — An incomplete streamed bar is "not yet arrived", not "absent".** The reconciler
+reports `MISSING` only when the stream produced no bar at all for a bucket, so a bar that
+happens to be open when reconciliation runs does not look like a data gap.
+
+**A44 — FRED is authoritative, Forex Factory is advisory.** FRED supplies *which day* a
+release lands on and a failure propagates. The YAML supplies *what time of day*, in New York
+wall clock, because FRED does not publish release times. Forex Factory can only add
+corroborating events: a 429 or a malformed payload logs a warning and yields nothing, and an
+advisory event can never create a blackout on its own.
+
+**A45 — The spread breaker uses a median, not a mean.** A single wide quote during a news
+spike would poison an average and either block everything or desensitise the breaker. The
+median is recomputed rather than maintained incrementally: the window is small and correctness
+matters more than the saving. The even-count midpoint is quantized to the coarser input
+exponent so no phantom precision is invented.
+
+**A46 — Under-populated breakers stay permissive rather than blocking by default.** With fewer
+than `minimum_spread_samples` observations there is no spread block, because blocking on a
+median of two values is noise. Again: the breaker reports *why* it has nothing to say.
+
+**A47 — `feed` and `news` were added to the float-free invariant set, so the six Phase-0 skip
+cases became four.** `domain`, `execution`, `risk`, `strategy` and `journal` still skip, since
+those packages do not exist yet. `market`, `feed` and `news` are now actively enforced.

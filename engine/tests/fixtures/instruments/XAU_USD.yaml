@@ -1,0 +1,31 @@
+# Test-only fallback spec for XAU_USD.
+#
+# This is a *fixture*, not a configuration source. Engine logic must never read it: tick
+# and pip sizes are derived from the live OANDA instrument payload (engine.market.instrument)
+# and cached in config/instrument.cache.yaml. This file exists so unit tests never touch
+# the network and never hardcode a tick size in logic.
+#
+# Values mirror the documented OANDA v20 instrument response for XAU_USD. Verify against the
+# live endpoint before relying on them for anything but tests.
+
+name: XAU_USD
+displayName: Gold
+pipLocation: -4
+displayPrecision: 2
+tradeUnitsPrecision: 5
+minimumTradeSize: "1"
+
+# OANDA JSON is string-typed throughout; this is the raw shape from_oanda_payload parses.
+raw:
+  name: "XAU_USD"
+  type: "CFD"
+  displayName: "Gold"
+  pipLocation: -4
+  displayPrecision: 2
+  tradeUnitsPrecision: 5
+  minimumTradeSize: "1"
+  maximumTrailingStopDistance: "10.00000"
+  minimumTrailingStopDistance: "0.50000"
+  maximumPositionSize: "0"
+  maximumOrderUnits: "0"
+  marginRate: "0.01"

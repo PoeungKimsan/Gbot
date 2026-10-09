@@ -1,0 +1,19 @@
+# Volatility / spread signal breaker configuration (engine.news.breaker).
+#
+# All values are strings so they are parsed into exact Decimals. Never floats.
+
+# Block signal generation when the current spread exceeds this multiple of the rolling
+# median spread. A multiple of 3 blocks a spread three times the median.
+spread_breaker_multiple: "3"
+
+# Rolling ATR window, in one-minute bars. 5 means a 5-minute rolling ATR.
+atr_window_bars: 5
+
+# Minimum number of mid bars before the ATR is considered usable.
+minimum_atr_bars: 2
+
+# Number of recent spread observations kept for the rolling median.
+spread_window_samples: 60
+
+# Minimum number of spread observations before the spread breaker is considered usable.
+minimum_spread_samples: 5

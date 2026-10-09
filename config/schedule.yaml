@@ -1,0 +1,48 @@
+# Economic release schedule consumed by engine.news.calendar.
+#
+# Times are LOCAL America/New_York rules, not instants. Release *dates* come from the
+# FRED API (releases/dates); the clock time below comes from this file only. That split is
+# deliberate: FRED tells us *which day* a release lands on, this file tells us *what time
+# of day* in New York it is expected, because FRED does not publish release times.
+#
+# Forex Factory data is advisory only and never changes anything in this file.
+
+# Exact settings for the instrument whose feeds this engine consumes. The instrument spec
+# itself (tick size, pip size, lot precision) is NOT configured here: it is loaded from the
+# OANDA API and cached in config/instrument.cache.yaml (git-ignored). See
+# engine.market.instrument.
+instrument: XAU_USD
+
+# Default blackout padding applied to every event, in minutes. Per-event values below
+# override these.
+defaults:
+  blackout_before_minutes: 15
+  blackout_after_minutes: 60
+
+events:
+  # Employment Situation. FRED release id 50.
+  # 08:30 America/New_York, monthly.
+  - name: Nonfarm Payrolls
+    fred_release_id: 50
+    local_time: "08:30"
+    impact: high
+    blackout_before_minutes: 30
+    blackout_after_minutes: 90
+
+  # Consumer Price Index. FRED release id 10.
+  - name: Consumer Price Index
+    fred_release_id: 10
+    local_time: "08:30"
+    impact: high
+    blackout_before_minutes: 30
+    blackout_after_minutes: 90
+
+  # FOMC statement. FRED release id 101.
+  # Released at 14:00 New York, but the statement window is wider than a point in time,
+  # so this one is treated as a whole-day rule.
+  - name: FOMC Statement
+    fred_release_id: 101
+    whole_day: true
+    impact: high
+    blackout_before_minutes: 60
+    blackout_after_minutes: 180

@@ -22,6 +22,11 @@ SRC_ROOT: Path = REPO_ROOT / "engine" / "src" / "engine"
 API_ROOT: Path = REPO_ROOT / "api"
 
 #: Rule (a): these packages must never host floating point.
+#: Rule (a): these packages must never host floating point.
+#:
+#: ``feed`` and ``news`` are included because they now carry price arithmetic: ``feed``
+#: parses OANDA prices and ``news`` computes spread ratios and rolling ATR. Keeping them
+#: under the same scan is what stops a float from sneaking in at the ingest boundary.
 FLOAT_FREE_PACKAGES: tuple[str, ...] = (
     "domain",
     "execution",
@@ -29,6 +34,8 @@ FLOAT_FREE_PACKAGES: tuple[str, ...] = (
     "strategy",
     "journal",
     "market",
+    "feed",
+    "news",
 )
 
 #: Rule (b): SQL DDL shapes whose text is inspected for banned column types.

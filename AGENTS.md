@@ -122,19 +122,37 @@ connections). Dependencies flow inward toward `domain/`.
 
 ## 4. Current State
 
-> **CURRENT ACTIVE PHASE: Phase 0 (Workspace Provisioning & Gates)**
+> **CURRENT ACTIVE PHASE: Phase 1 (Market Data, Feed & News Infrastructure) — COMPLETE**
 
-Phase 0 scope, and only Phase 0 scope:
-- Repository skeleton per Section 3 (directories only, where needed by tooling).
-- `pyproject.toml` with the `uv`-managed toolchain, pinned dependencies (including `tzdata`),
-  and configured test/lint gates.
-- Test infrastructure: `uv run pytest` runs green on an empty or minimal suite.
-- Any actual engine modules belong to later phases. Do not write them yet.
+Phase 1 scope, and only Phase 1 scope:
 
-**Phases 1+ (NOT started — do not implement):** feed, market data & session math, news calendar,
-domain events & Decimal ledger, execution/fill model, risk limits, ICT strategy detectors,
-SQLite journal worker + hash chain, publisher/projections, runtime supervisor + IPC, web
-dashboard, FastAPI service, systemd units.
+- `market/`: `InstrumentSpec` (tick/pip derived, never hardcoded), Decimal `Quote`/`Bar` models,
+  and session-anchored M1/M5 bar builders with REST reconciliation.
+- `feed/`: async chunked OANDA v20 pricing stream consumer with heartbeat monitoring,
+  staleness detection, jittered exponential backoff reconnect, and REST backfill.
+- `news/`: schedule ingestion, FRED release dates, advisory Forex Factory scraping, and the
+  volatility/spread signal breaker.
+- **Tests first**: no module is written before its test file exists.
+- **No live network in unit tests.** Every HTTP boundary is injected (`feed` transports, FRED
+  and Forex Factory fetchers). Tests drive injected clocks; no real `sleep()` timing races.
+- Decimal (or integer) arithmetic only. See docs/ASSUMPTIONS.md for the recorded `float`
+  exceptions at `asyncio` boundaries.
+
+**Phase 1 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `market/instrument.py` | tick/pip derived, never hardcoded; cache never persists a float |
+| `market/models.py` | no float ever reaches a price; bid/ask never inverts; UTC always |
+| `market/builder.py` | session anchor is wall-clock, not a fixed UTC hour (DST-correct) |
+| `feed/oanda_client.py` | chunk-boundary safety; `> 10s` of silence ⇒ `STALE_FEED`; exponential backoff with jitter; backfill of the missed interval |
+| `news/calendar.py` | FRED is authoritative; Forex Factory is advisory and can never block alone |
+| `news/breaker.py` | spread breaker uses the *median*, never the mean |
+
+**Not in Phase 1:** `domain/`, `execution/`, `risk/`, `strategy/`, `journal/`, `publisher/`,
+the runtime supervisor, the web dashboard, the FastAPI service, and systemd units.
+
+*Update this section before starting any new phase.*
 
 ---
 

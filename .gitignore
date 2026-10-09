@@ -48,6 +48,12 @@ config/control.token
 *.token
 secrets/
 
+# --- Fetched-and-cached reference data -------------------------------------
+# The instrument spec is fetched from OANDA and cached here; only the fixture in
+# engine/tests/fixtures is tracked.
+config/instrument.cache.yaml
+config/*.cache.yaml
+
 # --- SQLite journals / local state ----------------------------------------
 # The production database lives outside the repo, but ignore stray local ones.
 *.db
