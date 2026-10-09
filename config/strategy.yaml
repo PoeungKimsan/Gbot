@@ -1,0 +1,48 @@
+# ICT silver-bullet strategy configuration (engine.strategy).
+#
+# Every numeric value is quoted so it parses into an exact Decimal, exactly as in
+# config/risk.yaml: an unquoted 0.25 would be a binary float, and
+# engine.risk.decimal_yaml refuses such a file at load time. Never relax these to
+# bare numbers.
+#
+# The SHA-256 of this document, once parsed, is the run's strategy_version and is
+# stamped into the journal header. Editing a value here therefore produces a new
+# version, which is the point: two runs are only comparable under the same policy.
+
+# Fractal width. A swing high or low needs this many completed bars on each side
+# with a strictly more extreme print, so the most recent swing_n bars can never be
+# a swing point yet.
+swing_n: 2
+
+# A liquidity sweep must pierce the prior swing extreme by at least this many
+# ticks. A touch at the level is not a sweep: somebody's stops sitting there are
+# not liquidity unless the price actually trades through them.
+sweep_min_ticks: 3
+
+# ...and the close must come back inside the pierced level within this many bars
+# of the breach. A level that is broken and stays broken is a breakout, not a
+# sweep, and breakout entries are a different strategy.
+sweep_close_back_bars: 2
+
+# The ATR window the MSS body and FVG imbalance thresholds are measured against.
+atr_window: 14
+
+# A market structure shift must print a body of at least this multiple of
+# ATR(atr_window). A tick of travel through a swing point is noise.
+mss_body_k: "0.25"
+
+# A fair value gap's imbalance must be at least this multiple of ATR(atr_window).
+# A gap smaller than this is a one-tick print, not an imbalance.
+fvg_min_atr: "0.25"
+
+# A resting limit entry stays live for this many M5 bars, which is exactly one
+# 60-minute silver-bullet window.
+order_expiry_bars: 12
+
+# The stop rests this many ticks beyond the swept extreme, so an immediate
+# re-test of the swept level does not take the trade out at the entry.
+stop_buffer_ticks: 5
+
+# The profit target is this multiple of R beyond the entry, where one R is the
+# distance from the entry to the stop.
+rr_target: "2"

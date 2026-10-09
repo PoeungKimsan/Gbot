@@ -122,7 +122,48 @@ connections). Dependencies flow inward toward `domain/`.
 
 ## 4. Current State
 
-> **CURRENT ACTIVE PHASE: Phase 3 (Risk, Metrics & Reporting)**
+> **CURRENT ACTIVE PHASE: Phase 4 (Strategy & Replay)**
+
+Phase 4 scope, and only Phase 4 scope:
+
+- `config/strategy.yaml`: every tunable the detectors and the silver bullet read, loaded
+  through `risk/decimal_yaml.py` so an unquoted threshold is refused at the door. The
+  SHA-256 of the parsed document is the run's `strategy_version`, stamped into the
+  journal header (`RUN_STARTED`).
+- `strategy/detectors.py`: fractal swings (`swing_n` bars either side), liquidity sweeps
+  of a prior swing extreme (>= `sweep_min_ticks`, closed back within
+  `sweep_close_back_bars`), market structure shifts (close through a swing point, body
+  >= `mss_body_k` * ATR(`atr_window`)), and fair value gaps (imbalance >= `fvg_min_atr` *
+  ATR, limit entry at the 50% midpoint). All of it on closed mid bars.
+- `strategy/silver_bullet.py`: the 03:00-04:00 London and 10:00-11:00 New York windows,
+  the reference guard that keeps the London window off the not-yet-concluded London daily
+  range, the order lifecycle (`order_expiry_bars`, buffered stop, `rr_target` target), and
+  the 16:45 New York dynamic close.
+- `strategy/backtest.py`: the replay engine over the Phase 2 execution layer, and the
+  proofs that nothing it produced depended on a bar that had not printed.
+
+**Phase 4 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `strategy/config.py` | the version is the SHA-256 of the parsed document: key order does not move it, every edited value does |
+| `strategy/detectors.py` | a swing is only knowable `swing_n` bars after it prints; a level cannot be swept before it is knowable; streaming indicators match the batch functions at every prefix |
+| `strategy/silver_bullet.py` | the windows are New York wall clock across both DST transitions; the London window cannot reference the London daily range; a setup needs sweep, shift and gap inside one 60-minute window; positions are flat by 16:45 |
+| `strategy/backtest.py` | tick-streamed indicator calculations match batch computations; a run over `bars[:n]` equals the full run truncated at bar `n` |
+
+`strategy/` joining the tree switches the Phase 0 float-free invariant from *skipping*
+to *enforcing* for that package, exactly as `risk/` did in Phase 3.
+
+**Not in Phase 4:** the runtime supervisor wiring (nothing in `runtime/` constructs a
+`SilverBulletStrategy` or reads `config/strategy.yaml` yet), risk-based quantity sizing
+injected into the replay, `publisher/`, the web dashboard, the FastAPI service, and
+systemd units.
+
+*Update this section before starting any new phase.*
+
+---
+
+### Phase 3 (Risk, Metrics & Reporting) — COMPLETE
 
 Phase 3 scope, and only Phase 3 scope:
 
@@ -133,8 +174,6 @@ Phase 3 scope, and only Phase 3 scope:
 - `metrics/`: `performance.py` — the single module where floats are permitted, because
   it is the reporting boundary and produces no number any other module consumes.
 
-**Phase 3 outcomes and the invariants that now have machine coverage:**
-
 | Module | Invariant enforced by tests |
 | --- | --- |
 | `risk/decimal_yaml.py` | a float in a config file is refused at load time, never coerced |
@@ -143,17 +182,10 @@ Phase 3 scope, and only Phase 3 scope:
 | `risk/killswitch.py` | tripping latches; the latch survives a process restart through journal events; resting limits are cancelled and new entries blocked until the next day's rollover |
 | `metrics/performance.py` | bootstrap CI is byte-reproducible for a fixed seed; `N < 30` returns `INSUFFICIENT_DATA` with no bounds |
 
-Note that `risk/` joining the tree switches the Phase 0 float-free invariant from
-*skipping* to *enforcing* for that package: `engine/tests/test_invariants.py` stops
-skipping `risk/` and starts failing on any float literal or `float()` call under it.
-`metrics/` is deliberately **not** in that set (AGENTS.md 2.1 permits floats at the
-display/serialization boundary, and a report is that boundary).
-
-**Not in Phase 3:** the runtime supervisor wiring (nothing in `runtime/` constructs a
-`KillSwitch` or reads `config/risk.yaml` yet), `publisher/`, the web dashboard, the
-FastAPI service, and systemd units.
-
-*Update this section before starting any new phase.*
+`risk/` joining the tree switched the Phase 0 float-free invariant from *skipping* to
+*enforcing* for that package. `metrics/` was deliberately **not** added to that set
+(AGENTS.md 2.1 permits floats at the display/serialization boundary, and a report is
+that boundary).
 
 ---
 

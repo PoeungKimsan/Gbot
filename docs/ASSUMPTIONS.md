@@ -468,3 +468,95 @@ global generator first. 10,000 resamples and the 2.5th/97.5th percentiles are th
 defaults; the seed is pinned for the life of the report format so historical numbers do not
 shift under a re-read. Below 30 trades the interval is not computed at all, and the point
 estimates are still reported.
+
+---
+
+## Phase 4 (Strategy & Replay)
+
+**A75 — `strategy.yaml` is quoted exactly like `risk.yaml`, and is loaded through the same
+`decimal_yaml`.** One config boundary, one rule. The document holds nine knobs: two fractal/
+sweep counts, a look-back window, three thresholds (all Decimals), an expiry in bars, a stop
+buffer in ticks, and a reward multiple. The committed thresholds are the ones the brief
+names; the windows are module constants rather than config, because the silver bullet's
+03:00/10:00/16:45 are the strategy rather than a tunable of it — the same call the Phase 3
+kill-switch made for the 17:00 rollover.
+
+**A76 — The `strategy_version` is the SHA-256 of the *parsed* document's canonical JSON.**
+Deliberately not of the file's bytes: a reformatted or reordered file is the same policy, and
+the canonical JSON makes that structural. Every edited value moves the digest, because a
+rerun under a changed threshold is a different strategy. The version is stamped as a
+`RUN_STARTED` event payload — the journal has no header table, so the run's first event *is*
+the header — and `run_header_event()` carries only strings so the header canonicalizes
+stably and puts no Decimal in the journal's amount column.
+
+**A77 — A bar's `mid_ohlc` is the whole input to the detectors.** The strategy never reads bid
+or ask: price discovery is mid-side, and the bid/ask split is the fill model's business
+(Phase 2). That is why `Bar.mid_ohlc` is derived rather than stored, and it is what makes a
+tick-streamed bar and a batch-built bar produce identical signals.
+
+**A78 — The look-ahead prevention is structural, and the test proves it by mutation.** During
+the London window the London daily range is not *filtered out*, it is *absent*: a session
+range is handed to the detectors only at the instant it concludes, so a 03:00 bar cannot
+reference a range that concludes at 05:00. `permitted_levels()` is the queryable form of the
+policy, and it has two halves — the window decides *which* ranges a setup may read, and the
+date decides *which day's*. A test rebuilds the London range with its decisive extreme an
+hour after the window closes and shows the order never moves; a second test asserts the
+permitted levels' *dates*, because the fixture prints the same prices every day and only a
+date can tell a stale level from a live one. Both guards were verified by mutation: removing
+either one fails the suite.
+
+**A79 — Sweeps target *levels*, and the silver bullet only trades session-range levels.** The
+detector's sweep scanner accepts any extreme, fractal swings and concluded ranges alike,
+because that is the detector's contract. The silver bullet's `_permitted` then requires the
+swept level's source to be a session range, which is what makes the reference guard total: a
+fractal sweep can be emitted by the detector and still never be traded. The MSS, by contrast,
+breaks a *fractal* swing — the reclaim's own structural point — so all four detectors are
+load-bearing.
+
+**A80 — Levels are remembered for two days of M5 bars and then dropped.** `drop_levels()`
+is memory management for a process that runs for weeks, and it is the *caller's* decision
+because only the caller knows what "unreachable" means. The horizon is 576 bars; anything
+older is refused by the date filter anyway.
+
+**A81 — Order ids are `run_id-sb-NNNN`, counted per strategy instance.** Deterministic and
+namespaced, so two replays of the same run_id produce byte-identical journals, and the
+journal of a live run and a backtest of the same run are comparable.
+
+**A82 — The replay evaluates orders and positions *before* the strategy sees the bar.** An
+order placed as bar N's close arrives did not exist while bar N traded, so it cannot fill on
+bar N. A position opened by a fill on bar N *is* then tested against bar N, which is the
+"entry filled and immediately stopped out" case AGENTS.md 2.5 demands — it falls out of the
+ordering rather than needing a special case. The stop triggers on a touch and fills at the
+bar extreme plus slippage; the target is a limit, so it needs a tick of travel and is
+therefore *harder* to hit than the stop. Both directions of the pessimism are tested.
+
+**A83 — The no-repaint proof compares a run over `bars[:n]` with the full run truncated at
+bar `n`.** That is the definition, and it is the only thing a backtest can honestly assert:
+a prefix run shares no state with the full run, so any dependence on a bar that had not
+printed shows up as a difference. The ATR is cross-checked twice more — streaming against a
+batch recomputation, and tick-streamed bars against a batch fold of the same quotes, through
+the Phase 1 `BarReconciler`. All three guards were verified by mutation: a one-point change
+in the batch ATR fails two of them.
+
+**A84 — The stop sits beyond the *swept extreme*, not beyond the level.** A sweep pierces the
+level by at least `sweep_min_ticks`, and the buffer is measured from where the price
+actually traded, so the stop is `breach - stop_buffer_ticks` for a long. Measuring from the
+level would let a deeper sweep tighten the stop, which is the optimistic direction.
+
+**A85 — A below-zero R setup is declined and recorded, not silently dropped.** A shallow
+reclaim can put the gap's midpoint inside the stop, and there is no order that expresses
+"risk nothing". `DeclinedSetup` keeps the reason inspectable; a test asserts the sweep stands
+and no order is placed. `quantity_fn` defaults to one troy ounce and is injected, so
+fixed-fractional sizing (Phase 3's `size_position`) is a Phase 5 wiring decision rather than
+a Phase 4 dependency — `strategy/` importing `risk/` beyond the config guards would be a
+cross-layer import AGENTS.md section 3 forbids.
+
+**A86 — The strategy refuses an incomplete bar, a non-M5 bar, and out-of-order bars, loudly.**
+An incomplete bar has no final close, so every value computed from it would change; a bar
+out of order would poison the session buckets. Both are defects, not conditions, so they
+raise rather than degrade.
+
+**A87 — The replay's bar loop does not sleep, read the clock, or touch the network.** Every
+slippage draw comes from `derive_seed(run_id, order_id)`, so two replays of the same run are
+byte-identical, and two replays under different run ids are honestly different runs. That is
+what makes a backtest a record rather than a story.
