@@ -290,3 +290,71 @@ median of two values is noise. Again: the breaker reports *why* it has nothing t
 **A47 — `feed` and `news` were added to the float-free invariant set, so the six Phase-0 skip
 cases became four.** `domain`, `execution`, `risk`, `strategy` and `journal` still skip, since
 those packages do not exist yet. `market`, `feed` and `news` are now actively enforced.
+
+---
+
+## Phase 2 (Domain, Journal & Execution)
+
+**A48 — One sign convention, stated once.** A ledger balance is **debits less credits**.
+Debit-normal accounts (`CASH`, `FEES_PAID`, `REALIZED_PNL`, `UNREALIZED_PNL`, `MARGIN_USED`)
+read positive; credit-normal accounts (`EQUITY`, `PAYABLE_TO_BROKER`) read negative. No
+uniform formula can make both kinds of account positive at once — that asymmetry is exactly
+what makes the trial balance sum to zero. `equity()` is the single place the sign is
+resolved, so callers never handle it.
+
+**A49 — A transaction's postings must cover distinct accounts.** Two debits to `CASH` in one
+transaction is legal double-entry but lossy for this schema, because the journal keeps one
+amount per account. Refused at construction.
+
+**A50 — Re-applying the same `transaction_id` raises.** Replay is the reason: a journal
+replayed from the start must reproduce the live ledger, and a repeated tail must not
+double-count. The same shape appears in the journal writer, where every `event_id` is
+`UNIQUE`.
+
+**A51 — Stop-loss orders trigger on a *touch*, limit orders need a *tick of travel*.** These
+are deliberately different and both pessimistic:
+
+- A resting stop becomes a market order the instant the price reaches its level, so it
+  triggers at `level` and fills at the bar extreme plus slippage. Requiring overshoot would
+  let a stop sit unfilled while the price ran straight through it.
+- A limit needs the price to trade *through* the level by a full tick. A touch at the level
+  with no trade through is an order sitting unfilled, and assuming otherwise is optimistic.
+
+The comparison in `is_price_past_level` is inclusive at the boundary, because "at least one
+tick of travel" means reaching `level + tick` already qualifies.
+
+**A52 — Slippage is integer-tick-based, not float-based.** `random.Random(seed).randrange(0,
+max+1)` returns an integer, so the resulting price is exact. The seed is
+`int.from_bytes(sha256(f"{run_id}:{order_id}").digest()[:8], "big")`, matching the phase
+specification verbatim, and every fill journals its seed and slippage so a replay is
+byte-reproducible. A limit fill carries no slippage, because its price is guaranteed.
+
+**A53 — `asyncio` and `threading` boundary floats are confined.** `stop(timeout=...)` and
+`drain(timeout=...)` accept an `int` or a `timedelta`; `_seconds_of` converts via integer
+microseconds into a float, which is what `asyncio.sleep` and `Thread.join` require. The
+result of that arithmetic never touches a price or a balance. The same reasoning covers
+`time.monotonic()` in `drain`, which must wait on wall-clock time rather than a test's
+injected clock, because it is a shutdown barrier.
+
+**A54 — `JournalExhausted` is deliberately not named `JournalExhaustedError`.** Ruff's N818
+wants an `Error` suffix; this is a *condition* with its own exit code (70), caught precisely
+at the boundary that maps it. Renaming it would read as a bug rather than a deliberate
+state, so the rule is suppressed per-file with that reasoning recorded in `pyproject.toml`.
+
+**A55 — `engine/tests/` is now a package.** Two `test_properties.py` files (domain and
+journal) collided under pytest's rootdir-relative module naming — the classic "import file
+mismatch" — which broke collection of the whole suite. `__init__.py` files in
+`engine/tests/` and each subdirectory give each test module a unique package-qualified
+name. This also fixes the earlier problem where running a single test file needed
+`engine/tests` on `sys.path`.
+
+**A56 — `OrderStatus.is_terminal` / `is_open` were broken at runtime and the tests never
+called them.** Enum sibling members are not in scope inside a property body the way plain
+class attributes are, so `FILLED` raised `NameError`. Ruff's `F821` caught what the tests
+missed, which is the intended division of labour: the static guard finds what runtime
+coverage did not. Both properties now reference members through the class.
+
+**A57 — Hashes use SHA-256, never the builtin `hash()`.** The Phase 0 invariant test caught
+three `hash()` calls in `__hash__` methods. The builtin is salted per process, so a hash
+computed in one run would not match the same value in another — fatal for anything keyed
+across a restart. Each `__hash__` now derives from `hashlib.sha256`.

@@ -122,35 +122,31 @@ connections). Dependencies flow inward toward `domain/`.
 
 ## 4. Current State
 
-> **CURRENT ACTIVE PHASE: Phase 1 (Market Data, Feed & News Infrastructure) — COMPLETE**
+> **CURRENT ACTIVE PHASE: Phase 2 (Domain, Journal & Execution) — COMPLETE**
 
-Phase 1 scope, and only Phase 1 scope:
+Phase 2 scope, and only Phase 2 scope:
 
-- `market/`: `InstrumentSpec` (tick/pip derived, never hardcoded), Decimal `Quote`/`Bar` models,
-  and session-anchored M1/M5 bar builders with REST reconciliation.
-- `feed/`: async chunked OANDA v20 pricing stream consumer with heartbeat monitoring,
-  staleness detection, jittered exponential backoff reconnect, and REST backfill.
-- `news/`: schedule ingestion, FRED release dates, advisory Forex Factory scraping, and the
-  volatility/spread signal breaker.
-- **Tests first**: no module is written before its test file exists.
-- **No live network in unit tests.** Every HTTP boundary is injected (`feed` transports, FRED
-  and Forex Factory fetchers). Tests drive injected clocks; no real `sleep()` timing races.
-- Decimal (or integer) arithmetic only. See docs/ASSUMPTIONS.md for the recorded `float`
-  exceptions at `asyncio` boundaries.
+- `domain/`: immutable `events.py`, `orders.py`, `positions.py`, and the double-entry
+  `ledger.py`, all Decimal-only. A float is rejected at every boundary.
+- `journal/`: the append-only schema, the SHA-256 hash chain with `verify_chain()`, and the
+  thread-isolated `writer.py` consuming a bounded `queue.Queue(maxsize=10000)`.
+- `execution/`: the deterministic pessimistic `simulator.py`.
 
-**Phase 1 outcomes and the invariants that now have machine coverage:**
+**Phase 2 outcomes and the invariants that now have machine coverage:**
 
 | Module | Invariant enforced by tests |
 | --- | --- |
-| `market/instrument.py` | tick/pip derived, never hardcoded; cache never persists a float |
-| `market/models.py` | no float ever reaches a price; bid/ask never inverts; UTC always |
-| `market/builder.py` | session anchor is wall-clock, not a fixed UTC hour (DST-correct) |
-| `feed/oanda_client.py` | chunk-boundary safety; `> 10s` of silence ⇒ `STALE_FEED`; exponential backoff with jitter; backfill of the missed interval |
-| `news/calendar.py` | FRED is authoritative; Forex Factory is advisory and can never block alone |
-| `news/breaker.py` | spread breaker uses the *median*, never the mean |
+| `domain/events.py` | canonical JSON is a pure function; floats rejected; timestamps UTC |
+| `domain/orders.py` | every state transition returns a new object; invalid orders refused |
+| `domain/positions.py` | scale-out keeps each slice's cost basis; PnL realized exactly once |
+| `domain/ledger.py` | trial balance is identically zero (property-tested over arbitrary histories) |
+| `journal/schema.py` | hash chain detects any tampering; UPDATE/DELETE triggers fire |
+| `journal/writer.py` | `put_nowait` only; SQLite never runs on the event loop; group commits |
+| `execution/simulator.py` | buys on ask, stops trigger on a touch, intra-bar ambiguity resolves against the trade |
 
-**Not in Phase 1:** `domain/`, `execution/`, `risk/`, `strategy/`, `journal/`, `publisher/`,
-the runtime supervisor, the web dashboard, the FastAPI service, and systemd units.
+**Not in Phase 2:** the runtime supervisor wiring, `publisher/`, the web dashboard, the
+FastAPI service, and systemd units. The writer is complete and tested, but nothing in
+`runtime/` submits to it yet.
 
 *Update this section before starting any new phase.*
 

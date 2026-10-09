@@ -116,7 +116,7 @@ def instrument_payload() -> dict[str, Any]:
 
 
 @pytest.fixture
-def instrument_spec(instrument_payload: Mapping[str, Any]) -> Any:  # noqa: ANN401
+def instrument_spec(instrument_payload: Mapping[str, Any]) -> Any:
     from engine.market.instrument import InstrumentSpec
 
     return InstrumentSpec.from_oanda_payload(instrument_payload)
@@ -124,7 +124,7 @@ def instrument_spec(instrument_payload: Mapping[str, Any]) -> Any:  # noqa: ANN4
 
 @pytest.fixture
 def quote_factory(
-    instrument_spec: Any,  # noqa: ANN401
+    instrument_spec: Any,
 ) -> Callable[..., Any]:
     """Build a :class:`Quote` with Overridable defaults."""
     from engine.market.models import Quote
@@ -148,7 +148,7 @@ def _ohlc(
     high: Decimal | str,
     low: Decimal | str,
     close: Decimal | str,
-) -> Any:  # noqa: ANN401
+) -> Any:
     from engine.market.models import OHLC
 
     return OHLC(
@@ -165,12 +165,12 @@ def bar_factory() -> Callable[..., Any]:
     from engine.market.models import Bar, Timeframe
 
     def build(
-        timeframe: Any = Timeframe.M1,  # noqa: ANN401
+        timeframe: Any = Timeframe.M1,
         timestamp_utc: dt.datetime | None = None,
         complete: bool = True,
         volume: int = 0,
-        bid: Any = None,  # noqa: ANN401
-        ask: Any = None,  # noqa: ANN401
+        bid: Any = None,
+        ask: Any = None,
     ) -> Bar:
         return Bar(
             timeframe=timeframe,
@@ -185,7 +185,7 @@ def bar_factory() -> Callable[..., Any]:
 
 
 @pytest.fixture
-def breaker_config() -> Any:  # noqa: ANN401
+def breaker_config() -> Any:
     """Breaker configuration read from ``config/breaker.yaml``."""
     from engine.news.breaker import BreakerConfig
 
@@ -194,7 +194,7 @@ def breaker_config() -> Any:  # noqa: ANN401
 
 
 @pytest.fixture
-def schedule_rules() -> Any:  # noqa: ANN401
+def schedule_rules() -> Any:
     """Parsed schedule rules from ``config/schedule.yaml``."""
     from engine.news.calendar import ScheduleLoader
 
@@ -222,7 +222,7 @@ def _no_real_io() -> Iterator[None]:
 
     original = socket.getaddrinfo
 
-    def guarded(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401 # pragma: no cover
+    def guarded(*args: Any, **kwargs: Any) -> Any:  # pragma: no cover
         if args and str(args[0]) in {"127.0.0.1", "localhost", "::1"}:
             return original(*args, **kwargs)
         raise AssertionError(

@@ -73,4 +73,17 @@ select = [
     "ANN202",  # private test helpers return None implicitly
     "ANN001",  # fixture/argument types are inferred from the signature
     "ANN204",  # __init__ needs no return annotation
+    "ANN401",  # test doubles and fake payloads are dynamically typed by construction
+]
+
+# The engine's I/O and coercion boundaries legitimately accept Any, because the value's
+# shape is validated inside each function rather than by a static annotation.
+"engine/src/engine/domain/*.py" = ["ANN401"]
+"engine/src/engine/execution/*.py" = ["ANN401"]
+"engine/src/engine/journal/*.py" = [
+    "ANN401",
+    # JournalExhausted is deliberately not named *Error: it is a *condition* with its own
+    # exit code (70), caught precisely at the boundary that maps it. Renaming it to
+    # JournalExhaustedError would read as a bug rather than a deliberate state.
+    "N818",
 ]
