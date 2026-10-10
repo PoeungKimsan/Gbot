@@ -634,3 +634,12 @@ invariants are unchanged and still pass — a live run and a replay are the same
 transport, so the supervisor takes one or runs without it (spread and ATR gating still apply).
 A supervisor that cannot start without the network is a supervisor that cannot be tested, and
 the runtime is the layer where that dependency would be legitimate anyway.
+
+**A99 — `httpx2` is a dev dependency, and the API suite asserts it stays.**
+`starlette.testclient` prefers `httpx2` and falls back to `httpx` with a
+`StarletteDeprecationWarning` raised at *import* time — which no `filterwarnings` entry can
+suppress, because the warning fires before a test is collected. The dependency is the fix, not
+a filter. `test_no_import_of_the_test_client_emits_a_deprecation` imports `fastapi.testclient`
+in a subprocess with warnings promoted to errors, so the day the dependency is dropped the
+suite goes red rather than quietly nagging. Verified by blocking `httpx2` at import and
+watching that test fail.

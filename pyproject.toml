@@ -22,6 +22,7 @@ dev = [
     "pytest-asyncio",
     "hypothesis",
     "ruff",
+    "httpx2>=2.13.1",
 ]
 
 [build-system]

@@ -210,6 +210,27 @@ def test_the_app_defaults_to_port_8080() -> None:
     assert API_PORT == 8080
 
 
+def test_no_import_of_the_test_client_emits_a_deprecation() -> None:
+    """The API suite must not import a deprecated transport.
+
+    Starlette's ``testclient`` prefers ``httpx2`` and falls back to ``httpx`` with a
+    ``StarletteDeprecationWarning`` at import time. An import-time warning is not a
+    deprecation a test can filter, so the only fix is the dependency -- and a test that
+    fails when the fallback is back is what keeps it installed.
+    """
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "-W", "error::Warning", "-c", "import fastapi.testclient"],
+        capture_output=True,
+        timeout=120,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr.decode("utf-8", "replace")
+
+
 def test_openapi_is_served(client: TestClient) -> None:
     response = client.get("/openapi.json")
 
