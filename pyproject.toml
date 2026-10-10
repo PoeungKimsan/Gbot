@@ -96,3 +96,14 @@ select = [
 # bootstrap interval is a function of its seed and nothing else. That perturbation
 # is the test.
 "engine/tests/metrics/**/*.py" = ["S311"]
+
+# The control-plane tests pass tokens as arguments and defaults, which is what a
+# test of an authenticated endpoint has to do: the token is the subject under test,
+# not a credential. S106/S107 name the *shape* of the pass, which is the point.
+"engine/tests/runtime/**/*.py" = ["S106", "S107"]
+
+# Two scripts are executed from tests: the CLI client through ``--help``, and the
+# project's own ``sys.executable``. Both are the repository's own code, on a
+# controlled argv, which is not untrusted input.
+"scripts/**/*.py" = ["S105"]
+"engine/tests/runtime/test_xauusdctl.py" = ["S603"]

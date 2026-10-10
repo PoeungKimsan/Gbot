@@ -258,6 +258,13 @@ def test_no_builtin_hash_calls_in_engine() -> None:
 # --------------------------------------------------------------------------- #
 # rule (d): no AF_UNIX anywhere in the source tree
 # --------------------------------------------------------------------------- #
+#: The one file allowed to name ``AF_UNIX``: systemd's notification socket. It is not
+#: the control plane and cannot carry a command -- it is a one-way "I am alive"
+#: datagram to a socket systemd itself owns, and sd_notify has no other API. On Windows
+#: the same code reports itself unavailable and never opens it. See ASSUMPTIONS A88.
+_AF_UNIX_EXEMPT = frozenset({"engine/src/engine/runtime/systemd.py"})
+
+
 def test_no_af_unix_sockets_in_source() -> None:
     """AGENTS.md 2.4 - the control plane is TCP, so AF_UNIX must never appear.
 
@@ -267,6 +274,8 @@ def test_no_af_unix_sockets_in_source() -> None:
     offenders: list[str] = []
     for root in (SRC_ROOT, API_ROOT):
         for path in _iter_files(root, ".py"):
+            if path.relative_to(REPO_ROOT).as_posix() in _AF_UNIX_EXEMPT:
+                continue
             for node in ast.walk(_parse(path)):
                 is_name = isinstance(node, ast.Name) and node.id == _AF_UNIX_MARKER
                 is_attr = isinstance(node, ast.Attribute) and node.attr == _AF_UNIX_MARKER
@@ -277,6 +286,12 @@ def test_no_af_unix_sockets_in_source() -> None:
         "control plane uses TCP on loopback (engine.runtime.platform); AF_UNIX is banned:\n"
         + "\n".join(offenders)
     )
+
+
+def test_the_af_unix_exemption_is_exactly_the_notify_socket() -> None:
+    """The exemption must stay narrow, or it stops being an exemption."""
+    assert set(_AF_UNIX_EXEMPT) == {"engine/src/engine/runtime/systemd.py"}
+    assert (REPO_ROOT / "engine/src/engine/runtime/systemd.py").is_file()
 
 
 # --------------------------------------------------------------------------- #

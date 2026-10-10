@@ -560,3 +560,77 @@ raise rather than degrade.
 slippage draw comes from `derive_seed(run_id, order_id)`, so two replays of the same run are
 byte-identical, and two replays under different run ids are honestly different runs. That is
 what makes a backtest a record rather than a story.
+
+---
+
+## Phase 5 (Runtime Supervisor, Control Plane & Projections)
+
+**A88 — The Phase 0 `AF_UNIX` ban is scoped to the control plane, with one exemption.**
+`runtime/systemd.py` names `socket.AF_UNIX`, because `sd_notify` has no other API: systemd's
+notification socket is a unix datagram target and nothing else. The exemption is narrow and
+tested (`test_the_af_unix_exemption_is_exactly_the_notify_socket` asserts the set is exactly
+that one file), and the socket is one-way and systemd-owned, so it cannot carry a command the
+way the Phase 0 ban feared. This is a scope correction to a rule written before notifications
+existed, not a loosening to make a host pass — and it is recorded here rather than done
+silently.
+
+**A89 — The supervisor's exit codes are nested, not parallel.** A blocked start returns 78
+*and writes nothing*, because `_begin` has not opened the journal yet; an exhausted journal
+returns 70 *and still drains*, because a journal that cannot accept one event may have others
+in flight. Both end in the same `_end()`, so a caller cannot get a clean stop for the wrong
+reason. A feed failure is neither: the stream dying is journalled as `FEED_STATE_CHANGED` and
+the process stops with 0, because systemd is the thing that should restart it.
+
+**A90 — The shutdown budget is honoured in wall-clock time, with both barriers off the loop.**
+`JournalWriter.drain` and `stop` block by design, so they run through `asyncio.to_thread`;
+a barrier that blocked the loop would make the 10-second deadline unenforceable, which is the
+whole point of having one. The bound is asserted with a journal whose drain and stop each
+block for five seconds against a two-second budget, and the assertion is the waiter's own
+timeout -- so a supervisor that overran its budget simply would not be there. The budget is a
+settings field defaulting to the phase's ten seconds, so the deadline is testable at speed;
+the drain is capped at half of it, so the stop still has room. Both mutations that remove the
+deadline were checked against the suite.
+
+**A91 — The gate that blocks risk is one question, asked in one place.** `runner.advance(bar,
+entries=False)` settles exits without asking the strategy for setups, so a PAUSE command, a
+tripped kill-switch and a news blackout all funnel through `entries=` and the strategy layer
+never learns about any of them. Exits always settle: a blocked exit is how a stop becomes a
+blow-up, the same rule the Phase 3 kill-switch enforces on its side.
+
+**A92 — The health probe answers for three things, and a withheld ping is the signal.** The
+event loop (a beat the watchdog task records), the journal worker thread, and the bounded
+queue. A ping withheld because a dependency is unhealthy is what makes systemd restart a
+wedged engine; the probe is in the runtime because it is the only layer that knows all three.
+
+**A93 — The publisher reads the canonical event envelope, one level down.** A journal row's
+`payload` column holds the whole canonical event the writer hashed, so the action's fields
+live under `payload["payload"]`. A fold that forgets that reads an empty document and reports
+a healthy engine with no trades — found by a test, and now pinned by one.
+
+**A94 — The projection's atomic write retries its rename.** `Path.replace` is atomic
+everywhere, but on Windows it fails outright while a reader holds the destination open, which
+a dashboard reader will briefly every time it serves a page. The retry is in `atomic_write_json`
+and the rename is still atomic from the reader's side, because readers only ever open the real
+path.
+
+**A95 — The API answers 200 with no database at all.** That is the point of the projection:
+the dashboard cannot stop the trader, so a test deletes the journal and asserts every endpoint
+still answers. A missing snapshot is a 503 with `cache-control: no-store`, so the next request
+re-checks rather than serving a stale "not ready" for ten seconds.
+
+**A96 — `main()` takes its quote source as a parameter.** The live OANDA wiring belongs to the
+phase that runs a live engine; a supervisor that cannot be built without a broker connection
+cannot be tested, and one that silently invents a transport is worse than one that refuses.
+Running `python -m engine.runtime.supervisor` therefore exits with that instruction rather than
+trading a day that never happened.
+
+**A97 — The strategy layer gained two seams in Phase 5, both one-directional.**
+`BacktestRunner.advance(bar, entries=)` and the `observer` callback exist so the runtime can
+drive the same fill loop and record what it did, without the strategy importing a journal or a
+gate. `SilverBulletStrategy.withdraw_order` is the book owner's own withdrawal path. Phase 4's
+invariants are unchanged and still pass — a live run and a replay are the same code.
+
+**A98 — The news calendar is injected, not loaded at startup.** `NewsCalendar` needs a FRED
+transport, so the supervisor takes one or runs without it (spread and ATR gating still apply).
+A supervisor that cannot start without the network is a supervisor that cannot be tested, and
+the runtime is the layer where that dependency would be legitimate anyway.

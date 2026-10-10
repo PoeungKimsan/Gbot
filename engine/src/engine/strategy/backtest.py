@@ -40,6 +40,7 @@ from engine.strategy.silver_bullet import (
     FlattenPosition,
     PlaceLimit,
     SilverBulletStrategy,
+    StrategyIntent,
 )
 
 if TYPE_CHECKING:
@@ -74,6 +75,36 @@ class ExitReason(StrEnum):
     TARGET = "TARGET"
     STOP = "STOP"
     DYNAMIC_CLOSE = "DYNAMIC_CLOSE"
+
+
+class ReplayEventKind(StrEnum):
+    """What kind of thing happened during a replay."""
+
+    INTENT = "INTENT"
+    ENTRY_FILL = "ENTRY_FILL"
+    EXIT_FILL = "EXIT_FILL"
+    TRADE = "TRADE"
+
+
+@dataclass(frozen=True, slots=True)
+class ReplayEvent:
+    """One thing that happened, handed to the observer the runner was given.
+
+    This is the seam between a replay and anything that wants to *record* it. The
+    strategy layer has no idea what a journal is; it emits these, and whoever wired it
+    up turns them into whatever their world needs.
+    """
+
+    kind: ReplayEventKind
+    at: dt.datetime
+    intent: StrategyIntent | None = None
+    fill: Fill | None = None
+    trade: BacktestTrade | None = None
+
+
+#: What a runner calls for each event. ``Any`` because the runner has no idea what a
+#: journal is, and must not have: reporting belongs to the wiring, not the replay.
+ReplayObserver = "Callable[[ReplayEvent], None]"
 
 
 @dataclass(frozen=True, slots=True)
@@ -323,6 +354,7 @@ class BacktestRunner:
         spec: InstrumentSpec,
         run_id: str = "backtest",
         broker: SimulatedBroker | None = None,
+        observer: ReplayObserver | None = None,
     ) -> None:
         if not isinstance(strategy, SilverBulletStrategy):
             raise ValueError(
@@ -334,6 +366,7 @@ class BacktestRunner:
         self._spec = spec
         self._tick = spec.tick
         self._run_id = run_id
+        self._observer = observer
         self._broker = broker if broker is not None else SimulatedBroker(run_id=run_id)
         self._reset()
 
@@ -342,21 +375,140 @@ class BacktestRunner:
         self._orders: list[_RunningOrder] = []
         self._positions: list[_RunningPosition] = []
         self._trades: list[BacktestTrade] = []
+        self._returned = 0
         self._bars = 0
+
+    def _emit_intent(self, intent: StrategyIntent, bar: Bar) -> None:
+        """Hand one intent to the observer, which is the runtime's seam.
+
+        The strategy layer never touches the journal: it emits what it wants, and
+        whoever wired it up decides what to record about it.
+        """
+        if self._observer is None:
+            return
+        self._observer(
+            ReplayEvent(
+                kind=ReplayEventKind.INTENT,
+                at=bar.timestamp_utc,
+                intent=intent,
+                trade=None,
+                fill=None,
+            )
+        )
 
     @property
     def strategy(self) -> SilverBulletStrategy:
         return self._strategy
 
+    def accept(self, bar: Bar) -> tuple[BacktestTrade, ...]:
+        """Consume one closed bar, returning the trades it closed.
+
+        The same per-bar work :meth:`run` performs, exposed one bar at a time so a
+        live engine can drive the identical loop without reimplementing it. The
+        ordering that makes the fills pessimistic -- orders before the strategy sees
+        the bar, then stops and targets -- all lives here, so there is exactly one
+        implementation of it.
+
+        Only the trades *this* bar closed are returned; the full history is on the
+        result :meth:`run` builds.
+        """
+        return self.advance(bar, entries=True)
+
+    def advance(self, bar: Bar, *, entries: bool = True) -> tuple[BacktestTrade, ...]:
+        """Consume one bar, settling the book and optionally asking the strategy.
+
+        ``entries=False`` settles exits only. That is the runtime's gate: a news
+        blackout, a tripped kill-switch or a PAUSE command must stop *new* orders, and
+        an order that never reaches the strategy never happens -- which is the only way
+        to stop one, because a limit the strategy has already decided on is a limit it
+        is tracking.
+
+        Args:
+            bar: One closed bar.
+            entries: Whether the strategy may open new positions on this bar.
+
+        Returns:
+            The trades this bar closed.
+        """
+        self._bars += 1
+        fresh = len(self._trades)
+        self._fill_resting(bar)
+        self._resolve_positions(bar)
+        if entries:
+            for intent in self._strategy.on_bar(bar):
+                self._emit_intent(intent, bar)
+                self._apply(intent, bar)
+        closed = tuple(self._trades[fresh:])
+        self._returned = len(self._trades)
+        return closed
+
+    @property
+    def bars_consumed(self) -> int:
+        """Bars this runner has consumed."""
+        return self._bars
+
+    def withdraw_all(self, *, at: dt.datetime, reason: str) -> tuple[str, ...]:
+        """Withdraw every resting order, returning their ids.
+
+        A resting limit is an entry waiting to happen, so "stop trading now" has to
+        include it. The caller supplies the instant and the reason, which is what a
+        journal entry records.
+        """
+        withdrawn: list[str] = []
+        for order_id in list(self._resting):
+            order = self._resting.pop(order_id)
+            order.status = "CANCELLED"
+            withdrawn.append(order_id)
+            self._strategy.withdraw_order(order_id)
+        if self._observer is not None:
+            for order_id in withdrawn:
+                self._observer(
+                    ReplayEvent(
+                        kind=ReplayEventKind.INTENT,
+                        at=at,
+                        intent=CancelOrder(order_id=order_id, at=at, reason=reason),
+                    )
+                )
+        return tuple(withdrawn)
+
+    def flatten_all(self, *, bar: Bar, reason: str) -> tuple[BacktestTrade, ...]:
+        """Close every open position at market on ``bar``, returning the trades.
+
+        ``bar`` is the current market, not a historical one: a forced flatten is
+        measured against the last quote, and inventing a price would invent a result.
+        """
+        closed: list[BacktestTrade] = []
+        for position in list(self._positions):
+            if position.closed:
+                continue
+            outcome = self._broker.submit_market(
+                bar,
+                _exit_side(position.side),
+                position.quantity,
+                order_id=f"{position.position_id}-flatten",
+                tick=self._tick,
+            )
+            if not outcome.filled or outcome.fill is None:  # pragma: no cover - defensive
+                continue
+            before = len(self._trades)
+            self._close(position, outcome.fill, ExitReason.DYNAMIC_CLOSE)
+            closed.extend(self._trades[before:])
+        return tuple(closed)
+
     def run(self, bars: Sequence[Bar] | Iterable[Bar]) -> BacktestResult:
-        """Replay ``bars``, in order, and return what they produced."""
+        """Replay ``bars``, in order, and return what they produced.
+
+        Deliberately a loop over :meth:`accept`: a replay and a live run are the same
+        code, so there is no second implementation of the fill rules to drift.
+
+        Single-use. The runner resets its own book but not the strategy it was handed,
+        so a second ``run`` on the same runner would be refused by the strategy's
+        bar-order check. Construct a fresh runner per replay -- which is what
+        :func:`replay` does.
+        """
         self._reset()
         for bar in bars:
-            self._bars += 1
-            self._fill_resting(bar)
-            self._resolve_positions(bar)
-            for intent in self._strategy.on_bar(bar):
-                self._apply(intent, bar)
+            self.accept(bar)
 
         return BacktestResult(
             trades=tuple(self._trades),
@@ -399,6 +551,14 @@ class BacktestRunner:
             # The bar that filled the entry may also take the stop out: that is the
             # pessimistic reading of an intra-bar touch spanning both (AGENTS.md 2.5).
             self._resolve(position, bar)
+            if self._observer is not None:
+                self._observer(
+                    ReplayEvent(
+                        kind=ReplayEventKind.ENTRY_FILL,
+                        at=outcome.fill.filled_at,
+                        fill=outcome.fill,
+                    )
+                )
 
     def _resolve_positions(self, bar: Bar) -> None:
         for position in list(self._positions):
@@ -442,7 +602,7 @@ class BacktestRunner:
 
         if not outcome.filled or outcome.fill is None:  # pragma: no cover - defensive
             return
-        self._close(position, outcome.fill, reason)
+        self._close(position, outcome.fill, reason, stop=reason is ExitReason.STOP)
 
     def _open_position(self, order: _RunningOrder, fill: Fill) -> _RunningPosition:
         return _RunningPosition(
@@ -458,28 +618,36 @@ class BacktestRunner:
         )
 
     def _close(
-        self, position: _RunningPosition, fill: Fill, reason: ExitReason
+        self, position: _RunningPosition, fill: Fill, reason: ExitReason, *, stop: bool = False
     ) -> None:
         position.closed = True
         self._positions.remove(position)
 
         per_unit = (fill.price - position.entry_price) * position.side.sign
-        self._trades.append(
-            BacktestTrade(
-                trade_id=position.position_id,
-                side=position.side,
-                quantity=position.quantity,
-                entry_price=position.entry_price,
-                entry_time=position.entry_time,
-                exit_price=fill.price,
-                exit_time=fill.filled_at,
-                pnl=per_unit * position.quantity,
-                r_multiple=per_unit / position.risk,
-                reference=position.reference,
-                exit_reason=reason,
-            )
+        trade = BacktestTrade(
+            trade_id=position.position_id,
+            side=position.side,
+            quantity=position.quantity,
+            entry_price=position.entry_price,
+            entry_time=position.entry_time,
+            exit_price=fill.price,
+            exit_time=fill.filled_at,
+            pnl=per_unit * position.quantity,
+            r_multiple=per_unit / position.risk,
+            reference=position.reference,
+            exit_reason=reason,
         )
+        self._trades.append(trade)
         self._strategy.on_position_closed(position.position_id)
+        if self._observer is not None:
+            self._observer(
+                ReplayEvent(
+                    kind=ReplayEventKind.TRADE,
+                    at=trade.exit_time,
+                    fill=fill,
+                    trade=trade,
+                )
+            )
 
     def _apply(self, intent: Any, bar: Bar) -> None:  # noqa: ANN401 - a tagged union
         """Act on one strategy intent, in the order the strategy asked for it."""
@@ -520,7 +688,6 @@ class BacktestRunner:
                 if outcome.filled and outcome.fill is not None:
                     self._close(position, outcome.fill, ExitReason.DYNAMIC_CLOSE)
                 break
-
     def _record_fill(self, order: _RunningOrder, fill: Fill) -> None:
         order.status = "FILLED"
         order.filled_at = fill.filled_at

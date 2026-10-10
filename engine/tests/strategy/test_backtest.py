@@ -60,6 +60,137 @@ def _quotes(bars, quote_factory) -> list:
 
 
 # --------------------------------------------------------------------------- #
+# incremental consumption and observation
+# --------------------------------------------------------------------------- #
+def test_accept_feeds_one_bar_at_a_time(
+    strategy_config: StrategyConfig, spec, canonical_day_factory
+) -> None:
+    bars = canonical_day_factory(dt.date(2026, 3, 9))
+    strategy = SilverBulletStrategy(config=strategy_config, spec=spec, run_id="test")
+    runner = BacktestRunner(strategy=strategy, spec=spec, run_id="test")
+
+    closed: list[object] = []
+    for bar in bars:
+        closed.extend(runner.accept(bar))
+
+    assert len(closed) == 1
+    assert closed[0].exit_reason is ExitReason.TARGET
+    assert runner.bars_consumed == len(bars)
+
+
+def test_a_replay_is_exactly_a_loop_over_accept(
+    strategy_config: StrategyConfig, spec, canonical_day_factory
+) -> None:
+    """Two implementations of the fill rules would be two fill rules."""
+    bars = canonical_day_factory(dt.date(2026, 3, 9))
+
+    streamed = SilverBulletStrategy(config=strategy_config, spec=spec, run_id="test")
+    incremental = BacktestRunner(strategy=streamed, spec=spec, run_id="test")
+    closed: list[object] = []
+    for bar in bars:
+        closed.extend(incremental.accept(bar))
+
+    # A replay constructs its own strategy, which is what makes it a replay: the
+    # incremental runner is single-use, and ``run`` documents that.
+    replayed = replay(bars, config=strategy_config, spec=spec, run_id="test").trades
+
+    assert tuple(closed) == replayed
+
+
+def test_the_observer_sees_every_event_of_a_round_trip(
+    strategy_config: StrategyConfig, spec, canonical_day_factory
+) -> None:
+    from engine.strategy.backtest import ReplayEventKind
+
+    bars = canonical_day_factory(dt.date(2026, 3, 9))
+    strategy = SilverBulletStrategy(config=strategy_config, spec=spec, run_id="test")
+    seen: list[ReplayEventKind] = []
+    runner = BacktestRunner(
+        strategy=strategy,
+        spec=spec,
+        run_id="test",
+        observer=lambda event: seen.append(event.kind),
+    )
+
+    runner.run(bars)
+
+    # An intent, then the fill, then the exit and the trade it produced.
+    assert seen[0] is ReplayEventKind.INTENT
+    assert ReplayEventKind.ENTRY_FILL in seen
+    assert seen[-1] is ReplayEventKind.TRADE
+    assert seen.count(ReplayEventKind.TRADE) == 1
+
+
+def test_the_observer_gets_the_prices_a_journal_would_record(
+    strategy_config: StrategyConfig, spec, canonical_day_factory
+) -> None:
+    from engine.strategy.backtest import ReplayEventKind
+
+    bars = canonical_day_factory(dt.date(2026, 3, 9), reaches_target=False)
+    strategy = SilverBulletStrategy(config=strategy_config, spec=spec, run_id="test")
+    events: list[object] = []
+    runner = BacktestRunner(
+        strategy=strategy,
+        spec=spec,
+        run_id="test",
+        observer=events.append,
+    )
+
+    runner.run(bars)
+
+    fills = [event for event in events if event.kind is ReplayEventKind.TRADE]
+    trade = fills[0].trade
+    assert trade.exit_price == Decimal("2008.38")
+    assert trade.pnl == Decimal("2.03")
+    assert fills[0].fill.price == trade.exit_price
+
+
+# --------------------------------------------------------------------------- #
+# forced exits
+# --------------------------------------------------------------------------- #
+def test_withdrawing_every_order_empties_the_book(
+    strategy_config: StrategyConfig, spec, canonical_day_factory
+) -> None:
+    bars = canonical_day_factory(dt.date(2026, 3, 9), reaches_target=False)
+    strategy = SilverBulletStrategy(config=strategy_config, spec=spec, run_id="test")
+    runner = BacktestRunner(strategy=strategy, spec=spec, run_id="test")
+    runner.run(bars[: _cut(bars, dt.date(2026, 3, 9), dt.time(3, 25))])
+
+    assert runner.strategy.resting_orders
+    withdrawn = runner.withdraw_all(at=bars[0].timestamp_utc, reason="control plane")
+
+    assert withdrawn
+    assert runner.strategy.resting_orders == ()
+
+
+def test_flattening_the_book_closes_every_position_at_market(
+    strategy_config: StrategyConfig, spec, canonical_day_factory
+) -> None:
+    """A forced flatten is measured against the last quote, not a fabricated bar."""
+    bars = canonical_day_factory(dt.date(2026, 3, 9), reaches_target=False)
+    strategy = SilverBulletStrategy(config=strategy_config, spec=spec, run_id="test")
+    runner = BacktestRunner(strategy=strategy, spec=spec, run_id="test")
+    cut = _cut(bars, dt.date(2026, 3, 9), dt.time(3, 30))
+    runner.run(bars[:cut])
+
+    assert runner.strategy.positions
+    closed = runner.flatten_all(bar=bars[cut - 1], reason="control plane")
+
+    assert len(closed) == 1
+    assert closed[0].exit_reason is ExitReason.DYNAMIC_CLOSE
+    assert runner.strategy.positions == ()
+
+
+def _cut(bars, day: dt.date, clock: dt.time) -> int:
+    """The first bar at or after ``clock`` on ``day``, as a list length."""
+    for index, bar in enumerate(bars):
+        local = bar.timestamp_utc.astimezone(NEW_YORK)
+        if local.date() == day and local.time() >= clock:
+            return index
+    return len(bars)
+
+
+# --------------------------------------------------------------------------- #
 # the round trip
 # --------------------------------------------------------------------------- #
 def test_a_canonical_day_produces_one_winning_trade(

@@ -122,8 +122,51 @@ connections). Dependencies flow inward toward `domain/`.
 
 ## 4. Current State
 
-> **CURRENT ACTIVE PHASE: Phase 4 (Strategy & Replay)**
+> **CURRENT ACTIVE PHASE: Phase 5 (Runtime Supervisor, Control Plane & Projections)**
 
+Phase 5 scope, and only Phase 5 scope:
+
+- `runtime/signals.py`: cross-platform signal router. POSIX uses `loop.add_signal_handler`
+  for SIGTERM/SIGINT; Windows uses `signal.signal` plus `loop.call_soon_threadsafe`. Both
+  funnel into one `ShutdownController`.
+- `runtime/systemd.py`: `sd_notify` wrapper (`READY=1`, `WATCHDOG=1`, `STATUS=`), a no-op
+  when `NOTIFY_SOCKET` is absent or on Windows. A watchdog ping is emitted only when the
+  event loop, the journal thread, and the bounded queue are all healthy.
+- `runtime/control.py`: loopback TCP control plane on `127.0.0.1` via `asyncio.start_server`,
+  newline-delimited JSON, token validated with `hmac.compare_digest`. Commands: STATUS,
+  PAUSE, RESUME, KILL_FLATTEN, SHUTDOWN. Non-loopback peers are refused.
+- `runtime/supervisor.py`: the headless async orchestrator wiring feed, bar aggregation,
+  news breakers, the Phase 4 strategy, Phase 3 risk controls and the Phase 2 journal queue.
+  Exit 78 for config/gate failure, exit 70 for journal exhaustion, graceful shutdown that
+  drains the write queue and exits inside 10 seconds.
+- `publisher/outbox.py`: an independent projection process reading the journal read-only
+  (`mode=ro`), computing metrics, and writing atomic JSON snapshots (`state.json`,
+  `trades.json`, `metrics.json`) through temp files and `os.replace`.
+- `api/main.py`: read-only FastAPI service on `127.0.0.1:8080` serving `/api/status`,
+  `/api/trades`, `/api/metrics`, `/api/health` from those snapshots with
+  `Cache-Control: public, max-age=10`, mounting `web/dist` when present.
+- `scripts/xauusdctl.py`: CLI administration client for the loopback control port.
+
+**Phase 5 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `runtime/signals.py` | both platforms funnel into one controller; a POSIX install restores the previous handlers on uninstall |
+| `runtime/systemd.py` | no ping when a dependency is unhealthy; no datagram without `NOTIFY_SOCKET`; Windows falls back to a no-op |
+| `runtime/control.py` | a wrong token is refused by constant-time comparison; non-loopback peers are refused; every command answers exactly one line |
+| `runtime/supervisor.py` | a gate/config failure exits 78, journal exhaustion exits 70, a trapped signal drains the queue and exits inside 10 seconds; no SQLite commit runs on the event loop |
+| `publisher/outbox.py` | the projection reads `mode=ro` and takes no write lock while a writer commits; snapshots are replaced atomically and never half-written |
+| `api/main.py` | every snapshot path answers from JSON without touching `journal.db`, and carries the cache header |
+
+**Not in Phase 5:** `web/` (the dashboard build lands with its own phase; the mount is a
+conditional), systemd unit files, and live OANDA trading -- the feed stays behind an
+injected transport.
+
+*Update this section before starting any new phase.*
+
+---
+
+### Phase 4 (Strategy & Replay) — COMPLETE
 Phase 4 scope, and only Phase 4 scope:
 
 - `config/strategy.yaml`: every tunable the detectors and the silver bullet read, loaded

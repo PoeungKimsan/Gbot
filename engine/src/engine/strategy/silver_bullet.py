@@ -512,6 +512,22 @@ class SilverBulletStrategy:
             return
         raise StrategyFeedError(f"unknown position {position_id!r}")
 
+    def withdraw_order(self, order_id: str, *, reason: str = "") -> bool:
+        """Withdraw one of this strategy's own resting orders.
+
+        The strategy owns its book, so the runtime asks it to withdraw rather than
+        expecting the book to change underneath it. ``reason`` is recorded for the
+        caller's log; the strategy itself does not journal anything.
+
+        Returns:
+            ``True`` if an order was withdrawn.
+        """
+        for order in list(self._resting):
+            if order.order_id == order_id:
+                self._resting.remove(order)
+                return True
+        return False
+
     # -- internals ------------------------------------------------------------ #
     def _validate(self, bar: Bar) -> None:
         if not isinstance(bar, Bar):
