@@ -1,24 +1,35 @@
-# PRE-REGISTRATION: Trend Rules on Liquid Markets (`trend_v1.1`)
+# PRE-REGISTRATION: Trend Rules on Liquid Markets (`trend_v1.2`)
 
-**Registration Version:** `trend_v1.1` (Amended Pre-Registration)  
+**Registration Version:** `trend_v1.2` (Amended Pre-Registration)  
 **Amendment Date:** 2026-10-11  
-**Prior Version:** `trend_v1` (`0ed2400`, SHA-256 `6bc1c9c9ae10fba5e69fbbe46d51a38f259c3c4b124c33b3121defa7cfc346a7`)  
+**Prior Versions:**  
+- `trend_v1` (`0ed2400`, SHA-256 `6bc1c9c9ae10fba5e69fbbe46d51a38f259c3c4b124c33b3121defa7cfc346a7`)  
+- `trend_v1.1` (`b14b541`, SHA-256 `766bfbbe85d18823423c96760c438c1670b7cf7ae5fbfc55fd7ebcba1d31dfab`)  
 **Status:** FROZEN PRIOR TO BACKTEST EXECUTION  
 
 ---
 
-## 1. Summary of Amendments (`trend_v1` -> `trend_v1.1`)
+## 1. Summary of Amendments
 
+### Amendments in `trend_v1.1`:
 1. **Rule T1 Reset Condition:** Added an explicit channel reset rule following any stop-out or exit: no new entry is permitted until the breakout condition has reset, defined as a daily bar closing back inside the 55-day channel ($\text{Close} \le \text{High}_{55}$ for Longs, $\text{Close} \ge \text{Low}_{55}$ for Shorts). A subsequent entry requires a fresh breakout.
 2. **Primary Evaluation Sample Window:** Expanded the primary sample from fixed 2010–2025 to **each market's full available history from first date + 1 year warm-up (252 trading bars) through 2025-12-31**. Sub-periods:
    - `Earliest–2009`: Report-only context.
    - `2010–2017`: Core sub-period evaluation for Gate 5.
    - `2018–2025`: Core sub-period evaluation for Gate 5.
-   (Acceptance gates remain unchanged: Gate 5 requires Net $R > 0$ in 2010–2017, 2018–2025, and Ex-Metals).
 3. **Statistical Power Labeling ($N < 200$):** If any pooled or sub-period sample size has $N < 200$, it is explicitly flagged as `[UNDERPOWERED]` (signaling insufficient sample size to reject $H_0$, rather than affirmative evidence of absence of edge). Expected trade counts per rule are stated.
 4. **Data Quality Audit & Roll Handling:** Incorporated report-only data quality audit (bars with $H < L$, zero/NaN, stale closes, $|Close - Close_{prev}| > 6 \times ATR_{20}$). Stated continuous futures roll handling for `GC=F`, `SI=F`, and `BZ=F`.
 5. **Bug & Execution Policy:** Explicitly codified that any defect fix mandates re-running the entire pre-registered test battery from scratch across all 12 assets, incrementing a run counter (`run_number`).
 6. **Report-Only Outputs:** Formally mandated reporting of disaggregations (by market, by side), cost sensitivities (financing 0%, 2%, 4%; spread $2\times$), equal-risk portfolio drawdown, and script-generated report verification.
+
+### Amendments in `trend_v1.2`:
+1. **Pre-Registered Verdict Ladder:** Fixed a formal 3-tier verdict ladder:
+   - **(a) SURVIVOR:** All five gates pass at primary costs ($1.5\times$ spread + 2% financing).
+   - **(b) GROSS-OF-FINANCING SURVIVOR:** All five gates pass at 0% financing ($1.5\times$ spread + 0% financing) but not at 2% financing (reported as: *"edge before carry; viability depends on financing terms"*).
+   - **(c) Otherwise INCONCLUSIVE: NO EDGE DEMONSTRATED.**
+   - Gates and numerical thresholds are identical and unchanged. Holm-Bonferroni correction is applied within each financing level across the 3 rules, and the final report states that two financing levels (0% and 2%) were examined.
+2. **Sealed 2026 Evaluation Policy:** Sealed 2026 out-of-sample data opens exactly once, and ONLY for rules qualifying under (a) `SURVIVOR` or (b) `GROSS-OF-FINANCING SURVIVOR`, evaluated at the financing level that qualified them (2% for (a), 0% for (b)). If no rule qualifies for (a) or (b), 2026 data remains strictly sealed and unopened.
+3. **Granular Drag & Duration Disaggregation:** Added mandatory report-only breakdown of average drag by component (spread drag, slippage drag, financing drag in $R$) per rule and per market, alongside average holding duration ($H$ in days).
 
 ---
 
@@ -113,7 +124,10 @@ Across all 68,070 daily bars in the 12-instrument universe:
    - For T1 Donchian: expected $\approx 40\text{--}70$ trades per market over 16–23 years ($\approx 600\text{--}800$ pooled).
    - For T2 SMA Cross: expected $\approx 15\text{--}30$ trades per market over 16–23 years ($\approx 250\text{--}350$ pooled).
    - For T3 TSMOM: expected $\approx 15\text{--}35$ trades per market over 16–23 years ($\approx 250\text{--}350$ pooled).
-5. **Sealed 2026 Policy:** The data loader strictly hard-stops at **2025-12-31**. Data for 2026 remains completely unloaded until the sealed sanity-check step (executed only if a rule survives).
+5. **Sealed 2026 Evaluation Policy:**
+   - The data loader strictly hard-stops at **2025-12-31**. Data for 2026 remains completely unloaded until the sealed out-of-sample sanity check.
+   - **Sealed 2026 opens once, and ONLY for rules qualifying under the Verdict Ladder as (a) `SURVIVOR` or (b) `GROSS-OF-FINANCING SURVIVOR`, evaluated at the financing level that qualified them (2% for SURVIVOR, 0% for GROSS-OF-FINANCING SURVIVOR).**
+   - If no rule qualifies for (a) or (b), 2026 data remains strictly sealed and unopened.
 
 ---
 
@@ -122,7 +136,7 @@ Across all 68,070 daily bars in the 12-instrument universe:
 ### Rule T1: Donchian Channel Breakout (with Reset Condition)
 - **Signal:**
   - Long if Bar $t$ Close $> \max(\text{High}_{t-55}, \dots, \text{High}_{t-1})$. Enter Long at Bar $t+1$ Open.
-  - Short if Bar $t$ Close $< \min(\text{Low}_{t-55}, \dots, \text{Low}_{t-1})$. Enter Short at Bar $t+1$ Open.
+  - Short if Bar $t$ Close $< \min(\text{Low}_{t-55}, \dots, \text{Low}_{t-1}).$ Enter Short at Bar $t+1$ Open.
 - **Exit Channel:**
   - Long: Bar $t$ Close $< \min(\text{Low}_{t-20}, \dots, \text{Low}_{t-1})$. Exit at Bar $t+1$ Open.
   - Short: Bar $t$ Close $> \max(\text{High}_{t-20}, \dots, \text{High}_{t-1})$. Exit at Bar $t+1$ Open.
@@ -192,7 +206,7 @@ $$\text{Net } R = \text{Gross } R - \text{Drag}_{\text{spread}} - \text{Drag}_{\
    - Resampling unit: Calendar exit month blocks across all markets simultaneously.
    - Resamples: **10,000 bootstrap iterations**.
    - Hypothesis: One-sided $p$-value for $H_0: \mathbb{E}[\text{Net } R] \le 0$.
-   - Correction: **Holm-Bonferroni correction** across the 3 rules at $\alpha_{\text{family}} = 0.05$.
+   - Correction: **Holm-Bonferroni correction** across the 3 rules applied within each financing level (0% and 2%) at $\alpha_{\text{family}} = 0.05$. The final report will explicitly state that two financing levels were examined.
    - Confidence Intervals: 95% bootstrap percentile intervals $[2.5\%, 97.5\%]$.
 2. **Null Distributions (Fixed Seed = 42, Iterations $\ge 2,000$):**
    - **Null A (Drift-Matched Random Entry):** Random entry date in same market, SAME direction, same stop multiple, same duration, same costs.
@@ -200,21 +214,33 @@ $$\text{Net } R = \text{Gross } R - \text{Drag}_{\text{spread}} - \text{Drag}_{\
 
 ---
 
-## 9. Pre-Registered Acceptance Gates (Survival Criteria)
+## 9. Pre-Registered Acceptance Gates & Verdict Ladder
 
-A rule is declared an empirical **SURVIVOR** if and only if **ALL FIVE** conditions are satisfied:
+### 9.1 The Five Acceptance Gates
+A rule is evaluated against **ALL FIVE** gates:
 1. **Sample Size:** $N \ge 200$ pooled trades across the universe.
-2. **Net Positive Expectancy:** Mean Net $R > 0$ under primary costs ($1.5\times$ spread + 2% financing).
-3. **Statistical Significance:** Holm-adjusted bootstrap $p$-value $< 0.05$.
+2. **Net Positive Expectancy:** Mean Net $R > 0$ under the tested financing condition.
+3. **Statistical Significance:** Holm-adjusted bootstrap $p$-value $< 0.05$ (applied within financing level across the 3 rules).
 4. **Superiority over Nulls:** Real Mean Net $R \ge$ 95th percentile of Null A **AND** 95th percentile of Null B.
 5. **Sub-Period & Breadth Robustness:**
    - Mean Net $R > 0$ in Sub-period 2010–2017, AND
    - Mean Net $R > 0$ in Sub-period 2018–2025, AND
    - Mean Net $R > 0$ in Ex-Metals sample (excluding XAUUSD and XAGUSD).
 
-**Default Verdict:** If no rule satisfies all five criteria:
-> **"INCONCLUSIVE: NO EDGE DEMONSTRATED"**  
-No ad-hoc parameter tuning, indicator fitting, or post-hoc filtering permitted.
+### 9.2 The Pre-Registered Verdict Ladder (Fixed)
+The outcome for each candidate rule is determined strictly by the following ladder:
+
+- **(a) SURVIVOR:**  
+  All five gates pass at primary costs ($1.5\times$ spread + 2% financing carry).
+
+- **(b) GROSS-OF-FINANCING SURVIVOR:**  
+  All five gates pass at 0% financing carry ($1.5\times$ spread + 0% financing), but not at 2% financing carry.  
+  *Reported as:* **"edge before carry; viability depends on financing terms"**.
+
+- **(c) Otherwise INCONCLUSIVE: NO EDGE DEMONSTRATED:**  
+  The rule fails one or more gates under both financing conditions.
+
+*Note:* Gates and numerical thresholds are identical and unchanged. Holm-Bonferroni correction is applied within each financing level across the 3 rules, and the report will explicitly disclose that two financing levels were examined.
 
 ---
 
@@ -222,10 +248,12 @@ No ad-hoc parameter tuning, indicator fitting, or post-hoc filtering permitted.
 
 1. **Bug & Re-Run Policy:** If any software bug or pipeline flaw is discovered, the fix must be documented in git, and the **ENTIRE pre-registered battery across all 12 markets must be re-run from scratch**. Selective re-running of individual rules or markets is forbidden. A run counter (`run_number`) must be incremented and recorded in all metadata.
 2. **Deterministic Hand-Traces:** 5 trades per rule audited against raw daily bars.
-3. **Report-Only Disaggregations:**
-   - By-market breakdown (12 markets)
-   - By-side breakdown (Long vs Short)
-   - Spread $2\times$ sensitivity
-   - Financing rate sensitivities (0%, 2%, 4% for every rule)
-   - Equal-risk portfolio equity curve and maximum drawdown in $R$
+3. **Report-Only Disaggregations & Drag Breakdown:**
+   - Average drag by component (spread drag, slippage drag, financing drag in $R$) per rule and per market.
+   - Average holding duration ($H$ in days) per rule and per market.
+   - By-market breakdown (12 markets).
+   - By-side breakdown (Long vs Short).
+   - Spread $2\times$ sensitivity.
+   - Financing rate sensitivities (0%, 2%, 4% for every rule).
+   - Equal-risk portfolio equity curve and maximum drawdown in $R$.
 4. **Script-Generated Final Report:** `research/trend/FINAL_REPORT.md` must be generated by script from the JSON/CSV result files with zero hand-typed numbers, accompanied by a test that asserts every number in the markdown matches the result files bit-for-bit.
