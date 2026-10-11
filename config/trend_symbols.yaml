@@ -1,0 +1,52 @@
+# Trend Strategy Multi-Market Symbol Mapping (MT5 Exness)
+# All numeric fields are string-quoted per Decimal YAML standards.
+
+symbols:
+  XAUUSD:
+    broker_symbol: "XAUUSDm"
+    category: "metals"
+    exchange_tz: "America/New_York"
+  XAGUSD:
+    broker_symbol: "XAGUSDm"
+    category: "metals"
+    exchange_tz: "America/New_York"
+  Brent:
+    broker_symbol: "UKOILm"
+    category: "commodities"
+    exchange_tz: "America/New_York"
+  US500:
+    broker_symbol: "US500m"
+    category: "equities"
+    exchange_tz: "America/New_York"
+  NDX:
+    broker_symbol: "USTECm"
+    category: "equities"
+    exchange_tz: "America/New_York"
+  GER40:
+    broker_symbol: "DE30m"
+    category: "equities"
+    exchange_tz: "Europe/Berlin"
+  EURUSD:
+    broker_symbol: "EURUSDm"
+    category: "fx"
+    exchange_tz: "Europe/London"
+  GBPUSD:
+    broker_symbol: "GBPUSDm"
+    category: "fx"
+    exchange_tz: "Europe/London"
+  USDJPY:
+    broker_symbol: "USDJPYm"
+    category: "fx"
+    exchange_tz: "Europe/London"
+  AUDUSD:
+    broker_symbol: "AUDUSDm"
+    category: "fx"
+    exchange_tz: "Europe/London"
+  USDCAD:
+    broker_symbol: "USDCADm"
+    category: "fx"
+    exchange_tz: "Europe/London"
+  USDCHF:
+    broker_symbol: "USDCHFm"
+    category: "fx"
+    exchange_tz: "Europe/London"
