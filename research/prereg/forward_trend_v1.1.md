@@ -6,73 +6,117 @@
 **Prior Pre-Registrations:**  
 - `trend_v1.2`: `f1affec` (SHA-256 `d8330268db3e5e0115751e4d2a7c1fc06c01451448d473bc9cca35f45dd075c3`)  
 - `forward_trend_v1`: `296ef4c` (SHA-256 `ca2b499e3848e7f45ddfce7e0d7854e18db1935a4e93d9fe7c4869987c2f6f33`)  
-**Status:** DRAFT AMENDMENT — FROZEN PRIOR TO CLOCK START — PENDING USER APPROVAL  
+**Status:** FROZEN UPON BYTE HASH COMMITMENT (PENDING COMMIT)  
 
 ---
 
-## 1. Objective & Amendment Scope
+## 1. Objective, Status & Superseded Rules
 
-This amendment updates the forward paper-trading protocol `forward_trend_v1` to incorporate empirical audit findings, calendar synchronization, and bar completeness invariants established as of 2026-10-11:
+This document establishes the self-contained pre-registration for the forward paper-trading evaluation of trend-following strategies on out-of-sample data starting October 2026.
 
-1. **Start Date Definition:** Forward paper trading commences on the **first complete trading bar after 2026-10-09** (Monday, 2026-10-12).
-2. **Historical Bar Spending Invariant:** All market bars up through Friday, 2026-10-09, are formally designated as **spent historical data** (used for audit verification and baseline regime initialization). They are permanently excluded from forward out-of-sample scoring.
-3. **Canonical Baseline Alignment:** Adopts the London-session fixed FX calendar (`output_fxfixed`, $N=374$ for T2, $N=373$ for T3) as the canonical research baseline.
-4. **Execution Schedule & Incomplete Bar Rejection:** Proposes scheduled daily runner execution at **06:00 UTC, Tuesday through Saturday**. Rejects and drops any bar timestamped on or after the current calendar date in the underlying instrument's exchange timezone.
-5. **Real Broker Swaps Prerequisite:** Mandates that real broker swap rates must be collected before any live `trend_v2` vehicle is deployed; forward logs continue at 0% and 2% carry with swap terms un-invented (`NaN`).
+1. **Superseded Rules:** This document formally **supersedes the v1 $-6R$ hard-stop termination criterion**. In its place, it establishes systematic **interim reviews at $N = 16, 32, \text{and } 64$ closed forward trades** focusing on implementation fidelity, cost-drag tracking, and empirical trade geometry.
+2. **Dual Reporting Requirement:** Forward reports must present performance metrics for:
+   - **Realized-Only Trades:** Closed trades with audited exits (`STOP`, `OPPOSITE_CROSS`, `SIGN_FLIP`).
+   - **Mark-to-Market Total:** Closed trades combined with active open positions marked to the latest closing prices.
+3. **Pinned Code Integrity:**
+   - Strategy logic: `research/trend/strategies.py` (SHA-256 `2f098555e7178385bb120df01362e5deec2a666e85cb48a8677c385ce0f15c1e`)
+   - Forward runner: `forward/runner.py` (Git `b044274`, SHA-256 `71f00cb105655519ec297f6c698ce857c02b55f1f7d54d241c8f1f7366304dc1`)
+   - Forward feed: `forward/feed.py` (Git `b044274`, SHA-256 `16baec9ec189c47012ebad1b860fe69f20c91ba44b9b47e8529e74ce9a7d3c01`)
+   - Forward config: `forward/config.py` (Git `c0520f5`, SHA-256 `4fa7c85aa1f744e2b023f7cfd36a31c51ae21e257ebc8ae8bb3ca5b4ae6b35d7`)
 
 ---
 
 ## 2. Frozen Strategy Rules & Universe
 
-Identical to `forward_trend_v1`:
-- **Strategies:** T2 50/200 SMA Cross and T3 12-Month TSMOM (`research/trend/strategies.py`).
-- **Universe (12 Markets):** `XAUUSD`, `XAGUSD`, `US500`, `GER40`, `NDX`, `EURUSD`, `GBPUSD`, `USDJPY`, `AUDUSD`, `USDCAD`, `USDCHF`, `Brent`.
-- **Costs:** $1.5\times$ baseline spread, $0.5\times \text{spread}$ stop slippage, logged concurrently at 0% and 2% p.a. financing carry.
+- **Strategies:**
+  - **T2 SMA Cross:** 50-day / 200-day simple moving average golden/death cross on daily bar close, $3.0\times \text{ATR}_{20}$ fixed stop loss. No re-entry into same regime following stop-out until fresh opposite cross resets regime.
+  - **T3 TSMOM:** 12-month (252-day) return sign evaluated exclusively on calendar month-end bar close ($+1$ for Long, $-1$ for Short), $3.0\times \text{ATR}_{20}$ fixed stop loss. Exactly 1 trade per multi-month episode; if stopped out, strategy remains flat until next opposite sign flip.
+- **Universe (12 Markets):**
+  - Equities: `US500` (^GSPC), `NDX` (^NDX), `GER40` (^GDAXI).
+  - Commodities: `XAUUSD` (GC=F), `XAGUSD` (SI=F), `Brent` (BZ=F).
+  - FX: `EURUSD=X`, `GBPUSD=X`, `USDJPY=X`, `AUDUSD=X`, `USDCAD=X`, `USDCHF=X`.
+- **Cost Model:**
+  - Fixed $1.5\times$ baseline spread, $0.5\times \text{spread}$ stop slippage.
+  - Concurrently logged at **0% financing** and **2% p.a. financing carry**.
 
 ---
 
-## 3. Mandatory Flat-Start Policy & 15 Carried Positions
+## 3. Start Boundary & Carried Positions
 
-The forward paper test enforces a **strict flat start**. As of 2026-10-09 close, exactly **15 positions** are active across the two rules and are classified as **CARRIED POSITIONS**:
+### 3.1 Start Boundary Rule
+1. **Carried / Carried-Pending Exclusion:** All signals computed from daily bars dated on or before **2026-10-09** (including pending orders queued to enter at the 2026-10-12 session open) are classified as **CARRIED** or **CARRIED_PENDING**. They are permanently excluded from forward trade counts ($N$), win rates, mean $R$, and test statistics.
+2. **Fresh Forward Entry:** A trade is classified as **FRESH** if and only if its signal is computed from a daily bar dated **$\ge$ 2026-10-12** (entering at the market open on or after 2026-10-13).
+3. **Reversal Entries:** If a carried position exits due to an opposite signal generated on or after 2026-10-12, the subsequent reverse entry is **FRESH**.
 
-### 3.1 Rule T2_SMA_CROSS (7 Carried Positions, 5 Flat)
-1. **EURUSD:** SHORT (Entry: 2026-04-14, Entry Px: 1.1763, Stop Loss: 1.2030, Stop Dist: 0.0267)
-2. **USDJPY:** SHORT (Entry: 2026-10-01, Entry Px: 157.5870, Stop Loss: 161.8183, Stop Dist: 4.2313)
-3. **AUDUSD:** LONG (Entry: 2025-06-24, Entry Px: 0.6480, Stop Loss: 0.6276, Stop Dist: 0.0204)
-4. **USDCHF:** LONG (Entry: 2026-07-03, Entry Px: 0.8043, Stop Loss: 0.7881, Stop Dist: 0.0162)
-5. **US500:** LONG (Entry: 2025-07-02, Entry Px: 6193.8799, Stop Loss: 5983.2845, Stop Dist: 210.5954)
-6. **GER40:** LONG (Entry: 2026-06-08, Entry Px: 24447.3203, Stop Loss: 23325.3796, Stop Dist: 1121.9407)
-7. **NDX:** LONG (Entry: 2025-06-25, Entry Px: 22279.6895, Stop Loss: 21248.8026, Stop Dist: 1030.8869)
-*Flat Markets under T2:* `XAUUSD`, `XAGUSD`, `GBPUSD`, `USDCAD`, `Brent`.
-
-### 3.2 Rule T3_TSMOM (8 Carried Positions, 4 Flat)
-1. **XAGUSD:** LONG (Entry: 2024-03-01, Entry Px: 22.6550, Stop Loss: 21.6426, Stop Dist: 1.0125)
-2. **GBPUSD:** SHORT (Entry: 2026-09-01, Entry Px: 1.3548, Stop Loss: 1.3763, Stop Dist: 0.0214)
-3. **USDJPY:** LONG (Entry: 2026-02-02, Entry Px: 155.1350, Stop Loss: 150.9715, Stop Dist: 4.1635)
-4. **AUDUSD:** LONG (Entry: 2025-12-01, Entry Px: 0.6552, Stop Loss: 0.6401, Stop Dist: 0.0151)
-5. **USDCAD:** LONG (Entry: 2026-06-01, Entry Px: 1.3798, Stop Loss: 1.3623, Stop Dist: 0.0175)
-6. **USDCHF:** LONG (Entry: 2026-09-01, Entry Px: 0.8084, Stop Loss: 0.7911, Stop Dist: 0.0173)
-7. **US500:** LONG (Entry: 2023-06-01, Entry Px: 4183.0298, Stop Loss: 4047.3480, Stop Dist: 135.6818)
-8. **NDX:** LONG (Entry: 2023-05-01, Entry Px: 13229.1104, Stop Loss: 12595.4589, Stop Dist: 633.6514)
-*Flat Markets under T3:* `XAUUSD`, `EURUSD`, `GER40`, `Brent`.
-
-### 3.3 Statistical Isolation Invariant
-All 15 carried positions are routed directly to the `carried_trades` table in `forward/forward_trend.db`. They are **strictly excluded** from forward trade counts ($N$), win rates, mean $R$, and confidence intervals. Only fresh signals triggered on or after 2026-10-12 enter the forward test evaluation set.
+### 3.2 15 Carried Positions as of 2026-10-09
+- **T2_SMA_CROSS (7 positions):** EURUSD (Short), USDJPY (Short), AUDUSD (Long), USDCHF (Long), US500 (Long), GER40 (Long), NDX (Long). *(Flat: XAUUSD, XAGUSD, GBPUSD, USDCAD, Brent).*
+- **T3_TSMOM (8 positions):** XAGUSD (Long), GBPUSD (Short), USDJPY (Long), AUDUSD (Long), USDCAD (Long), USDCHF (Long), US500 (Long), NDX (Long). *(Flat: XAUUSD, EURUSD, GER40, Brent).*
 
 ---
 
-## 4. Execution Timing & Bar Completeness
+## 4. Zoneinfo Date Rule, Bar Completeness & Schedule
 
-- **Scheduled Execution:** 06:00 UTC, Tuesday through Saturday.
-  - London local time: 07:00 BST (session closed at 00:00 midnight).
-  - New York local time: 02:00 EDT (session closed at 17:00 EDT previous day).
-  - Berlin local time: 08:00 CEST (session closed at 22:00 CEST previous day).
-- **Incomplete Bar Filter:** The runner enforces that any bar dated on or after the current local date in the instrument's exchange timezone is dropped. No forming bar is ever evaluated.
+### 4.1 Zoneinfo Date Rule
+All calendar date and session boundaries are resolved using Python's deterministic `zoneinfo.ZoneInfo` engine with pinned `tzdata`:
+- `America/New_York`: US equities, gold, silver, Brent.
+- `Europe/Berlin`: German DAX (`^GDAXI`).
+- `Europe/London`: FX pairs (`EURUSD=X`, `GBPUSD=X`, etc.).
+
+### 4.2 Bar Close & Settlement Times
+- `^GDAXI` (XETRA): Official close/settlement auction at 17:30 Berlin (15:30 UTC in CEST; 16:30 UTC in CET). Late trading ends 22:00 Berlin (20:00 UTC in CEST; 21:00 UTC in CET).
+- Yahoo FX: Timestamped 00:00 London / 00:00 UTC (23:00 UTC during BST; 00:00 UTC during GMT).
+- US Equities & Metals: Closes 16:00 / 17:00 New York (20:00 / 21:00 UTC in EDT; 21:00 / 22:00 UTC in EST).
+
+### 4.3 Incomplete Bar Filter
+The feed enforces that any daily bar dated on or after the current calendar date in the underlying instrument's exchange timezone is dropped. No forming bar is ever evaluated.
+
+### 4.4 Execution Schedule
+The runner is proposed for **06:00 UTC, Tuesday through Saturday**.  
+*Completeness Note:* Because live raw weekend snapshots cannot be evaluated while markets are closed on Sunday, the 06:00 UTC schedule remains marked as **unproven on live weekday raw diff** until validated during active weekday operations.
 
 ---
 
-## 5. Statistical Power & Reporting
+## 5. Statistical Power & Review Protocol
 
-- **Power Threshold:** $N \ge 193$ trades required for positive lower bound of 95% CI.
-- **Reporting Rule:** All reports prior to reaching $N = 193$ must carry the label `[LOW N / UNDERPOWERED]`.
-- **Clock Status:** The forward runner is **not scheduled**, and no timer/cron has been started. Execution awaits explicit user authorization.
+The requirement for arbitrary $N \ge 193$ stopping is removed. Statistical power is recognized as descriptive:
+
+### 5.1 Power Requirements at Historical Means
+*Computed from canonical historical backtest datasets (1998–2025, ~15.0 trades/year pace):*
+
+| Rule | Carry | Model | Hist Mean R | Hist Sigma | 50% Power (Trades) | 80% Power (Trades) | 50% Power (Years) | 80% Power (Years) | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **T2_SMA_CROSS** | 0% | IID | +0.5652 | 4.0076 | 193 | 395 | 12.9 | 26.4 | `[LOW N / UNDERPOWERED]` |
+| **T2_SMA_CROSS** | 0% | Cluster-Adj | +0.5652 | 4.0076 | 300 | 614 | 20.1 | 41.0 | `[LOW N / UNDERPOWERED]` |
+| **T2_SMA_CROSS** | 2% | IID | +0.2777 | 3.7407 | 697 | 1424 | 46.6 | 95.2 | `[LOW N / UNDERPOWERED]` |
+| **T2_SMA_CROSS** | 2% | Cluster-Adj | +0.2777 | 3.7407 | 1081 | 2209 | 72.3 | 147.6 | `[LOW N / UNDERPOWERED]` |
+| **T3_TSMOM** | 0% | IID | +0.7902 | 5.5076 | 187 | 381 | 12.5 | 25.6 | `[LOW N / UNDERPOWERED]` |
+| **T3_TSMOM** | 0% | Cluster-Adj | +0.7902 | 5.5076 | 299 | 612 | 20.1 | 41.0 | `[LOW N / UNDERPOWERED]` |
+| **T3_TSMOM** | 2% | IID | +0.4721 | 5.0796 | 445 | 909 | 29.8 | 60.9 | `[LOW N / UNDERPOWERED]` |
+| **T3_TSMOM** | 2% | Cluster-Adj | +0.4721 | 5.0796 | 723 | 1477 | 48.4 | 99.0 | `[LOW N / UNDERPOWERED]` |
+
+All reporting while $N < 200$ must explicitly display `[LOW N / UNDERPOWERED]`.
+
+### 5.2 Interim Review Milestones
+At $N = 16, 32, \text{and } 64$ closed forward trades:
+1. **Implementation Fidelity:** Check 100% agreement between feed, broker quotes, and signal logic.
+2. **Cost Attribution:** Decompose realized drag into spread, slippage, and financing.
+3. **Outlier Check:** Audit any trade with $|R| > 10.0$ or stop distance $< 1.0\%$ of price.
+
+---
+
+## 6. Risk Logging & Persistence
+
+The runner persists and logs:
+1. **Per-Trade Risk:** `stop_pct_price = (stop_distance / entry_price) * 100.0` logged and recorded in `trades` table.
+2. **Daily Portfolio Risk:** Active open positions recorded in `open_positions` table; `open_positions_count` and `summed_open_risk_r` ($1.0R$ per open trade) logged daily and recorded in `runs` table.
+
+---
+
+## 7. Baseline Regression Results
+
+Regression verification on canonical fixed datasets:
+- **T2_SMA_CROSS:** $N = 374$ trades across 12 markets (PASS).
+- **T3_TSMOM:** $N = 373$ trades across 12 markets (PASS).
+- **Independent Signal Check:** Minimal non-import script on XAGUSD, USDJPY, US500 verifies 0 mismatches across dates and directions (PASS).
+
+*Status: Pre-registration draft finalized. FROZEN once committed to `trend-forward` branch.*

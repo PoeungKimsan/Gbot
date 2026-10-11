@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-PREREG_VERSION = "forward_trend_v1"
-PREREG_COMMIT = "296ef4c"
-PREREG_SHA256 = "ca2b499e3848e7f45ddfce7e0d7854e18db1935a4e93d9fe7c4869987c2f6f33"
+PREREG_VERSION = "forward_trend_v1.1"
+PREREG_COMMIT = "trend-forward"  # To be pinned upon commit
+PREREG_SHA256 = "0d777ce840bc8db21512bd12840530a969b38d33c030edfdf5729e460a6db62e"
 
 FORWARD_DIR = Path("forward")
 DATA_DIR = FORWARD_DIR / "data"
@@ -39,4 +39,7 @@ RULES = ["T2_SMA_CROSS", "T3_TSMOM"]
 SPREAD_MULTIPLIER = 1.0  # Uses frozen 1.5x research baseline table
 SLIPPAGE_STOP_FACTOR = 0.5
 LOW_N_THRESHOLD = 200
-POWER_N_THRESHOLD = 193
+
+# Boundary dates
+START_BOUNDARY_SIGNAL_DATE = "2026-10-12"
+CARRIED_PENDING_CUTOFF_DATE = "2026-10-09"

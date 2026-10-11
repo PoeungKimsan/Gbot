@@ -1,0 +1,4 @@
+file,bytes,sha256,status_vs_prior
+research/prereg/trend_v1.2.md,18777,d8330268db3e5e0115751e4d2a7c1fc06c01451448d473bc9cca35f45dd075c3,Identical to prior reports
+research/prereg/forward_trend_v1.md,7670,ca2b499e3848e7f45ddfce7e0d7854e18db1935a4e93d9fe7c4869987c2f6f33,Drafted in b044274; to be finalized in prereg v1.1
+research/prereg/forward_trend_v1.1.md,8132,0d777ce840bc8db21512bd12840530a969b38d33c030edfdf5729e460a6db62e,Drafted in b044274; to be finalized in prereg v1.1

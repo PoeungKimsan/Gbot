@@ -79,6 +79,7 @@ def init_trend_db(db_path: Path = TREND_DB_PATH) -> None:
             entry_price REAL NOT NULL,
             stop_loss REAL NOT NULL,
             stop_distance REAL NOT NULL,
+            stop_pct_price REAL NOT NULL DEFAULT 0.0,
             exit_date TEXT NOT NULL,
             exit_price REAL NOT NULL,
             exit_reason TEXT NOT NULL,
@@ -105,6 +106,8 @@ def init_trend_db(db_path: Path = TREND_DB_PATH) -> None:
             entry_price REAL NOT NULL,
             stop_loss REAL NOT NULL,
             stop_distance REAL NOT NULL,
+            stop_pct_price REAL NOT NULL DEFAULT 0.0,
+            status TEXT NOT NULL DEFAULT 'CARRIED',
             recorded_at TEXT NOT NULL
         );
 
@@ -117,6 +120,8 @@ def init_trend_db(db_path: Path = TREND_DB_PATH) -> None:
             entry_price REAL NOT NULL,
             stop_loss REAL NOT NULL,
             stop_distance REAL NOT NULL,
+            stop_pct_price REAL NOT NULL DEFAULT 0.0,
+            open_risk_r REAL NOT NULL DEFAULT 1.0,
             episode_id TEXT,
             last_updated TEXT NOT NULL
         );
@@ -128,6 +133,7 @@ def init_trend_db(db_path: Path = TREND_DB_PATH) -> None:
             direction TEXT NOT NULL,
             signal_date TEXT NOT NULL,
             trigger_reason TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'PENDING',
             recorded_at TEXT NOT NULL
         );
 
@@ -137,6 +143,7 @@ def init_trend_db(db_path: Path = TREND_DB_PATH) -> None:
             executed_at TEXT NOT NULL,
             trades_count INTEGER NOT NULL,
             positions_count INTEGER NOT NULL,
+            summed_open_risk_r REAL NOT NULL DEFAULT 0.0,
             warnings_count INTEGER NOT NULL
         );
         """)
