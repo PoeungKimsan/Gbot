@@ -31,11 +31,24 @@ def load_broker_swaps() -> dict[str, dict[str, float]]:
     with open(SWAPS_CSV_PATH, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for r in reader:
-            sym = r["symbol"]
-            swaps[sym] = {
-                "swap_long_pts": float(r["swap_long_pts"]),
-                "swap_short_pts": float(r["swap_short_pts"]),
-            }
+            sym = r.get("symbol") or r.get("market")
+            if not sym:
+                continue
+            sl_raw = r.get("swap_long_pts") or r.get("swap_long")
+            ss_raw = r.get("swap_short_pts") or r.get("swap_short")
+            if sl_raw is None or ss_raw is None:
+                continue
+            try:
+                sl = float(sl_raw)
+                ss = float(ss_raw)
+                import math
+                if not (math.isnan(sl) or math.isnan(ss)):
+                    swaps[sym] = {
+                        "swap_long_pts": sl,
+                        "swap_short_pts": ss,
+                    }
+            except (ValueError, TypeError):
+                continue
     return swaps
 
 

@@ -1,0 +1,4 @@
+rule,n,sigma_gross,sigma_net_0,sigma_net_2,sigma_net_4,low_n_flag
+T1_DONCHIAN,1025,2.6876,2.6891,2.5572,2.4344,OK
+T2_SMA_CROSS,374,4.0087,4.0076,3.7407,3.5021,OK
+T3_TSMOM,373,5.5087,5.5076,5.0796,4.6830,OK
