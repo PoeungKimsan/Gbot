@@ -1,0 +1,17 @@
+rule,carry_model,dropped_k,remaining_N,mean_net_r,ci_95,ci_lower,ci_lower_gt_0
+T2_SMA_CROSS,0% Carry,0,150,0.0067,"[-0.4102, +0.4532]",-0.4102,False
+T2_SMA_CROSS,0% Carry,1,149,-0.0934,"[-0.4690, +0.3117]",-0.469,False
+T2_SMA_CROSS,0% Carry,3,147,-0.2203,"[-0.5027, +0.0841]",-0.5027,False
+T2_SMA_CROSS,0% Carry,10,140,-0.515,"[-0.6706, -0.3556]",-0.6706,False
+T2_SMA_CROSS,Broker Swaps,0,150,-0.5574,"[-0.9621, -0.1304]",-0.9621,False
+T2_SMA_CROSS,Broker Swaps,1,149,-0.6614,"[-1.0144, -0.2901]",-1.0144,False
+T2_SMA_CROSS,Broker Swaps,3,147,-0.7784,"[-1.0547, -0.5369]",-1.0547,False
+T2_SMA_CROSS,Broker Swaps,10,140,-0.9448,"[-1.2189, -0.7333]",-1.2189,False
+T3_TSMOM,0% Carry,0,147,0.3722,"[-0.1991, +1.0364]",-0.1991,False
+T3_TSMOM,0% Carry,1,146,0.2057,"[-0.2876, +0.7918]",-0.2876,False
+T3_TSMOM,0% Carry,3,144,-0.0453,"[-0.4259, +0.4039]",-0.4259,False
+T3_TSMOM,0% Carry,10,137,-0.5,"[-0.6577, -0.3109]",-0.6577,False
+T3_TSMOM,Broker Swaps,0,147,-0.3217,"[-0.8272, +0.2464]",-0.8272,False
+T3_TSMOM,Broker Swaps,1,146,-0.4606,"[-0.9202, +0.0270]",-0.9202,False
+T3_TSMOM,Broker Swaps,3,144,-0.6504,"[-1.0226, -0.3146]",-1.0226,False
+T3_TSMOM,Broker Swaps,10,137,-0.9279,"[-1.2434, -0.6976]",-1.2434,False
