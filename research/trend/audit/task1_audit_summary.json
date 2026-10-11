@@ -1,0 +1,1379 @@
+{
+  "timestamp_utc": "2026-10-11T13:36:22.841669+00:00",
+  "task_1a_beta_check": {
+    "T2_SMA_CROSS": {
+      "XAUUSD": {
+        "total_days": 5830,
+        "pct_long": 27.75,
+        "pct_short": 12.88,
+        "pct_flat": 59.37,
+        "bh_return_pct": 1282.52,
+        "long_trades_n": 15,
+        "long_price_ret_pct": 31.11,
+        "long_mean_net_r_0": 1.3177,
+        "long_mean_net_r_2": 0.9973
+      },
+      "XAGUSD": {
+        "total_days": 5830,
+        "pct_long": 33.6,
+        "pct_short": 31.65,
+        "pct_flat": 34.75,
+        "bh_return_pct": 1509.32,
+        "long_trades_n": 17,
+        "long_price_ret_pct": 285.6,
+        "long_mean_net_r_0": 4.2171,
+        "long_mean_net_r_2": 3.9944
+      },
+      "EURUSD": {
+        "total_days": 5478,
+        "pct_long": 40.0,
+        "pct_short": 37.6,
+        "pct_flat": 22.4,
+        "bh_return_pct": -9.28,
+        "long_trades_n": 15,
+        "long_price_ret_pct": 8.64,
+        "long_mean_net_r_0": 0.361,
+        "long_mean_net_r_2": -0.0886
+      },
+      "GBPUSD": {
+        "total_days": 5490,
+        "pct_long": 28.16,
+        "pct_short": 34.19,
+        "pct_flat": 37.65,
+        "bh_return_pct": -27.14,
+        "long_trades_n": 15,
+        "long_price_ret_pct": -24.24,
+        "long_mean_net_r_0": -0.6504,
+        "long_mean_net_r_2": -0.9356
+      },
+      "USDJPY": {
+        "total_days": 6037,
+        "pct_long": 31.52,
+        "pct_short": 28.33,
+        "pct_flat": 40.15,
+        "bh_return_pct": 28.08,
+        "long_trades_n": 17,
+        "long_price_ret_pct": 27.84,
+        "long_mean_net_r_0": 1.0793,
+        "long_mean_net_r_2": 0.6767
+      },
+      "AUDUSD": {
+        "total_days": 4854,
+        "pct_long": 30.63,
+        "pct_short": 43.35,
+        "pct_flat": 26.02,
+        "bh_return_pct": -18.65,
+        "long_trades_n": 17,
+        "long_price_ret_pct": -5.88,
+        "long_mean_net_r_0": -0.2777,
+        "long_mean_net_r_2": -0.457
+      },
+      "USDCAD": {
+        "total_days": 5546,
+        "pct_long": 41.71,
+        "pct_short": 33.38,
+        "pct_flat": 24.92,
+        "bh_return_pct": 5.32,
+        "long_trades_n": 17,
+        "long_price_ret_pct": 6.44,
+        "long_mean_net_r_0": 0.1204,
+        "long_mean_net_r_2": -0.3518
+      },
+      "USDCHF": {
+        "total_days": 5544,
+        "pct_long": 21.86,
+        "pct_short": 43.02,
+        "pct_flat": 35.12,
+        "bh_return_pct": -37.73,
+        "long_trades_n": 18,
+        "long_price_ret_pct": -27.24,
+        "long_mean_net_r_0": -0.7188,
+        "long_mean_net_r_2": -0.9059
+      },
+      "US500": {
+        "total_days": 5844,
+        "pct_long": 52.45,
+        "pct_short": 11.55,
+        "pct_flat": 36.0,
+        "bh_return_pct": 751.52,
+        "long_trades_n": 12,
+        "long_price_ret_pct": 128.95,
+        "long_mean_net_r_0": 2.6298,
+        "long_mean_net_r_2": 2.0852
+      },
+      "GER40": {
+        "total_days": 5898,
+        "pct_long": 48.13,
+        "pct_short": 14.51,
+        "pct_flat": 37.35,
+        "bh_return_pct": 834.0,
+        "long_trades_n": 12,
+        "long_price_ret_pct": 151.15,
+        "long_mean_net_r_0": 3.54,
+        "long_mean_net_r_2": 3.0779
+      },
+      "Brent": {
+        "total_days": 4333,
+        "pct_long": 19.27,
+        "pct_short": 38.47,
+        "pct_flat": 42.26,
+        "bh_return_pct": -50.41,
+        "long_trades_n": 17,
+        "long_price_ret_pct": -46.77,
+        "long_mean_net_r_0": -0.4352,
+        "long_mean_net_r_2": -0.4993
+      },
+      "NDX": {
+        "total_days": 5844,
+        "pct_long": 70.33,
+        "pct_short": 12.25,
+        "pct_flat": 17.42,
+        "bh_return_pct": 2872.07,
+        "long_trades_n": 17,
+        "long_price_ret_pct": 294.97,
+        "long_mean_net_r_0": 3.4637,
+        "long_mean_net_r_2": 3.0508
+      },
+      "_LONG_ONLY_NULL": {
+        "n_long_trades": 189,
+        "actual_long_net_r_0": 1.1395,
+        "actual_long_net_r_2": 0.8163,
+        "null_mean_0": 0.4325,
+        "null_ci_0": [
+          0.0453,
+          0.9301
+        ],
+        "null_p95_0": 0.8507,
+        "p_value_0": 0.003,
+        "null_mean_2": 0.2557,
+        "null_ci_2": [
+          -0.1011,
+          0.7244
+        ],
+        "null_p95_2": 0.637,
+        "p_value_2": 0.009,
+        "ex_metals_equities": {
+          "n_long": 116,
+          "actual_long_net_r_0": -0.0776,
+          "actual_long_net_r_2": -0.3656
+        }
+      }
+    },
+    "T3_TSMOM": {
+      "XAUUSD": {
+        "total_days": 5830,
+        "pct_long": 57.41,
+        "pct_short": 17.89,
+        "pct_flat": 24.7,
+        "bh_return_pct": 1282.52,
+        "long_trades_n": 14,
+        "long_price_ret_pct": 199.76,
+        "long_mean_net_r_0": 5.6922,
+        "long_mean_net_r_2": 5.0075
+      },
+      "XAGUSD": {
+        "total_days": 5830,
+        "pct_long": 45.08,
+        "pct_short": 24.39,
+        "pct_flat": 30.53,
+        "bh_return_pct": 1509.32,
+        "long_trades_n": 20,
+        "long_price_ret_pct": 382.77,
+        "long_mean_net_r_0": 3.6042,
+        "long_mean_net_r_2": 3.3896
+      },
+      "EURUSD": {
+        "total_days": 5478,
+        "pct_long": 25.96,
+        "pct_short": 34.36,
+        "pct_flat": 39.69,
+        "bh_return_pct": -9.28,
+        "long_trades_n": 17,
+        "long_price_ret_pct": -14.88,
+        "long_mean_net_r_0": -0.3774,
+        "long_mean_net_r_2": -0.6374
+      },
+      "GBPUSD": {
+        "total_days": 5490,
+        "pct_long": 21.6,
+        "pct_short": 35.39,
+        "pct_flat": 43.01,
+        "bh_return_pct": -27.14,
+        "long_trades_n": 18,
+        "long_price_ret_pct": -27.79,
+        "long_mean_net_r_0": -0.632,
+        "long_mean_net_r_2": -0.8588
+      },
+      "USDJPY": {
+        "total_days": 6037,
+        "pct_long": 42.69,
+        "pct_short": 36.49,
+        "pct_flat": 20.82,
+        "bh_return_pct": 28.08,
+        "long_trades_n": 18,
+        "long_price_ret_pct": 70.04,
+        "long_mean_net_r_0": 2.0895,
+        "long_mean_net_r_2": 1.5556
+      },
+      "AUDUSD": {
+        "total_days": 4854,
+        "pct_long": 22.35,
+        "pct_short": 40.23,
+        "pct_flat": 37.41,
+        "bh_return_pct": -18.65,
+        "long_trades_n": 14,
+        "long_price_ret_pct": -16.08,
+        "long_mean_net_r_0": -0.4031,
+        "long_mean_net_r_2": -0.6025
+      },
+      "USDCAD": {
+        "total_days": 5546,
+        "pct_long": 22.36,
+        "pct_short": 37.94,
+        "pct_flat": 39.7,
+        "bh_return_pct": 5.32,
+        "long_trades_n": 20,
+        "long_price_ret_pct": -25.99,
+        "long_mean_net_r_0": -0.4991,
+        "long_mean_net_r_2": -0.7328
+      },
+      "USDCHF": {
+        "total_days": 5544,
+        "pct_long": 22.8,
+        "pct_short": 46.01,
+        "pct_flat": 31.19,
+        "bh_return_pct": -37.73,
+        "long_trades_n": 24,
+        "long_price_ret_pct": -31.41,
+        "long_mean_net_r_0": -0.4744,
+        "long_mean_net_r_2": -0.647
+      },
+      "US500": {
+        "total_days": 5844,
+        "pct_long": 78.22,
+        "pct_short": 18.09,
+        "pct_flat": 3.7,
+        "bh_return_pct": 751.52,
+        "long_trades_n": 10,
+        "long_price_ret_pct": 196.86,
+        "long_mean_net_r_0": 4.8522,
+        "long_mean_net_r_2": 3.9617
+      },
+      "GER40": {
+        "total_days": 5898,
+        "pct_long": 57.17,
+        "pct_short": 16.94,
+        "pct_flat": 25.89,
+        "bh_return_pct": 834.0,
+        "long_trades_n": 12,
+        "long_price_ret_pct": 123.76,
+        "long_mean_net_r_0": 1.3969,
+        "long_mean_net_r_2": 0.9751
+      },
+      "Brent": {
+        "total_days": 4333,
+        "pct_long": 30.56,
+        "pct_short": 44.52,
+        "pct_flat": 24.92,
+        "bh_return_pct": -50.41,
+        "long_trades_n": 14,
+        "long_price_ret_pct": -12.47,
+        "long_mean_net_r_0": -0.1205,
+        "long_mean_net_r_2": -0.2298
+      },
+      "NDX": {
+        "total_days": 5844,
+        "pct_long": 70.33,
+        "pct_short": 6.79,
+        "pct_flat": 22.88,
+        "bh_return_pct": 2872.07,
+        "long_trades_n": 10,
+        "long_price_ret_pct": 280.07,
+        "long_mean_net_r_0": 6.2045,
+        "long_mean_net_r_2": 5.4489
+      },
+      "_LONG_ONLY_NULL": {
+        "n_long_trades": 191,
+        "actual_long_net_r_0": 1.4148,
+        "actual_long_net_r_2": 1.0658,
+        "null_mean_0": 0.5063,
+        "null_ci_0": [
+          -0.0213,
+          1.3085
+        ],
+        "null_p95_0": 1.2017,
+        "p_value_0": 0.016,
+        "null_mean_2": 0.3304,
+        "null_ci_2": [
+          -0.1666,
+          1.0977
+        ],
+        "null_p95_2": 0.9766,
+        "p_value_2": 0.031,
+        "ex_metals_equities": {
+          "n_long": 125,
+          "actual_long_net_r_0": -0.071,
+          "actual_long_net_r_2": -0.321
+        }
+      }
+    }
+  },
+  "task_1b_win_rates": {
+    "T1_DONCHIAN": {
+      "n": 1025,
+      "gross_win_rate": 30.54,
+      "gross_win_count": 313,
+      "net_0_win_rate": 29.95,
+      "net_0_win_count": 307,
+      "net_2_win_rate": 27.51,
+      "net_2_win_count": 282,
+      "reconciliation_0": {
+        "mean_net_r": 0.1634,
+        "avg_winner_r": 2.76,
+        "avg_loser_r": -0.9469,
+        "implied_win_rate": 29.95
+      },
+      "reconciliation_2": {
+        "mean_net_r": 0.0409,
+        "avg_winner_r": 2.7127,
+        "avg_loser_r": -0.9732,
+        "implied_win_rate": 27.51
+      }
+    },
+    "T2_SMA_CROSS": {
+      "n": 374,
+      "gross_win_rate": 28.88,
+      "gross_win_count": 108,
+      "net_0_win_rate": 28.88,
+      "net_0_win_count": 108,
+      "net_2_win_rate": 27.27,
+      "net_2_win_count": 102,
+      "reconciliation_0": {
+        "mean_net_r": 0.5652,
+        "avg_winner_r": 4.3227,
+        "avg_loser_r": -0.9604,
+        "implied_win_rate": 28.88
+      },
+      "reconciliation_2": {
+        "mean_net_r": 0.2777,
+        "avg_winner_r": 3.8505,
+        "avg_loser_r": -1.0621,
+        "implied_win_rate": 27.27
+      }
+    },
+    "T3_TSMOM": {
+      "n": 377,
+      "gross_win_rate": 26.79,
+      "gross_win_count": 101,
+      "net_0_win_rate": 26.79,
+      "net_0_win_count": 101,
+      "net_2_win_rate": 23.34,
+      "net_2_win_count": 88,
+      "reconciliation_0": {
+        "mean_net_r": 0.7662,
+        "avg_winner_r": 5.1251,
+        "avg_loser_r": -0.8289,
+        "implied_win_rate": 26.79
+      },
+      "reconciliation_2": {
+        "mean_net_r": 0.4531,
+        "avg_winner_r": 5.0282,
+        "avg_loser_r": -0.94,
+        "implied_win_rate": 23.34
+      }
+    }
+  },
+  "task_1c_weekend_comparison": {
+    "T1_DONCHIAN": {
+      "pooled": {
+        "old": {
+          "n": 1025,
+          "mean_net_0": 0.1634,
+          "mean_net_2": 0.0409
+        },
+        "fixed": {
+          "n": 1025,
+          "mean_net_0": 0.1634,
+          "mean_net_2": 0.0409
+        }
+      },
+      "by_market": {
+        "XAUUSD": {
+          "old_n": 104,
+          "old_net_0": 0.345,
+          "old_net_2": 0.2427,
+          "fixed_n": 104,
+          "fixed_net_0": 0.345,
+          "fixed_net_2": 0.2427
+        },
+        "XAGUSD": {
+          "old_n": 110,
+          "old_net_0": 0.4675,
+          "old_net_2": 0.4045,
+          "fixed_n": 110,
+          "fixed_net_0": 0.4675,
+          "fixed_net_2": 0.4045
+        },
+        "EURUSD": {
+          "old_n": 72,
+          "old_net_0": 0.0545,
+          "old_net_2": -0.1257,
+          "fixed_n": 72,
+          "fixed_net_0": 0.0545,
+          "fixed_net_2": -0.1256
+        },
+        "GBPUSD": {
+          "old_n": 68,
+          "old_net_0": 0.1696,
+          "old_net_2": -0.0046,
+          "fixed_n": 68,
+          "fixed_net_0": 0.1696,
+          "fixed_net_2": -0.0043
+        },
+        "USDJPY": {
+          "old_n": 71,
+          "old_net_0": 0.516,
+          "old_net_2": 0.3065,
+          "fixed_n": 71,
+          "fixed_net_0": 0.516,
+          "fixed_net_2": 0.3066
+        },
+        "AUDUSD": {
+          "old_n": 71,
+          "old_net_0": -0.144,
+          "old_net_2": -0.2755,
+          "fixed_n": 71,
+          "fixed_net_0": -0.144,
+          "fixed_net_2": -0.2754
+        },
+        "USDCAD": {
+          "old_n": 68,
+          "old_net_0": 0.0311,
+          "old_net_2": -0.1726,
+          "fixed_n": 68,
+          "fixed_net_0": 0.0311,
+          "fixed_net_2": -0.1727
+        },
+        "USDCHF": {
+          "old_n": 70,
+          "old_net_0": -0.2082,
+          "old_net_2": -0.3689,
+          "fixed_n": 70,
+          "fixed_net_0": -0.2082,
+          "fixed_net_2": -0.3688
+        },
+        "US500": {
+          "old_n": 114,
+          "old_net_0": -0.0758,
+          "old_net_2": -0.1791,
+          "fixed_n": 114,
+          "fixed_net_0": -0.0758,
+          "fixed_net_2": -0.1791
+        },
+        "GER40": {
+          "old_n": 108,
+          "old_net_0": 0.05,
+          "old_net_2": -0.034,
+          "fixed_n": 108,
+          "fixed_net_0": 0.05,
+          "fixed_net_2": -0.034
+        },
+        "Brent": {
+          "old_n": 67,
+          "old_net_0": 0.4798,
+          "old_net_2": 0.4215,
+          "fixed_n": 67,
+          "fixed_net_0": 0.4798,
+          "fixed_net_2": 0.4215
+        },
+        "NDX": {
+          "old_n": 102,
+          "old_net_0": 0.214,
+          "old_net_2": 0.125,
+          "fixed_n": 102,
+          "fixed_net_0": 0.214,
+          "fixed_net_2": 0.125
+        }
+      }
+    },
+    "T2_SMA_CROSS": {
+      "pooled": {
+        "old": {
+          "n": 374,
+          "mean_net_0": 0.5652,
+          "mean_net_2": 0.2777
+        },
+        "fixed": {
+          "n": 374,
+          "mean_net_0": 0.5652,
+          "mean_net_2": 0.2777
+        }
+      },
+      "by_market": {
+        "XAUUSD": {
+          "old_n": 30,
+          "old_net_0": 0.3361,
+          "old_net_2": 0.1159,
+          "fixed_n": 30,
+          "fixed_net_0": 0.3361,
+          "fixed_net_2": 0.1159
+        },
+        "XAGUSD": {
+          "old_n": 33,
+          "old_net_0": 2.1682,
+          "old_net_2": 1.9631,
+          "fixed_n": 33,
+          "fixed_net_0": 2.1682,
+          "fixed_net_2": 1.9631
+        },
+        "EURUSD": {
+          "old_n": 30,
+          "old_net_0": 0.6131,
+          "old_net_2": 0.1332,
+          "fixed_n": 30,
+          "fixed_net_0": 0.6131,
+          "fixed_net_2": 0.1334
+        },
+        "GBPUSD": {
+          "old_n": 30,
+          "old_net_0": -0.1821,
+          "old_net_2": -0.5357,
+          "fixed_n": 30,
+          "fixed_net_0": -0.1821,
+          "fixed_net_2": -0.5359
+        },
+        "USDJPY": {
+          "old_n": 34,
+          "old_net_0": 0.2765,
+          "old_net_2": -0.0615,
+          "fixed_n": 34,
+          "fixed_net_0": 0.2765,
+          "fixed_net_2": -0.0614
+        },
+        "AUDUSD": {
+          "old_n": 34,
+          "old_net_0": 0.0981,
+          "old_net_2": -0.1542,
+          "fixed_n": 34,
+          "fixed_net_0": 0.0981,
+          "fixed_net_2": -0.1542
+        },
+        "USDCAD": {
+          "old_n": 33,
+          "old_net_0": -0.0183,
+          "old_net_2": -0.4436,
+          "fixed_n": 33,
+          "fixed_net_0": -0.0183,
+          "fixed_net_2": -0.4436
+        },
+        "USDCHF": {
+          "old_n": 36,
+          "old_net_0": -0.2935,
+          "old_net_2": -0.5666,
+          "fixed_n": 36,
+          "fixed_net_0": -0.2935,
+          "fixed_net_2": -0.5665
+        },
+        "US500": {
+          "old_n": 23,
+          "old_net_0": 1.2932,
+          "old_net_2": 0.9634,
+          "fixed_n": 23,
+          "fixed_net_0": 1.2932,
+          "fixed_net_2": 0.9634
+        },
+        "GER40": {
+          "old_n": 23,
+          "old_net_0": 1.7194,
+          "old_net_2": 1.4292,
+          "fixed_n": 23,
+          "fixed_net_0": 1.7194,
+          "fixed_net_2": 1.4292
+        },
+        "Brent": {
+          "old_n": 35,
+          "old_net_0": -0.0012,
+          "old_net_2": -0.0893,
+          "fixed_n": 35,
+          "fixed_net_0": -0.0012,
+          "fixed_net_2": -0.0893
+        },
+        "NDX": {
+          "old_n": 33,
+          "old_net_0": 1.3937,
+          "old_net_2": 1.1559,
+          "fixed_n": 33,
+          "fixed_net_0": 1.3937,
+          "fixed_net_2": 1.1559
+        }
+      }
+    },
+    "T3_TSMOM": {
+      "pooled": {
+        "old": {
+          "n": 377,
+          "mean_net_0": 0.7662,
+          "mean_net_2": 0.4531
+        },
+        "fixed": {
+          "n": 373,
+          "mean_net_0": 0.7902,
+          "mean_net_2": 0.4721
+        }
+      },
+      "by_market": {
+        "XAUUSD": {
+          "old_n": 27,
+          "old_net_0": 3.0383,
+          "old_net_2": 2.592,
+          "fixed_n": 27,
+          "fixed_net_0": 3.0383,
+          "fixed_net_2": 2.592
+        },
+        "XAGUSD": {
+          "old_n": 39,
+          "old_net_0": 1.7889,
+          "old_net_2": 1.6152,
+          "fixed_n": 39,
+          "fixed_net_0": 1.7889,
+          "fixed_net_2": 1.6152
+        },
+        "EURUSD": {
+          "old_n": 33,
+          "old_net_0": 0.1065,
+          "old_net_2": -0.2611,
+          "fixed_n": 33,
+          "fixed_net_0": -0.013,
+          "fixed_net_2": -0.3798
+        },
+        "GBPUSD": {
+          "old_n": 35,
+          "old_net_0": -0.0441,
+          "old_net_2": -0.3526,
+          "fixed_n": 35,
+          "fixed_net_0": -0.0236,
+          "fixed_net_2": -0.3314
+        },
+        "USDJPY": {
+          "old_n": 35,
+          "old_net_0": 1.3343,
+          "old_net_2": 0.8661,
+          "fixed_n": 33,
+          "fixed_net_0": 1.5139,
+          "fixed_net_2": 1.0282
+        },
+        "AUDUSD": {
+          "old_n": 27,
+          "old_net_0": -0.1672,
+          "old_net_2": -0.4497,
+          "fixed_n": 29,
+          "fixed_net_0": 0.0728,
+          "fixed_net_2": -0.2517
+        },
+        "USDCAD": {
+          "old_n": 40,
+          "old_net_0": -0.3106,
+          "old_net_2": -0.6061,
+          "fixed_n": 36,
+          "fixed_net_0": -0.2763,
+          "fixed_net_2": -0.6267
+        },
+        "USDCHF": {
+          "old_n": 49,
+          "old_net_0": -0.2382,
+          "old_net_2": -0.478,
+          "fixed_n": 49,
+          "fixed_net_0": -0.3047,
+          "fixed_net_2": -0.5123
+        },
+        "US500": {
+          "old_n": 20,
+          "old_net_0": 2.2467,
+          "old_net_2": 1.7322,
+          "fixed_n": 20,
+          "fixed_net_0": 2.2467,
+          "fixed_net_2": 1.7322
+        },
+        "GER40": {
+          "old_n": 24,
+          "old_net_0": 0.2663,
+          "old_net_2": 0.0029,
+          "fixed_n": 24,
+          "fixed_net_0": 0.2663,
+          "fixed_net_2": 0.0029
+        },
+        "Brent": {
+          "old_n": 28,
+          "old_net_0": 0.427,
+          "old_net_2": 0.2796,
+          "fixed_n": 28,
+          "fixed_net_0": 0.427,
+          "fixed_net_2": 0.2796
+        },
+        "NDX": {
+          "old_n": 20,
+          "old_net_0": 2.6862,
+          "old_net_2": 2.2876,
+          "fixed_n": 20,
+          "fixed_net_0": 2.6862,
+          "fixed_net_2": 2.2876
+        }
+      }
+    }
+  },
+  "task_1d_brent": {
+    "symbol": "Brent",
+    "rule": "T1_DONCHIAN",
+    "total_n": 67,
+    "long": {
+      "n": 31,
+      "sum_net_r_0": 14.811452,
+      "mean_net_r_0": 0.477789,
+      "mean_net_r_0_2dp": "+0.48R",
+      "sum_net_r_2": 12.605338,
+      "mean_net_r_2": 0.406624,
+      "mean_net_r_2_2dp": "+0.41R"
+    },
+    "short": {
+      "n": 36,
+      "sum_net_r_0": 17.335593,
+      "mean_net_r_0": 0.481544,
+      "mean_net_r_0_2dp": "+0.48R",
+      "sum_net_r_2": 15.637809,
+      "mean_net_r_2": 0.434384,
+      "mean_net_r_2_2dp": "+0.43R"
+    }
+  },
+  "task_1e_concentration": {
+    "T2_SMA_CROSS": {
+      "total_net_0": 211.37,
+      "total_net_2": 103.86,
+      "group_shares": {
+        "Metals": {
+          "n": 63,
+          "sum_net_0": 81.63,
+          "share_net_0_pct": 38.62,
+          "sum_net_2": 68.26,
+          "share_net_2_pct": 65.72
+        },
+        "Equities": {
+          "n": 79,
+          "sum_net_0": 115.28,
+          "share_net_0_pct": 54.54,
+          "sum_net_2": 93.17,
+          "share_net_2_pct": 89.71
+        },
+        "FX": {
+          "n": 197,
+          "sum_net_0": 14.5,
+          "share_net_0_pct": 6.86,
+          "sum_net_2": -54.44,
+          "share_net_2_pct": -52.42
+        },
+        "Brent": {
+          "n": 35,
+          "sum_net_0": -0.04,
+          "share_net_0_pct": -0.02,
+          "sum_net_2": -3.12,
+          "share_net_2_pct": -3.01
+        }
+      },
+      "yearly_shares": {
+        "2003": {
+          "n": 4,
+          "sum_net_0": -3.79,
+          "share_0_pct": -1.79,
+          "sum_net_2": -3.88,
+          "share_2_pct": -3.73
+        },
+        "2004": {
+          "n": 12,
+          "sum_net_0": 12.28,
+          "share_0_pct": 5.81,
+          "sum_net_2": 10.0,
+          "share_2_pct": 9.63
+        },
+        "2005": {
+          "n": 11,
+          "sum_net_0": -8.21,
+          "share_0_pct": -3.88,
+          "sum_net_2": -10.6,
+          "share_2_pct": -10.2
+        },
+        "2006": {
+          "n": 15,
+          "sum_net_0": 8.06,
+          "share_0_pct": 3.81,
+          "sum_net_2": 0.7,
+          "share_2_pct": 0.67
+        },
+        "2007": {
+          "n": 7,
+          "sum_net_0": 23.36,
+          "share_0_pct": 11.05,
+          "sum_net_2": 20.5,
+          "share_2_pct": 19.74
+        },
+        "2008": {
+          "n": 14,
+          "sum_net_0": 21.36,
+          "share_0_pct": 10.1,
+          "sum_net_2": 14.8,
+          "share_2_pct": 14.25
+        },
+        "2009": {
+          "n": 13,
+          "sum_net_0": 13.75,
+          "share_0_pct": 6.5,
+          "sum_net_2": 11.21,
+          "share_2_pct": 10.8
+        },
+        "2010": {
+          "n": 19,
+          "sum_net_0": -0.86,
+          "share_0_pct": -0.41,
+          "sum_net_2": -4.9,
+          "share_2_pct": -4.72
+        },
+        "2011": {
+          "n": 13,
+          "sum_net_0": 4.04,
+          "share_0_pct": 1.91,
+          "sum_net_2": 0.29,
+          "share_2_pct": 0.28
+        },
+        "2012": {
+          "n": 24,
+          "sum_net_0": -13.97,
+          "share_0_pct": -6.61,
+          "sum_net_2": -17.74,
+          "share_2_pct": -17.08
+        },
+        "2013": {
+          "n": 14,
+          "sum_net_0": -13.15,
+          "share_0_pct": -6.22,
+          "sum_net_2": -14.99,
+          "share_2_pct": -14.44
+        },
+        "2014": {
+          "n": 18,
+          "sum_net_0": 25.39,
+          "share_0_pct": 12.01,
+          "sum_net_2": 17.97,
+          "share_2_pct": 17.3
+        },
+        "2015": {
+          "n": 18,
+          "sum_net_0": 45.81,
+          "share_0_pct": 21.68,
+          "sum_net_2": 36.55,
+          "share_2_pct": 35.19
+        },
+        "2016": {
+          "n": 23,
+          "sum_net_0": 16.04,
+          "share_0_pct": 7.59,
+          "sum_net_2": 9.69,
+          "share_2_pct": 9.33
+        },
+        "2017": {
+          "n": 16,
+          "sum_net_0": -8.87,
+          "share_0_pct": -4.2,
+          "sum_net_2": -11.88,
+          "share_2_pct": -11.44
+        },
+        "2018": {
+          "n": 12,
+          "sum_net_0": 13.65,
+          "share_0_pct": 6.46,
+          "sum_net_2": 8.96,
+          "share_2_pct": 8.62
+        },
+        "2019": {
+          "n": 18,
+          "sum_net_0": -12.99,
+          "share_0_pct": -6.15,
+          "sum_net_2": -16.86,
+          "share_2_pct": -16.23
+        },
+        "2020": {
+          "n": 16,
+          "sum_net_0": -7.93,
+          "share_0_pct": -3.75,
+          "sum_net_2": -12.55,
+          "share_2_pct": -12.08
+        },
+        "2021": {
+          "n": 16,
+          "sum_net_0": 25.97,
+          "share_0_pct": 12.28,
+          "sum_net_2": 18.46,
+          "share_2_pct": 17.78
+        },
+        "2022": {
+          "n": 13,
+          "sum_net_0": 4.77,
+          "share_0_pct": 2.25,
+          "sum_net_2": 2.41,
+          "share_2_pct": 2.32
+        },
+        "2023": {
+          "n": 27,
+          "sum_net_0": 9.64,
+          "share_0_pct": 4.56,
+          "sum_net_2": -0.58,
+          "share_2_pct": -0.56
+        },
+        "2024": {
+          "n": 31,
+          "sum_net_0": -17.72,
+          "share_0_pct": -8.38,
+          "sum_net_2": -20.98,
+          "share_2_pct": -20.2
+        },
+        "2025": {
+          "n": 20,
+          "sum_net_0": 74.75,
+          "share_0_pct": 35.37,
+          "sum_net_2": 67.26,
+          "share_2_pct": 64.76
+        }
+      },
+      "best_market": "XAGUSD",
+      "best_market_sum_0": 71.55,
+      "ex_best_market": {
+        "excluded": "XAGUSD",
+        "n": 341,
+        "mean_net_0": 0.41,
+        "mean_net_2": 0.1146
+      },
+      "best_year": "2025",
+      "best_year_sum_0": 74.75,
+      "ex_best_year": {
+        "excluded": "2025",
+        "n": 354,
+        "mean_net_0": 0.3859,
+        "mean_net_2": 0.1034
+      },
+      "top10_trades": [
+        {
+          "trade_id": "T2_XAGUSD_0033",
+          "symbol": "XAGUSD",
+          "direction": "LONG",
+          "entry_date": "2024-03-28",
+          "exit_date": "2025-12-31",
+          "holding_days": 643,
+          "net_r_0": 43.4083,
+          "net_r_2": 42.5771
+        },
+        {
+          "trade_id": "T2_XAGUSD_0007",
+          "symbol": "XAGUSD",
+          "direction": "LONG",
+          "entry_date": "2005-09-27",
+          "exit_date": "2007-07-19",
+          "holding_days": 660,
+          "net_r_0": 23.262,
+          "net_r_2": 22.2244
+        },
+        {
+          "trade_id": "T2_XAUUSD_0020",
+          "symbol": "XAUUSD",
+          "direction": "LONG",
+          "entry_date": "2019-01-23",
+          "exit_date": "2021-02-18",
+          "holding_days": 757,
+          "net_r_0": 20.9414,
+          "net_r_2": 18.6873
+        },
+        {
+          "trade_id": "T2_GER40_0023",
+          "symbol": "GER40",
+          "direction": "LONG",
+          "entry_date": "2023-12-27",
+          "exit_date": "2025-12-30",
+          "holding_days": 734,
+          "net_r_0": 19.2414,
+          "net_r_2": 17.5733
+        },
+        {
+          "trade_id": "T2_NDX_0019",
+          "symbol": "NDX",
+          "direction": "LONG",
+          "entry_date": "2013-01-29",
+          "exit_date": "2015-10-01",
+          "holding_days": 975,
+          "net_r_0": 16.4195,
+          "net_r_2": 14.7549
+        },
+        {
+          "trade_id": "T2_NDX_0025",
+          "symbol": "NDX",
+          "direction": "LONG",
+          "entry_date": "2016-07-18",
+          "exit_date": "2018-12-04",
+          "holding_days": 869,
+          "net_r_0": 15.3044,
+          "net_r_2": 13.9261
+        },
+        {
+          "trade_id": "T2_US500_0011",
+          "symbol": "US500",
+          "direction": "LONG",
+          "entry_date": "2012-02-01",
+          "exit_date": "2015-08-31",
+          "holding_days": 1307,
+          "net_r_0": 13.9653,
+          "net_r_2": 12.0164
+        },
+        {
+          "trade_id": "T2_EURUSD_0013",
+          "symbol": "EURUSD",
+          "direction": "SHORT",
+          "entry_date": "2014-07-08",
+          "exit_date": "2015-10-05",
+          "holding_days": 454,
+          "net_r_0": 13.4618,
+          "net_r_2": 11.5759
+        },
+        {
+          "trade_id": "T2_Brent_0015",
+          "symbol": "Brent",
+          "direction": "SHORT",
+          "entry_date": "2014-08-20",
+          "exit_date": "2016-05-16",
+          "holding_days": 635,
+          "net_r_0": 12.9598,
+          "net_r_2": 12.1082
+        },
+        {
+          "trade_id": "T2_GER40_0003",
+          "symbol": "GER40",
+          "direction": "LONG",
+          "entry_date": "2004-11-05",
+          "exit_date": "2006-07-28",
+          "holding_days": 630,
+          "net_r_0": 10.4583,
+          "net_r_2": 9.5174
+        }
+      ]
+    },
+    "T3_TSMOM": {
+      "total_net_0": 288.87,
+      "total_net_2": 170.82,
+      "group_shares": {
+        "Metals": {
+          "n": 66,
+          "sum_net_0": 151.8,
+          "share_net_0_pct": 52.55,
+          "sum_net_2": 132.97,
+          "share_net_2_pct": 77.85
+        },
+        "Equities": {
+          "n": 64,
+          "sum_net_0": 105.05,
+          "share_net_0_pct": 36.37,
+          "sum_net_2": 80.47,
+          "share_net_2_pct": 47.11
+        },
+        "FX": {
+          "n": 219,
+          "sum_net_0": 20.06,
+          "share_net_0_pct": 6.95,
+          "sum_net_2": -50.45,
+          "share_net_2_pct": -29.54
+        },
+        "Brent": {
+          "n": 28,
+          "sum_net_0": 11.96,
+          "share_net_0_pct": 4.14,
+          "sum_net_2": 7.83,
+          "share_net_2_pct": 4.58
+        }
+      },
+      "yearly_shares": {
+        "2003": {
+          "n": 7,
+          "sum_net_0": -5.83,
+          "share_0_pct": -2.02,
+          "sum_net_2": -7.03,
+          "share_2_pct": -4.12
+        },
+        "2004": {
+          "n": 2,
+          "sum_net_0": 1.35,
+          "share_0_pct": 0.47,
+          "sum_net_2": 0.28,
+          "share_2_pct": 0.17
+        },
+        "2005": {
+          "n": 18,
+          "sum_net_0": -11.2,
+          "share_0_pct": -3.88,
+          "sum_net_2": -13.72,
+          "share_2_pct": -8.03
+        },
+        "2006": {
+          "n": 9,
+          "sum_net_0": -7.78,
+          "share_0_pct": -2.69,
+          "sum_net_2": -9.69,
+          "share_2_pct": -5.67
+        },
+        "2007": {
+          "n": 12,
+          "sum_net_0": 15.97,
+          "share_0_pct": 5.53,
+          "sum_net_2": 11.72,
+          "share_2_pct": 6.86
+        },
+        "2008": {
+          "n": 18,
+          "sum_net_0": 78.42,
+          "share_0_pct": 27.15,
+          "sum_net_2": 66.3,
+          "share_2_pct": 38.82
+        },
+        "2009": {
+          "n": 11,
+          "sum_net_0": 4.34,
+          "share_0_pct": 1.5,
+          "sum_net_2": 1.73,
+          "share_2_pct": 1.01
+        },
+        "2010": {
+          "n": 10,
+          "sum_net_0": 1.62,
+          "share_0_pct": 0.56,
+          "sum_net_2": -2.07,
+          "share_2_pct": -1.21
+        },
+        "2011": {
+          "n": 15,
+          "sum_net_0": -9.28,
+          "share_0_pct": -3.21,
+          "sum_net_2": -12.16,
+          "share_2_pct": -7.12
+        },
+        "2012": {
+          "n": 27,
+          "sum_net_0": 15.46,
+          "share_0_pct": 5.35,
+          "sum_net_2": 10.61,
+          "share_2_pct": 6.21
+        },
+        "2013": {
+          "n": 20,
+          "sum_net_0": -1.27,
+          "share_0_pct": -0.44,
+          "sum_net_2": -4.39,
+          "share_2_pct": -2.57
+        },
+        "2014": {
+          "n": 12,
+          "sum_net_0": 6.05,
+          "share_0_pct": 2.1,
+          "sum_net_2": 1.75,
+          "share_2_pct": 1.03
+        },
+        "2015": {
+          "n": 5,
+          "sum_net_0": 6.69,
+          "share_0_pct": 2.32,
+          "sum_net_2": 4.75,
+          "share_2_pct": 2.78
+        },
+        "2016": {
+          "n": 39,
+          "sum_net_0": 87.6,
+          "share_0_pct": 30.33,
+          "sum_net_2": 71.64,
+          "share_2_pct": 41.94
+        },
+        "2017": {
+          "n": 22,
+          "sum_net_0": -2.64,
+          "share_0_pct": -0.91,
+          "sum_net_2": -7.99,
+          "share_2_pct": -4.68
+        },
+        "2018": {
+          "n": 17,
+          "sum_net_0": -5.36,
+          "share_0_pct": -1.85,
+          "sum_net_2": -10.77,
+          "share_2_pct": -6.31
+        },
+        "2019": {
+          "n": 16,
+          "sum_net_0": 8.87,
+          "share_0_pct": 3.07,
+          "sum_net_2": 3.63,
+          "share_2_pct": 2.12
+        },
+        "2020": {
+          "n": 22,
+          "sum_net_0": -16.46,
+          "share_0_pct": -5.7,
+          "sum_net_2": -23.69,
+          "share_2_pct": -13.87
+        },
+        "2021": {
+          "n": 11,
+          "sum_net_0": 21.79,
+          "share_0_pct": 7.54,
+          "sum_net_2": 16.31,
+          "share_2_pct": 9.55
+        },
+        "2022": {
+          "n": 15,
+          "sum_net_0": -3.05,
+          "share_0_pct": -1.05,
+          "sum_net_2": -6.4,
+          "share_2_pct": -3.74
+        },
+        "2023": {
+          "n": 25,
+          "sum_net_0": -2.34,
+          "share_0_pct": -0.81,
+          "sum_net_2": -9.36,
+          "share_2_pct": -5.48
+        },
+        "2024": {
+          "n": 23,
+          "sum_net_0": 10.6,
+          "share_0_pct": 3.67,
+          "sum_net_2": 3.26,
+          "share_2_pct": 1.91
+        },
+        "2025": {
+          "n": 19,
+          "sum_net_0": 96.2,
+          "share_0_pct": 33.3,
+          "sum_net_2": 87.13,
+          "share_2_pct": 51.01
+        }
+      },
+      "best_market": "XAUUSD",
+      "best_market_sum_0": 82.03,
+      "ex_best_market": {
+        "excluded": "XAUUSD",
+        "n": 350,
+        "mean_net_0": 0.591,
+        "mean_net_2": 0.2881
+      },
+      "best_year": "2025",
+      "best_year_sum_0": 96.2,
+      "ex_best_year": {
+        "excluded": "2025",
+        "n": 358,
+        "mean_net_0": 0.5382,
+        "mean_net_2": 0.2338
+      },
+      "top10_trades": [
+        {
+          "trade_id": "T3_XAUUSD_0001",
+          "symbol": "XAUUSD",
+          "direction": "LONG",
+          "entry_date": "2002-11-01",
+          "exit_date": "2008-11-03",
+          "holding_days": 2194,
+          "net_r_0": 59.5432,
+          "net_r_2": 53.9722
+        },
+        {
+          "trade_id": "T3_XAGUSD_0039",
+          "symbol": "XAGUSD",
+          "direction": "LONG",
+          "entry_date": "2024-03-01",
+          "exit_date": "2025-12-31",
+          "holding_days": 670,
+          "net_r_0": 46.8655,
+          "net_r_2": 46.044
+        },
+        {
+          "trade_id": "T3_NDX_0010",
+          "symbol": "NDX",
+          "direction": "LONG",
+          "entry_date": "2009-10-01",
+          "exit_date": "2016-03-01",
+          "holding_days": 2343,
+          "net_r_0": 32.1874,
+          "net_r_2": 29.3884
+        },
+        {
+          "trade_id": "T3_USDJPY_0017",
+          "symbol": "USDJPY",
+          "direction": "LONG",
+          "entry_date": "2012-08-01",
+          "exit_date": "2016-02-01",
+          "holding_days": 1279,
+          "net_r_0": 26.536,
+          "net_r_2": 23.1433
+        },
+        {
+          "trade_id": "T3_XAGUSD_0005",
+          "symbol": "XAGUSD",
+          "direction": "LONG",
+          "entry_date": "2005-05-02",
+          "exit_date": "2007-05-01",
+          "holding_days": 729,
+          "net_r_0": 20.5487,
+          "net_r_2": 19.6695
+        },
+        {
+          "trade_id": "T3_USDJPY_0029",
+          "symbol": "USDJPY",
+          "direction": "LONG",
+          "entry_date": "2021-03-01",
+          "exit_date": "2024-09-01",
+          "holding_days": 1280,
+          "net_r_0": 20.3693,
+          "net_r_2": 16.5562
+        },
+        {
+          "trade_id": "T3_XAUUSD_0019",
+          "symbol": "XAUUSD",
+          "direction": "LONG",
+          "entry_date": "2019-06-03",
+          "exit_date": "2021-07-01",
+          "holding_days": 759,
+          "net_r_0": 19.6559,
+          "net_r_2": 17.3504
+        },
+        {
+          "trade_id": "T3_US500_0020",
+          "symbol": "US500",
+          "direction": "LONG",
+          "entry_date": "2023-06-01",
+          "exit_date": "2025-12-31",
+          "holding_days": 944,
+          "net_r_0": 19.6174,
+          "net_r_2": 18.0227
+        },
+        {
+          "trade_id": "T3_NDX_0020",
+          "symbol": "NDX",
+          "direction": "LONG",
+          "entry_date": "2023-05-01",
+          "exit_date": "2025-12-31",
+          "holding_days": 975,
+          "net_r_0": 18.967,
+          "net_r_2": 17.8517
+        },
+        {
+          "trade_id": "T3_XAGUSD_0011",
+          "symbol": "XAGUSD",
+          "direction": "LONG",
+          "entry_date": "2009-09-01",
+          "exit_date": "2012-01-03",
+          "holding_days": 854,
+          "net_r_0": 15.4319,
+          "net_r_2": 14.6206
+        }
+      ]
+    }
+  }
+}
