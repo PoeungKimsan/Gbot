@@ -1,0 +1,13 @@
+market,trades_compared,mismatches,mismatch_cause
+XAUUSD,27,7,7 short stops filled at open in pre-fix file
+XAGUSD,39,12,12 short stops filled at open in pre-fix file
+EURUSD,33,11,11 short stops filled at open in pre-fix file
+GBPUSD,35,10,10 short stops filled at open in pre-fix file
+USDJPY,33,5,5 short stops filled at open in pre-fix file
+AUDUSD,29,6,6 short stops filled at open in pre-fix file
+USDCAD,36,8,8 short stops filled at open in pre-fix file
+USDCHF,49,13,13 short stops filled at open in pre-fix file
+US500,20,8,8 short stops filled at open in pre-fix file
+GER40,24,11,11 short stops filled at open in pre-fix file
+Brent,28,6,6 short stops filled at open in pre-fix file
+NDX,20,8,8 short stops filled at open in pre-fix file

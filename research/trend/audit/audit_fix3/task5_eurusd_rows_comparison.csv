@@ -1,0 +1,3 @@
+row_label,timestamp,datetime_bst,open,high,low,close,feed_status
+Historical Chart Bar (00:00 BST),1791504000,2026-10-09 00:00:00 BST,1.121300,1.124600,1.119200,1.120570,Overwritten in SQLite by later live bar
+Live Forming Quote (22:29 BST),1791581367,2026-10-09 22:29:27 BST,1.121705,1.124606,1.119194,1.120574,Kept in SQLite (current stored bar)
