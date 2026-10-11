@@ -1,0 +1,4 @@
+rule,path,sha256,N,sum_net_r_0,sum_net_r_2,mean_gross_r,mean_net_r_0,mean_drag_0,drag_assertion_lt_0_05
+T1_DONCHIAN,research\trend\output_stopfixed\T1_DONCHIAN_trades.csv,f693d0381e117b6753f0a775f5da510e0112843d252ddc31c3e969e2a65db8c9,1025,+167.4565,+41.9621,+0.1893,+0.1634,0.0259,PASS
+T2_SMA_CROSS,research\trend\output_stopfixed\T2_SMA_CROSS_trades.csv,21a44019b492d453f961fc2e61256f693ed75fd9613839ba52a5b85c7c5b4971,374,+211.3690,+103.8644,+0.5826,+0.5652,0.0174,PASS
+T3_TSMOM,research\trend\output_stopfixed\T3_TSMOM_trades.csv,8a5470196a95c5721549c23e0df4c9d0a187f2d5eaf4ca8d84fca2e3c3782724,373,+275.2559,+156.6137,+0.7541,+0.7380,0.0161,PASS

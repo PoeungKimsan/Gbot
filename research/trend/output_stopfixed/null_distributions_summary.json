@@ -1,0 +1,89 @@
+{
+  "T1_DONCHIAN": {
+    "real_mean_net_r": 0.0409,
+    "real_mean_net_r_fin0": 0.1634,
+    "null_a": {
+      "mean": -0.0242,
+      "p95": 0.0545,
+      "beats_p95": false
+    },
+    "null_b": {
+      "mean": 0.013,
+      "p95": 0.0925,
+      "beats_p95": false
+    },
+    "passes_both_nulls": false,
+    "fin0": {
+      "real_mean_net_r": 0.1634,
+      "null_a": {
+        "mean": 0.0376,
+        "p95": 0.1188,
+        "beats_p95": true
+      },
+      "null_b": {
+        "mean": 0.0914,
+        "p95": 0.175,
+        "beats_p95": false
+      },
+      "passes_both_nulls": false
+    }
+  },
+  "T2_SMA_CROSS": {
+    "real_mean_net_r": 0.2777,
+    "real_mean_net_r_fin0": 0.5652,
+    "null_a": {
+      "mean": -0.0112,
+      "p95": 0.157,
+      "beats_p95": true
+    },
+    "null_b": {
+      "mean": 0.1255,
+      "p95": 0.3026,
+      "beats_p95": false
+    },
+    "passes_both_nulls": false,
+    "fin0": {
+      "real_mean_net_r": 0.5652,
+      "null_a": {
+        "mean": 0.1159,
+        "p95": 0.2936,
+        "beats_p95": true
+      },
+      "null_b": {
+        "mean": 0.295,
+        "p95": 0.4848,
+        "beats_p95": true
+      },
+      "passes_both_nulls": true
+    }
+  },
+  "T3_TSMOM": {
+    "real_mean_net_r": 0.4199,
+    "real_mean_net_r_fin0": 0.738,
+    "null_a": {
+      "mean": 0.0247,
+      "p95": 0.2779,
+      "beats_p95": true
+    },
+    "null_b": {
+      "mean": 0.1484,
+      "p95": 0.3832,
+      "beats_p95": true
+    },
+    "passes_both_nulls": true,
+    "fin0": {
+      "real_mean_net_r": 0.738,
+      "null_a": {
+        "mean": 0.1538,
+        "p95": 0.416,
+        "beats_p95": true
+      },
+      "null_b": {
+        "mean": 0.3333,
+        "p95": 0.588,
+        "beats_p95": true
+      },
+      "passes_both_nulls": true
+    }
+  }
+}

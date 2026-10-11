@@ -18,6 +18,7 @@ DATA_DIR = Path("research/trend/data")
 RESEARCH_OUTPUT_DIR = Path("research/trend/output")
 DATA_FXFIXED_DIR = Path("research/trend/data_fxfixed")
 OUTPUT_FXFIXED_DIR = Path("research/trend/output_fxfixed")
+OUTPUT_CANONICAL_DIR = Path("research/trend/output_stopfixed")
 
 SYMBOLS = [
     "XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY",
@@ -34,8 +35,8 @@ def _load_csv(folder: Path, fname: str) -> list[dict]:
 # --- Canonical Fixed Calendar Tests (Target: T2=374, T3=373) ---
 
 def test_t2_sma_cross_canonical_fixed_reproduces_exactly():
-    """Verify that running T2 on data_fxfixed reproduces output_fxfixed bit-for-bit."""
-    expected_trades = _load_csv(OUTPUT_FXFIXED_DIR, "T2_SMA_CROSS_trades.csv")
+    """Verify that running T2 on data_fxfixed reproduces canonical bit-for-bit."""
+    expected_trades = _load_csv(OUTPUT_CANONICAL_DIR, "T2_SMA_CROSS_trades.csv")
     assert len(expected_trades) == 374
 
     actual_trades: list[TrendTrade] = []
@@ -59,8 +60,8 @@ def test_t2_sma_cross_canonical_fixed_reproduces_exactly():
 
 
 def test_t3_tsmom_canonical_fixed_reproduces_exactly():
-    """Verify that running T3 on data_fxfixed reproduces output_fxfixed bit-for-bit (T3=373)."""
-    expected_trades = _load_csv(OUTPUT_FXFIXED_DIR, "T3_TSMOM_trades.csv")
+    """Verify that running T3 on data_fxfixed reproduces canonical bit-for-bit (T3=373)."""
+    expected_trades = _load_csv(OUTPUT_CANONICAL_DIR, "T3_TSMOM_trades.csv")
     assert len(expected_trades) == 373
 
     actual_trades: list[TrendTrade] = []

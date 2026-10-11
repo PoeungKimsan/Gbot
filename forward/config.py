@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-PREREG_VERSION = "forward_trend_v1.1"
+PREREG_VERSION = "forward_trend_v1.2"
 PREREG_COMMIT = "trend-forward"  # To be pinned upon commit
-PREREG_SHA256 = "0d777ce840bc8db21512bd12840530a969b38d33c030edfdf5729e460a6db62e"
+PREREG_SHA256 = "85570a4e69fcc86f7a3d21589f977180787bc622eada2ee7b07ef324fb785f6c"
 
 FORWARD_DIR = Path("forward")
 DATA_DIR = FORWARD_DIR / "data"
