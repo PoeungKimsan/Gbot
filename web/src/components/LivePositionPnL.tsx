@@ -38,7 +38,7 @@ export function LivePositionPnL({
             <DollarSign className="h-4 w-4" strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="font-sans text-sm font-medium text-[#ededed]">P&L & Positions</h3>
+            <h3 className="font-sans text-sm font-medium text-[#ededed]">PnL & Current Positions</h3>
             <p className="text-xs text-[#707070]">Real-time execution telemetry</p>
           </div>
         </div>

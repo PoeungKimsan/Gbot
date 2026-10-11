@@ -18,12 +18,9 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INSTRUMENT_FIXTURE = REPO_ROOT / "engine" / "tests" / "fixtures" / "instruments" / "XAU_USD.yaml"
-SCHEDULE_PATH = REPO_ROOT / "config" / "schedule.yaml"
-BREAKER_PATH = REPO_ROOT / "config" / "breaker.yaml"
 
 UTC = dt.UTC
 NEW_YORK = ZoneInfo("America/New_York")
@@ -182,33 +179,6 @@ def bar_factory() -> Callable[..., Any]:
         )
 
     return build
-
-
-@pytest.fixture
-def breaker_config() -> Any:
-    """Breaker configuration read from ``config/breaker.yaml``."""
-    from engine.news.breaker import BreakerConfig
-
-    raw = yaml.safe_load(BREAKER_PATH.read_text(encoding="utf-8"))
-    return BreakerConfig.from_mapping(raw)
-
-
-@pytest.fixture
-def schedule_rules() -> Any:
-    """Parsed schedule rules from ``config/schedule.yaml``."""
-    from engine.news.calendar import ScheduleLoader
-
-    return ScheduleLoader(SCHEDULE_PATH).load()
-
-
-@pytest.fixture
-def schedule_path() -> Path:
-    return SCHEDULE_PATH
-
-
-@pytest.fixture
-def schedule_raw() -> dict[str, Any]:
-    return yaml.safe_load(SCHEDULE_PATH.read_text(encoding="utf-8"))
 
 
 @pytest.fixture(autouse=True)

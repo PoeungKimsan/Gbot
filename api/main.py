@@ -6,8 +6,8 @@ and REST snapshot endpoints for the high-performance trading dashboard.
 
 from __future__ import annotations
 
-import asyncio
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
@@ -32,7 +32,7 @@ API_PORT: Final[int] = 8080
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Start the live market data and strategy engine on API launch."""
     logger.info("Initializing Live Trading Engine...")
     try:

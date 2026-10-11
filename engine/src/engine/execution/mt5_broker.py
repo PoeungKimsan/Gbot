@@ -7,13 +7,14 @@ parameters, volume rounding, and position monitoring.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-import MetaTrader5 as mt5
+import MetaTrader5 as mt5  # noqa: N813
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,11 @@ __all__ = [
     "MT5OrderResult",
     "OrderSide",
 ]
+
+
+def _to_mt5_float(value: Decimal) -> float:
+    """Boundary conversion: converts Decimal to float exclusively for MT5 API calls."""
+    return float(value)
 
 
 class MT5BrokerError(RuntimeError):
@@ -75,8 +81,7 @@ class MT5Broker:
         if info is None:
             return mt5.ORDER_FILLING_IOC
 
-        # Bitmask for filling modes
-        # 1 = FOK, 2 = IOC
+        # Bitmask for filling modes: 1 = FOK, 2 = IOC
         filling_mode = info.filling_mode
         if filling_mode & 2 != 0:
             return mt5.ORDER_FILLING_IOC
@@ -88,19 +93,41 @@ class MT5Broker:
         self,
         side: OrderSide,
         quantity: Decimal,
-        stop_loss: Decimal | None = None,
-        take_profit: Decimal | None = None,
+        stop_loss: Decimal,
+        take_profit: Decimal,
         comment: str = "ICT Trade",
     ) -> MT5OrderResult:
-        """Execute a market order with attached SL and TP."""
+        """Execute a protected market order with mandatory SL and TP."""
         self._ensure_connected()
+
+        if stop_loss is None or take_profit is None:
+            raise MT5BrokerError("Orders must carry both stop_loss and take_profit protection")
+        if stop_loss <= Decimal(0) or take_profit <= Decimal(0):
+            raise MT5BrokerError(
+                f"SL and TP must be strictly positive; got SL={stop_loss}, TP={take_profit}"
+            )
+        if quantity <= Decimal(0):
+            raise MT5BrokerError(f"Quantity must be strictly positive; got {quantity}")
 
         tick = mt5.symbol_info_tick(self.symbol)
         if tick is None:
             raise MT5BrokerError(f"Cannot get tick for {self.symbol}")
 
-        price = tick.ask if side == OrderSide.BUY else tick.bid
+        raw_price = tick.ask if side == OrderSide.BUY else tick.bid
+        price = Decimal(f"{raw_price:.3f}")
         order_type = mt5.ORDER_TYPE_BUY if side == OrderSide.BUY else mt5.ORDER_TYPE_SELL
+
+        # Protect against backward SL/TP geometry
+        if side == OrderSide.BUY and (stop_loss >= price or take_profit <= price):
+            raise MT5BrokerError(
+                f"Invalid BUY protection: SL ({stop_loss}) must be below price ({price}) "
+                f"and TP ({take_profit}) above price"
+            )
+        if side == OrderSide.SELL and (stop_loss <= price or take_profit >= price):
+            raise MT5BrokerError(
+                f"Invalid SELL protection: SL ({stop_loss}) must be above price ({price}) "
+                f"and TP ({take_profit}) below price"
+            )
 
         if self.paper_mode:
             logger.info(
@@ -116,7 +143,7 @@ class MT5Broker:
                 deal_id=999999,
                 order_id=999999,
                 volume=quantity,
-                price=Decimal(f"{price:.3f}"),
+                price=price,
                 comment=f"[PAPER] {comment}",
                 success=True,
             )
@@ -124,20 +151,17 @@ class MT5Broker:
         request: dict[str, Any] = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": self.symbol,
-            "volume": float(quantity),
+            "volume": _to_mt5_float(quantity),
             "type": order_type,
-            "price": float(price),
+            "price": _to_mt5_float(price),
+            "sl": _to_mt5_float(stop_loss),
+            "tp": _to_mt5_float(take_profit),
             "deviation": 20,
             "magic": self.magic_number,
             "comment": comment,
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": self._determine_filling_type(),
         }
-
-        if stop_loss is not None:
-            request["sl"] = float(stop_loss)
-        if take_profit is not None:
-            request["tp"] = float(take_profit)
 
         result = mt5.order_send(request)
         if result is None:
@@ -161,7 +185,7 @@ class MT5Broker:
             deal_id=result.deal,
             order_id=result.order,
             volume=Decimal(str(result.volume)) if result.volume else quantity,
-            price=Decimal(f"{result.price:.3f}") if result.price else Decimal(f"{price:.3f}"),
+            price=Decimal(f"{result.price:.3f}") if result.price else price,
             comment=result.comment,
             success=success,
             error_message=error_msg,
@@ -172,14 +196,36 @@ class MT5Broker:
         side: OrderSide,
         limit_price: Decimal,
         quantity: Decimal,
-        stop_loss: Decimal | None = None,
-        take_profit: Decimal | None = None,
+        stop_loss: Decimal,
+        take_profit: Decimal,
         comment: str = "ICT Limit",
     ) -> MT5OrderResult:
-        """Place a resting limit order in MT5 with SL and TP."""
+        """Place a resting limit order in MT5 with mandatory SL and TP."""
         self._ensure_connected()
 
-        order_type = mt5.ORDER_TYPE_BUY_LIMIT if side == OrderSide.BUY else mt5.ORDER_TYPE_SELL_LIMIT
+        if stop_loss is None or take_profit is None:
+            raise MT5BrokerError("Orders must carry both stop_loss and take_profit protection")
+        if stop_loss <= Decimal(0) or take_profit <= Decimal(0):
+            raise MT5BrokerError(
+                f"SL and TP must be strictly positive; got SL={stop_loss}, TP={take_profit}"
+            )
+        if quantity <= Decimal(0):
+            raise MT5BrokerError(f"Quantity must be strictly positive; got {quantity}")
+
+        if side == OrderSide.BUY and (stop_loss >= limit_price or take_profit <= limit_price):
+            raise MT5BrokerError(
+                f"Invalid BUY LIMIT protection: SL ({stop_loss}) must be below limit "
+                f"({limit_price}) and TP ({take_profit}) above"
+            )
+        if side == OrderSide.SELL and (stop_loss <= limit_price or take_profit >= limit_price):
+            raise MT5BrokerError(
+                f"Invalid SELL LIMIT protection: SL ({stop_loss}) must be above limit "
+                f"({limit_price}) and TP ({take_profit}) below"
+            )
+
+        order_type = (
+            mt5.ORDER_TYPE_BUY_LIMIT if side == OrderSide.BUY else mt5.ORDER_TYPE_SELL_LIMIT
+        )
 
         if self.paper_mode:
             logger.info(
@@ -203,20 +249,17 @@ class MT5Broker:
         request: dict[str, Any] = {
             "action": mt5.TRADE_ACTION_PENDING,
             "symbol": self.symbol,
-            "volume": float(quantity),
+            "volume": _to_mt5_float(quantity),
             "type": order_type,
-            "price": float(limit_price),
+            "price": _to_mt5_float(limit_price),
+            "sl": _to_mt5_float(stop_loss),
+            "tp": _to_mt5_float(take_profit),
             "deviation": 20,
             "magic": self.magic_number,
             "comment": comment,
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": self._determine_filling_type(),
         }
-
-        if stop_loss is not None:
-            request["sl"] = float(stop_loss)
-        if take_profit is not None:
-            request["tp"] = float(take_profit)
 
         result = mt5.order_send(request)
         if result is None:
@@ -247,17 +290,23 @@ class MT5Broker:
         out: list[dict[str, Any]] = []
         for p in positions:
             side = "BUY" if p.type == mt5.ORDER_TYPE_BUY else "SELL"
+            sl_val = Decimal(str(p.sl)) if p.sl else None
+            tp_val = Decimal(str(p.tp)) if p.tp else None
+            open_p = Decimal(str(p.price_open))
+            cur_p = Decimal(str(p.price_current))
+            prof = Decimal(str(p.profit))
+            vol = Decimal(str(p.volume))
             out.append(
                 {
                     "ticket": p.ticket,
                     "time": dt.datetime.fromtimestamp(p.time, dt.UTC).isoformat(),
                     "side": side,
-                    "volume": str(p.volume),
-                    "open_price": f"{p.price_open:.3f}",
-                    "current_price": f"{p.price_current:.3f}",
-                    "sl": f"{p.sl:.3f}" if p.sl else None,
-                    "tp": f"{p.tp:.3f}" if p.tp else None,
-                    "profit": f"{p.profit:.2f}",
+                    "volume": str(vol),
+                    "open_price": f"{open_p:.3f}",
+                    "current_price": f"{cur_p:.3f}",
+                    "sl": f"{sl_val:.3f}" if sl_val is not None else None,
+                    "tp": f"{tp_val:.3f}" if tp_val is not None else None,
+                    "profit": f"{prof:.2f}",
                     "comment": p.comment,
                 }
             )
@@ -276,8 +325,11 @@ class MT5Broker:
         if tick is None:
             return False
 
-        opposite_type = mt5.ORDER_TYPE_SELL if position.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
-        price = tick.bid if position.type == mt5.ORDER_TYPE_BUY else tick.ask
+        opposite_type = (
+            mt5.ORDER_TYPE_SELL if position.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
+        )
+        raw_price = tick.bid if position.type == mt5.ORDER_TYPE_BUY else tick.ask
+        price = Decimal(f"{raw_price:.3f}")
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
@@ -285,7 +337,7 @@ class MT5Broker:
             "symbol": self.symbol,
             "volume": position.volume,
             "type": opposite_type,
-            "price": float(price),
+            "price": _to_mt5_float(price),
             "deviation": 20,
             "magic": self.magic_number,
             "comment": "Close position",
@@ -295,3 +347,30 @@ class MT5Broker:
 
         res = mt5.order_send(request)
         return res is not None and res.retcode == mt5.TRADE_RETCODE_DONE
+
+    def get_closed_deal_for_position(self, ticket: int) -> dict[str, Any] | None:
+        """Fetch the closing deal record for a position ticket from MT5 deal history."""
+        self._ensure_connected()
+        if self.paper_mode:
+            return None
+        deals = mt5.history_deals_get(position=ticket)
+        if not deals:
+            return None
+        for deal in reversed(deals):
+            if getattr(deal, "entry", None) == mt5.DEAL_ENTRY_OUT:
+                deal_profit = Decimal(str(deal.profit))
+                deal_commission = Decimal(str(deal.commission))
+                deal_swap = Decimal(str(deal.swap))
+                total_pnl = deal_profit + deal_commission + deal_swap
+                deal_time = dt.datetime.fromtimestamp(deal.time, dt.UTC)
+                deal_price = Decimal(f"{deal.price:.3f}")
+                return {
+                    "ticket": deal.ticket,
+                    "order": deal.order,
+                    "position_id": deal.position_id,
+                    "price": deal_price,
+                    "profit": total_pnl,
+                    "time": deal_time,
+                    "comment": deal.comment,
+                }
+        return None

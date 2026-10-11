@@ -1,8 +1,4 @@
-"""Process runtime: startup gates and control-plane resolution.
-
-Nothing in this package is allowed to touch market data, open sockets or write
-journal rows until :func:`engine.runtime.gates.run_all_gates` has passed.
-"""
+"""Process runtime: the live MT5 trader (:mod:`engine.runtime.live_trader`)."""
 
 import os
 from pathlib import Path

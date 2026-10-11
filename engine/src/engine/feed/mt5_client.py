@@ -13,7 +13,7 @@ import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-import MetaTrader5 as mt5
+import MetaTrader5 as mt5  # noqa: N813
 
 from engine.market.models import OHLC, Bar, Quote, Timeframe
 
@@ -67,7 +67,10 @@ class MT5Feed:
                     mt5.symbol_select(candidate, True)
                 return candidate
 
-        all_symbols = [s.name for s in (mt5.symbols_get() or []) if "XAU" in s.name or "GOLD" in s.name]
+        all_symbols = [
+            s.name for s in (mt5.symbols_get() or [])
+            if "XAU" in s.name or "GOLD" in s.name
+        ]
         if all_symbols:
             chosen = all_symbols[0]
             mt5.symbol_select(chosen, True)
@@ -79,7 +82,8 @@ class MT5Feed:
     def symbol(self) -> str:
         if self._symbol is None:
             self.connect()
-        assert self._symbol is not None
+        if self._symbol is None:
+            raise MT5FeedError(f"Symbol {self._requested_symbol} could not be resolved.")
         return self._symbol
 
     def get_account_summary(self) -> dict[str, Any]:
@@ -121,12 +125,27 @@ class MT5Feed:
             stamp = dt.datetime.fromtimestamp(r["time"], dt.UTC)
             o = Decimal(f"{r['open']:.3f}")
             h = Decimal(f"{r['high']:.3f}")
-            l = Decimal(f"{r['low']:.3f}")
+            low_val = Decimal(f"{r['low']:.3f}")
             c = Decimal(f"{r['close']:.3f}")
-            half_spread = Decimal(f"{(r['spread'] * 0.01) / 2:.3f}") if r["spread"] > 0 else Decimal("0.05")
+            spread_points = Decimal(str(r["spread"]))
+            half_spread = (
+                (spread_points * Decimal("0.01") / Decimal(2))
+                if r["spread"] > 0
+                else Decimal("0.05")
+            )
 
-            bid_ohlc = OHLC(open=o - half_spread, high=h - half_spread, low=l - half_spread, close=c - half_spread)
-            ask_ohlc = OHLC(open=o + half_spread, high=h + half_spread, low=l + half_spread, close=c + half_spread)
+            bid_ohlc = OHLC(
+                open=o - half_spread,
+                high=h - half_spread,
+                low=low_val - half_spread,
+                close=c - half_spread,
+            )
+            ask_ohlc = OHLC(
+                open=o + half_spread,
+                high=h + half_spread,
+                low=low_val + half_spread,
+                close=c + half_spread,
+            )
 
             bars.append(
                 Bar(
@@ -155,7 +174,7 @@ class MT5Feed:
 
     async def stream_quotes(
         self,
-        poll_interval: float = 0.05,
+        poll_interval: Decimal = Decimal("0.05"),
     ) -> AsyncIterator[Quote]:
         """Asynchronously yield live price quotes as they change in MT5."""
         if not self._initialized:
@@ -164,6 +183,7 @@ class MT5Feed:
         last_msc = 0
         last_bid: Decimal | None = None
         last_ask: Decimal | None = None
+        sleep_seconds = int(poll_interval * Decimal(1000)) / 1000
 
         while True:
             try:
@@ -183,4 +203,4 @@ class MT5Feed:
             except Exception as exc:
                 logger.error("Error reading MT5 tick: %s", exc)
 
-            await asyncio.sleep(poll_interval)
+            await asyncio.sleep(sleep_seconds)

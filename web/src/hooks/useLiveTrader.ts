@@ -97,9 +97,18 @@ export function useLiveTrader() {
       const isHttps = window.location.protocol === "https:";
       const wsProto = isHttps ? "wss:" : "ws:";
       const host = window.location.hostname || "127.0.0.1";
-      // In development Vite runs on 5173, backend on 8080
-      const port = window.location.port === "5173" ? "8080" : window.location.port || "8080";
-      const wsUrl = `${wsProto}//${host}:${port}/ws/live`;
+
+      let wsUrl: string;
+      if (window.location.port && window.location.port !== "8080") {
+        // Local dev (e.g. Vite on 5173), target local backend on 8080
+        wsUrl = `ws://${host}:8080/ws/live`;
+      } else if (window.location.port === "8080") {
+        // Local direct access on port 8080
+        wsUrl = `${wsProto}//${host}:8080/ws/live`;
+      } else {
+        // Production domain via Cloudflare Tunnel or reverse proxy (standard 443/80, no port in URL)
+        wsUrl = `${wsProto}//${host}/ws/live`;
+      }
 
       try {
         ws = new WebSocket(wsUrl);

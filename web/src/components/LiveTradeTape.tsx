@@ -31,7 +31,7 @@ export function LiveTradeTape({
             <History className="h-4 w-4" strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="font-sans text-sm font-medium text-[#ededed]">Trade Tape</h3>
+            <h3 className="font-sans text-sm font-medium text-[#ededed]">Trade History</h3>
             <p className="text-xs text-[#707070]">Verified order fills & closed positions</p>
           </div>
         </div>

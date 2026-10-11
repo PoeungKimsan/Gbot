@@ -100,7 +100,7 @@ export function App(_props: AppProps = {}): ReactElement {
             />
           </section>
 
-          {/* Trade Tape (7 cols) */}
+          {/* Trade History (7 cols) */}
           <section className="lg:col-span-7">
             <LiveTradeTape
               trades={snapshot?.completed_trades ?? []}

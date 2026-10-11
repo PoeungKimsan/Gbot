@@ -16,13 +16,9 @@ import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
-from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from engine.market.models import Bar
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +59,7 @@ class JudasSetup:
 
 
 class JudasSwingStrategy:
-    """Detects and trades ICT Judas Swing setups around London Open."""
+    """Detects false breaks of the Asian session high/low during London Open."""
 
     def __init__(
         self,
@@ -92,10 +88,11 @@ class JudasSwingStrategy:
         return self._locked_range
 
     def on_bar(self, bar: Bar) -> JudasSetup | None:
-        """Process one closed M5 bar and evaluate Judas Swing setups."""
-        time_ny = bar.timestamp_utc.astimezone(NY_TZ)
-        hour = time_ny.hour
-        bar_date = time_ny.date()
+        """Process a closed 5-minute candle and evaluate for Judas Swing entry."""
+        # Convert timestamp to America/New_York
+        ny_time = bar.timestamp_utc.astimezone(NY_TZ)
+        bar_date = ny_time.date()
+        hour = ny_time.hour
 
         # Mid OHLC values
         mid = bar.mid_ohlc
@@ -106,13 +103,15 @@ class JudasSwingStrategy:
         # ------------------------------------------------------------------- #
         # 1. Asian Session Measurement (18:00 - 00:00 NY)
         # ------------------------------------------------------------------- #
-        # In NY time, 18:00 to 23:59 belongs to the new trading day starting
-        if hour >= 18 or hour < 0:
-            trading_day = bar_date if hour < 18 else bar_date + dt.timedelta(days=1)
+        if hour >= 18:
+            trading_day = bar_date + dt.timedelta(days=1)
             if self._current_asian_date != trading_day:
                 self._current_asian_date = trading_day
                 self._temp_asian_high = high
                 self._temp_asian_low = low
+                # Cleanly reset sweep tracking for the new session
+                self._swept_high_extreme = None
+                self._swept_low_extreme = None
             else:
                 if self._temp_asian_high is not None:
                     self._temp_asian_high = max(self._temp_asian_high, high)
@@ -121,111 +120,132 @@ class JudasSwingStrategy:
             return None
 
         # At 00:00 NY, the Asian range is locked
-        if 0 <= hour < 18 and self._temp_asian_high is not None and self._temp_asian_low is not None:
-            if self._locked_range is None or self._locked_range.date != self._current_asian_date:
-                assert self._current_asian_date is not None
-                self._locked_range = AsianRange(
-                    date=self._current_asian_date,
-                    high=self._temp_asian_high,
-                    low=self._temp_asian_low,
-                    complete=True,
-                )
-                self._swept_high_extreme = None
-                self._swept_low_extreme = None
-                logger.info(
-                    "Locked Asian Range for %s: High=%s, Low=%s",
-                    self._locked_range.date,
-                    self._locked_range.high,
-                    self._locked_range.low,
-                )
+        if (
+            0 <= hour < 18
+            and self._temp_asian_high is not None
+            and self._temp_asian_low is not None
+            and (self._locked_range is None or self._locked_range.date != self._current_asian_date)
+            and self._current_asian_date is not None
+        ):
+            self._locked_range = AsianRange(
+                date=self._current_asian_date,
+                high=self._temp_asian_high,
+                low=self._temp_asian_low,
+                complete=True,
+            )
+            self._swept_high_extreme = None
+            self._swept_low_extreme = None
+            logger.info(
+                "Locked Asian Range for %s: High=%s, Low=%s",
+                self._locked_range.date,
+                self._locked_range.high,
+                self._locked_range.low,
+            )
 
+        # We must have a completed Asian Range to evaluate Judas swings
         if self._locked_range is None:
             return None
 
-        # ------------------------------------------------------------------- #
-        # 2. London Open Window Evaluation (02:00 - 05:00 NY)
-        # ------------------------------------------------------------------- #
-        if not (2 <= hour < 5):
-            return None
-
-        # Prevent multiple trades on the same calendar day
+        # Only one trade per trading day allowed
         if bar_date in self._traded_dates:
             return None
 
-        sweep_threshold = Decimal(self.min_sweep_ticks) * self.tick_size
-        buffer = Decimal(self.buffer_ticks) * self.tick_size
+        # ------------------------------------------------------------------- #
+        # 2. Window Check: London Open (02:00 - 05:00 NY)
+        # ------------------------------------------------------------------- #
+        in_london_window = 2 <= hour < 5
+        if not in_london_window:
+            return None
+
         asian_high = self._locked_range.high
         asian_low = self._locked_range.low
 
-        # Track any breach during the window
-        if high > (asian_high + sweep_threshold):
-            self._swept_high_extreme = max(self._swept_high_extreme or high, high)
-
-        if low < (asian_low - sweep_threshold):
-            self._swept_low_extreme = min(self._swept_low_extreme or low, low)
+        min_breach = Decimal(str(self.min_sweep_ticks)) * self.tick_size
+        buffer = Decimal(str(self.buffer_ticks)) * self.tick_size
 
         # ------------------------------------------------------------------- #
-        # 3. Setup A: Bearish Judas Swing (Asian High Swept & Reclaimed)
+        # 3. Sweep Tracking
+        # ------------------------------------------------------------------- #
+        if high > asian_high + min_breach and (
+            self._swept_high_extreme is None or high > self._swept_high_extreme
+        ):
+            self._swept_high_extreme = high
+
+        if low < asian_low - min_breach and (
+            self._swept_low_extreme is None or low < self._swept_low_extreme
+        ):
+            self._swept_low_extreme = low
+
+        # ------------------------------------------------------------------- #
+        # 4. Setup A: Bearish Judas Swing (Asian High Swept & Reclaimed)
         # ------------------------------------------------------------------- #
         if self._swept_high_extreme is not None and close < asian_high:
-            # Bar breached above Asian High and closed back inside the range!
             entry = close
             sl = self._swept_high_extreme + buffer
             tp = asian_low  # Target the opposite side of the Asian range
 
-            risk = sl - entry
-            reward = entry - tp
+            # Guard: Entry must still be above Asian Low (inside the session range)
+            if entry >= asian_low:
+                risk = sl - entry
+                reward = entry - tp
 
-            # If Asian Low is too close, extend target to at least min_risk_reward R
-            if risk > 0 and reward / risk < self.min_risk_reward:
-                tp = entry - (risk * self.min_risk_reward)
+                # If Asian Low is too close, extend target to at least min_risk_reward R
+                if risk > 0 and reward / risk < self.min_risk_reward:
+                    tp = entry - (risk * self.min_risk_reward)
 
-            if risk > 0 and tp < entry:
-                self._traded_dates.add(bar_date)
-                setup = JudasSetup(
-                    side=JudasSide.SELL,
-                    bar_time=bar.timestamp_utc,
-                    entry_price=entry,
-                    stop_loss=sl,
-                    take_profit=tp,
-                    asian_high=asian_high,
-                    asian_low=asian_low,
-                    sweep_extreme=self._swept_high_extreme,
-                    reason=f"Judas Short: Asian High ({asian_high}) swept to {self._swept_high_extreme} and reclaimed.",
-                )
-                logger.info("Found Judas Swing Setup: %s", setup)
-                return setup
+                if risk > 0 and tp < entry:
+                    self._traded_dates.add(bar_date)
+                    setup = JudasSetup(
+                        side=JudasSide.SELL,
+                        bar_time=bar.timestamp_utc,
+                        entry_price=entry,
+                        stop_loss=sl,
+                        take_profit=tp,
+                        asian_high=asian_high,
+                        asian_low=asian_low,
+                        sweep_extreme=self._swept_high_extreme,
+                        reason=(
+                            f"Judas Short: Asian High ({asian_high}) swept to "
+                            f"{self._swept_high_extreme} and reclaimed."
+                        ),
+                    )
+                    logger.info("Found Judas Swing Setup: %s", setup)
+                    return setup
 
         # ------------------------------------------------------------------- #
-        # 4. Setup B: Bullish Judas Swing (Asian Low Swept & Reclaimed)
+        # 5. Setup B: Bullish Judas Swing (Asian Low Swept & Reclaimed)
         # ------------------------------------------------------------------- #
         if self._swept_low_extreme is not None and close > asian_low:
-            # Bar breached below Asian Low and closed back inside the range!
             entry = close
             sl = self._swept_low_extreme - buffer
             tp = asian_high  # Target the opposite side of the Asian range
 
-            risk = entry - sl
-            reward = tp - entry
+            # Guard: Entry must still be below Asian High (inside the session range)
+            if entry <= asian_high:
+                risk = entry - sl
+                reward = tp - entry
 
-            # If Asian High is too close, extend target to at least min_risk_reward R
-            if risk > 0 and reward / risk < self.min_risk_reward:
-                tp = entry + (risk * self.min_risk_reward)
+                # If Asian High is too close, extend target to at least min_risk_reward R
+                if risk > 0 and reward / risk < self.min_risk_reward:
+                    tp = entry + (risk * self.min_risk_reward)
 
-            if risk > 0 and tp > entry:
-                self._traded_dates.add(bar_date)
-                setup = JudasSetup(
-                    side=JudasSide.BUY,
-                    bar_time=bar.timestamp_utc,
-                    entry_price=entry,
-                    stop_loss=sl,
-                    take_profit=tp,
-                    asian_high=asian_high,
-                    asian_low=asian_low,
-                    sweep_extreme=self._swept_low_extreme,
-                    reason=f"Judas Long: Asian Low ({asian_low}) swept to {self._swept_low_extreme} and reclaimed.",
-                )
-                logger.info("Found Judas Swing Setup: %s", setup)
-                return setup
+                if risk > 0 and tp > entry:
+                    self._traded_dates.add(bar_date)
+                    setup = JudasSetup(
+                        side=JudasSide.BUY,
+                        bar_time=bar.timestamp_utc,
+                        entry_price=entry,
+                        stop_loss=sl,
+                        take_profit=tp,
+                        asian_high=asian_high,
+                        asian_low=asian_low,
+                        sweep_extreme=self._swept_low_extreme,
+                        reason=(
+                            f"Judas Long: Asian Low ({asian_low}) swept to "
+                            f"{self._swept_low_extreme} and reclaimed."
+                        ),
+                    )
+                    logger.info("Found Judas Swing Setup: %s", setup)
+                    return setup
 
         return None

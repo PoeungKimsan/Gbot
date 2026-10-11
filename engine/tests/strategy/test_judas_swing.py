@@ -17,8 +17,6 @@ import datetime as dt
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-import pytest
-
 from engine.market.models import OHLC, Bar, Timeframe
 from engine.strategy.judas_swing import JudasSide, JudasSwingStrategy
 
@@ -85,11 +83,19 @@ def test_no_signal_outside_london_window():
     trade_date = base_date + dt.timedelta(days=1)
 
     # Establish Asian range (2695.00 - 2705.00)
-    strat.on_bar(_make_bar(dt.datetime.combine(base_date, dt.time(20, 0)), "2700.00", "2705.00", "2695.00", "2700.00"))
-    strat.on_bar(_make_bar(dt.datetime.combine(trade_date, dt.time(0, 5)), "2700.00", "2701.00", "2699.00", "2700.00"))
+    t_asian = dt.datetime.combine(base_date, dt.time(20, 0))
+    t_mid = dt.datetime.combine(trade_date, dt.time(0, 5))
+    strat.on_bar(_make_bar(t_asian, "2700.00", "2705.00", "2695.00", "2700.00"))
+    strat.on_bar(_make_bar(t_mid, "2700.00", "2701.00", "2699.00", "2700.00"))
 
     # At 01:30 NY (before 02:00), price sweeps high and closes back
-    early_bar = _make_bar(dt.datetime.combine(trade_date, dt.time(1, 30)), "2704.00", "2706.00", "2703.00", "2704.00")
+    early_bar = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(1, 30)),
+        "2704.00",
+        "2706.00",
+        "2703.00",
+        "2704.00",
+    )
     assert strat.on_bar(early_bar) is None
 
 
@@ -99,11 +105,19 @@ def test_sub_threshold_sweep_is_ignored():
     trade_date = base_date + dt.timedelta(days=1)
 
     # Range High = 2705.00. 5 ticks = 0.05, so threshold is > 2705.05.
-    strat.on_bar(_make_bar(dt.datetime.combine(base_date, dt.time(20, 0)), "2700.00", "2705.00", "2695.00", "2700.00"))
-    strat.on_bar(_make_bar(dt.datetime.combine(trade_date, dt.time(0, 5)), "2700.00", "2701.00", "2699.00", "2700.00"))
+    t_asian = dt.datetime.combine(base_date, dt.time(20, 0))
+    t_mid = dt.datetime.combine(trade_date, dt.time(0, 5))
+    strat.on_bar(_make_bar(t_asian, "2700.00", "2705.00", "2695.00", "2700.00"))
+    strat.on_bar(_make_bar(t_mid, "2700.00", "2701.00", "2699.00", "2700.00"))
 
     # Bar only reaches 2705.03 (3 ticks breach) then closes at 2704.50
-    touch_bar = _make_bar(dt.datetime.combine(trade_date, dt.time(2, 15)), "2704.00", "2705.03", "2703.00", "2704.50")
+    touch_bar = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(2, 15)),
+        "2704.00",
+        "2705.03",
+        "2703.00",
+        "2704.50",
+    )
     assert strat.on_bar(touch_bar) is None
 
 
@@ -118,11 +132,19 @@ def test_valid_bearish_judas_swing_signal():
     trade_date = base_date + dt.timedelta(days=1)
 
     # Asian Range: High 2705.00, Low 2695.00
-    strat.on_bar(_make_bar(dt.datetime.combine(base_date, dt.time(20, 0)), "2700.00", "2705.00", "2695.00", "2700.00"))
-    strat.on_bar(_make_bar(dt.datetime.combine(trade_date, dt.time(0, 5)), "2700.00", "2701.00", "2699.00", "2700.00"))
+    t_asian = dt.datetime.combine(base_date, dt.time(20, 0))
+    t_mid = dt.datetime.combine(trade_date, dt.time(0, 5))
+    strat.on_bar(_make_bar(t_asian, "2700.00", "2705.00", "2695.00", "2700.00"))
+    strat.on_bar(_make_bar(t_mid, "2700.00", "2701.00", "2699.00", "2700.00"))
 
-    # At 02:30 NY, bar spikes to 2706.50 (+1.50 = +150 ticks > 5 ticks) and closes back inside at 2704.00 (< 2705.00)
-    judas_bar = _make_bar(dt.datetime.combine(trade_date, dt.time(2, 30)), "2704.00", "2706.50", "2703.50", "2704.00")
+    # At 02:30 NY, bar spikes to 2706.50 (+1.50 = +150 ticks) and closes inside at 2704.00
+    judas_bar = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(2, 30)),
+        "2704.00",
+        "2706.50",
+        "2703.50",
+        "2704.00",
+    )
     setup = strat.on_bar(judas_bar)
 
     assert setup is not None
@@ -130,8 +152,7 @@ def test_valid_bearish_judas_swing_signal():
     assert setup.entry_price == Decimal("2704.00")
     # SL = sweep_extreme (2706.50) + buffer (0.10) = 2706.60
     assert setup.stop_loss == Decimal("2706.60")
-    # Risk = 2706.60 - 2704.00 = 2.60
-    # TP = Asian Low (2695.00). Reward = 2704.00 - 2695.00 = 9.00 (Reward/Risk = 9.00 / 2.60 = 3.46R >= 2.0R)
+    # TP = Asian Low (2695.00)
     assert setup.take_profit == Decimal("2695.00")
     assert setup.asian_high == Decimal("2705.00")
     assert setup.asian_low == Decimal("2695.00")
@@ -148,11 +169,19 @@ def test_valid_bullish_judas_swing_signal():
     trade_date = base_date + dt.timedelta(days=1)
 
     # Asian Range: High 2705.00, Low 2695.00
-    strat.on_bar(_make_bar(dt.datetime.combine(base_date, dt.time(20, 0)), "2700.00", "2705.00", "2695.00", "2700.00"))
-    strat.on_bar(_make_bar(dt.datetime.combine(trade_date, dt.time(0, 5)), "2700.00", "2701.00", "2699.00", "2700.00"))
+    t_asian = dt.datetime.combine(base_date, dt.time(20, 0))
+    t_mid = dt.datetime.combine(trade_date, dt.time(0, 5))
+    strat.on_bar(_make_bar(t_asian, "2700.00", "2705.00", "2695.00", "2700.00"))
+    strat.on_bar(_make_bar(t_mid, "2700.00", "2701.00", "2699.00", "2700.00"))
 
-    # At 03:15 NY, bar spikes down to 2693.80 (-1.20 = -120 ticks < -5 ticks) and closes back inside at 2696.00 (> 2695.00)
-    judas_bar = _make_bar(dt.datetime.combine(trade_date, dt.time(3, 15)), "2695.50", "2696.50", "2693.80", "2696.00")
+    # At 03:15 NY, bar spikes down to 2693.80 (-1.20 = -120 ticks) and closes inside at 2696.00
+    judas_bar = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(3, 15)),
+        "2695.50",
+        "2696.50",
+        "2693.80",
+        "2696.00",
+    )
     setup = strat.on_bar(judas_bar)
 
     assert setup is not None
@@ -169,14 +198,50 @@ def test_single_trade_per_day_lockout():
     base_date = dt.date(2026, 3, 10)
     trade_date = base_date + dt.timedelta(days=1)
 
-    strat.on_bar(_make_bar(dt.datetime.combine(base_date, dt.time(20, 0)), "2700.00", "2705.00", "2695.00", "2700.00"))
-    strat.on_bar(_make_bar(dt.datetime.combine(trade_date, dt.time(0, 5)), "2700.00", "2701.00", "2699.00", "2700.00"))
+    t_asian = dt.datetime.combine(base_date, dt.time(20, 0))
+    t_mid = dt.datetime.combine(trade_date, dt.time(0, 5))
+    strat.on_bar(_make_bar(t_asian, "2700.00", "2705.00", "2695.00", "2700.00"))
+    strat.on_bar(_make_bar(t_mid, "2700.00", "2701.00", "2699.00", "2700.00"))
 
     # First valid trigger
-    bar1 = _make_bar(dt.datetime.combine(trade_date, dt.time(2, 30)), "2704.00", "2706.50", "2703.50", "2704.00")
+    bar1 = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(2, 30)),
+        "2704.00",
+        "2706.50",
+        "2703.50",
+        "2704.00",
+    )
     setup1 = strat.on_bar(bar1)
     assert setup1 is not None
 
     # Subsequent bar in same London window must be refused
-    bar2 = _make_bar(dt.datetime.combine(trade_date, dt.time(3, 00)), "2704.00", "2707.00", "2703.50", "2704.00")
+    bar2 = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(3, 00)),
+        "2704.00",
+        "2707.00",
+        "2703.50",
+        "2704.00",
+    )
     assert strat.on_bar(bar2) is None
+
+
+def test_overshot_beyond_opposite_boundary_refused():
+    strat = JudasSwingStrategy()
+    base_date = dt.date(2026, 3, 10)
+    trade_date = base_date + dt.timedelta(days=1)
+
+    # Asian Range: High 2705.00, Low 2695.00
+    t_asian = dt.datetime.combine(base_date, dt.time(20, 0))
+    t_mid = dt.datetime.combine(trade_date, dt.time(0, 5))
+    strat.on_bar(_make_bar(t_asian, "2700.00", "2705.00", "2695.00", "2700.00"))
+    strat.on_bar(_make_bar(t_mid, "2700.00", "2701.00", "2699.00", "2700.00"))
+
+    # Bar sweeps high to 2707.00, but crashes completely through Asian Low, closing at 2690.00
+    overshot_bar = _make_bar(
+        dt.datetime.combine(trade_date, dt.time(2, 30)),
+        "2704.00",
+        "2707.00",
+        "2689.00",
+        "2690.00",
+    )
+    assert strat.on_bar(overshot_bar) is None

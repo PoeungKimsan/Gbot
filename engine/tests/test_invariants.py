@@ -22,11 +22,9 @@ SRC_ROOT: Path = REPO_ROOT / "engine" / "src" / "engine"
 API_ROOT: Path = REPO_ROOT / "api"
 
 #: Rule (a): these packages must never host floating point.
-#: Rule (a): these packages must never host floating point.
 #:
-#: ``feed`` and ``news`` are included because they now carry price arithmetic: ``feed``
-#: parses OANDA prices and ``news`` computes spread ratios and rolling ATR. Keeping them
-#: under the same scan is what stops a float from sneaking in at the ingest boundary.
+#: ``feed`` is included because it parses broker prices: keeping it under the same scan
+#: is what stops a float from sneaking in at the ingest boundary.
 FLOAT_FREE_PACKAGES: tuple[str, ...] = (
     "domain",
     "execution",
@@ -35,7 +33,6 @@ FLOAT_FREE_PACKAGES: tuple[str, ...] = (
     "journal",
     "market",
     "feed",
-    "news",
 )
 
 #: Rule (b): SQL DDL shapes whose text is inspected for banned column types.
@@ -129,17 +126,55 @@ def _string_nodes(tree: ast.Module) -> Iterator[ast.Constant | ast.JoinedStr]:
             yield node
 
 
+#: Rule (a): The single named boundary helper allowed to call float() for MT5 C-API requests
+#: (AGENTS.md section 2.1).
+_ALLOWED_FLOAT_HELPER: tuple[str, str] = (
+    "engine/src/engine/execution/mt5_broker.py",
+    "_to_mt5_float",
+)
+
+
 def _float_offences(source: str, filename: str) -> list[str]:
     """Return one message per ``float()`` call or float literal in ``source``."""
     tree = ast.parse(source, filename=filename)
     offenders: list[str] = []
-    for node in ast.walk(tree):
-        is_call = isinstance(node, ast.Call)
-        is_builtin_float = is_call and isinstance(node.func, ast.Name) and node.func.id == "float"
-        if is_builtin_float:
-            offenders.append(f"{filename}:{node.lineno}: float() call")
-        elif isinstance(node, ast.Constant) and isinstance(node.value, float):
-            offenders.append(f"{filename}:{node.lineno}: float literal {node.value!r}")
+    normalized_file = Path(filename).as_posix()
+
+    class FloatVisitor(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self.current_func: str | None = None
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            prev = self.current_func
+            self.current_func = node.name
+            self.generic_visit(node)
+            self.current_func = prev
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+            prev = self.current_func
+            self.current_func = node.name
+            self.generic_visit(node)
+            self.current_func = prev
+
+        def visit_Call(self, node: ast.Call) -> None:
+            is_builtin_float = (
+                isinstance(node.func, ast.Name) and node.func.id == "float"
+            )
+            if is_builtin_float:
+                is_exempt = (
+                    normalized_file.endswith(_ALLOWED_FLOAT_HELPER[0])
+                    and self.current_func == _ALLOWED_FLOAT_HELPER[1]
+                )
+                if not is_exempt:
+                    offenders.append(f"{filename}:{node.lineno}: float() call")
+            self.generic_visit(node)
+
+        def visit_Constant(self, node: ast.Constant) -> None:
+            if isinstance(node.value, float):
+                offenders.append(f"{filename}:{node.lineno}: float literal {node.value!r}")
+            self.generic_visit(node)
+
+    FloatVisitor().visit(tree)
     return offenders
 
 
@@ -258,15 +293,17 @@ def test_no_builtin_hash_calls_in_engine() -> None:
 # --------------------------------------------------------------------------- #
 # rule (d): no AF_UNIX anywhere in the source tree
 # --------------------------------------------------------------------------- #
-#: The one file allowed to name ``AF_UNIX``: systemd's notification socket. It is not
-#: the control plane and cannot carry a command -- it is a one-way "I am alive"
-#: datagram to a socket systemd itself owns, and sd_notify has no other API. On Windows
-#: the same code reports itself unavailable and never opens it. See ASSUMPTIONS A88.
-_AF_UNIX_EXEMPT = frozenset({"engine/src/engine/runtime/systemd.py"})
+def test_the_float_conversion_exemption_is_strictly_the_mt5_boundary_helper() -> None:
+    """The float() exemption must stay strictly narrow to AGENTS.md 2.1."""
+    broker_path = REPO_ROOT / _ALLOWED_FLOAT_HELPER[0]
+    assert broker_path.is_file()
+    tree = ast.parse(broker_path.read_text(encoding="utf-8"), filename=str(broker_path))
+    funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    assert _ALLOWED_FLOAT_HELPER[1] in funcs
 
 
 def test_no_af_unix_sockets_in_source() -> None:
-    """AGENTS.md 2.4 - the control plane is TCP, so AF_UNIX must never appear.
+    """AGENTS.md 2.4 - AF_UNIX must never appear in the engine or the API.
 
     The scan is AST-based: it flags real references to the symbol, so prose that
     merely explains why AF_UNIX is banned does not trip it.
@@ -274,24 +311,13 @@ def test_no_af_unix_sockets_in_source() -> None:
     offenders: list[str] = []
     for root in (SRC_ROOT, API_ROOT):
         for path in _iter_files(root, ".py"):
-            if path.relative_to(REPO_ROOT).as_posix() in _AF_UNIX_EXEMPT:
-                continue
             for node in ast.walk(_parse(path)):
                 is_name = isinstance(node, ast.Name) and node.id == _AF_UNIX_MARKER
                 is_attr = isinstance(node, ast.Attribute) and node.attr == _AF_UNIX_MARKER
                 if is_name or is_attr:
                     offenders.append(f"{_rel(path)}:{node.lineno}: {_AF_UNIX_MARKER} reference")
 
-    assert not offenders, (
-        "control plane uses TCP on loopback (engine.runtime.platform); AF_UNIX is banned:\n"
-        + "\n".join(offenders)
-    )
-
-
-def test_the_af_unix_exemption_is_exactly_the_notify_socket() -> None:
-    """The exemption must stay narrow, or it stops being an exemption."""
-    assert set(_AF_UNIX_EXEMPT) == {"engine/src/engine/runtime/systemd.py"}
-    assert (REPO_ROOT / "engine/src/engine/runtime/systemd.py").is_file()
+    assert not offenders, "AF_UNIX is banned:\n" + "\n".join(offenders)
 
 
 # --------------------------------------------------------------------------- #

@@ -1,1 +1,1 @@
-"""Pessimistic fill simulation."""
+"""Order execution against MetaTrader 5."""

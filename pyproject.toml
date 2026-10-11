@@ -1,7 +1,7 @@
 [project]
 name = "xauusd-lab"
 version = "0.0.0"
-description = "Research lab for an automated XAUUSD trading engine: OANDA feed, ICT strategy, pessimistic fills, hash-chained SQLite journal."
+description = "Automated XAUUSD trading engine: MetaTrader 5 feed and execution, ICT Judas Swing strategy, Decimal risk controls, live dashboard."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic>=2",
@@ -78,6 +78,20 @@ select = [
     "ANN204",  # __init__ needs no return annotation
     "ANN401",  # test doubles and fake payloads are dynamically typed by construction
 ]
+"forward/tests/**/*.py" = [
+    "S101",
+    "ANN",
+    "E501",
+    "B905",
+    "PTH",
+    "B007",
+]
+"forward/**/*.py" = [
+    "E501",
+    "ANN",
+    "PTH",
+    "SIM",
+]
 
 # The engine's I/O and coercion boundaries legitimately accept Any, because the value's
 # shape is validated inside each function rather than by a static annotation.
@@ -95,29 +109,3 @@ select = [
 # a caller must be able to tell the two apart. Renaming it would read as a bug.
 # Same reasoning as JournalExhausted above.
 "engine/src/engine/risk/*.py" = ["N818"]
-# The reporting tests deliberately perturb the process's global RNG to prove the
-# bootstrap interval is a function of its seed and nothing else. That perturbation
-# is the test.
-"engine/tests/metrics/**/*.py" = ["S311"]
-
-# The control-plane tests pass tokens as arguments and defaults, which is what a
-# test of an authenticated endpoint has to do: the token is the subject under test,
-# not a credential. S106/S107 name the *shape* of the pass, which is the point.
-"engine/tests/runtime/**/*.py" = ["S106", "S107"]
-
-# Two scripts are executed from tests: the CLI client through ``--help``, and the
-# project's own ``sys.executable``. Both are the repository's own code, on a
-# controlled argv, which is not untrusted input.
-"scripts/**/*.py" = ["S105"]
-"engine/tests/runtime/test_xauusdctl.py" = ["S603"]
-
-# Phase 7 executes the repository's two shell scripts under `bash -n` and the deploy
-# script's refusal path. Both are the repository's own files at a path the test built,
-# on a controlled argv -- the same argument as test_xauusdctl.py above.
-"engine/tests/deploy/test_release_scripts.py" = ["S603"]
-
-# The fault-injection drills spawn a harness child process and hand it a stand-in control
-# token. Both are the repository's own code and the repository's own token-shaped value:
-# the drill is about crash recovery, not about the credential, so S105/S106/S107/S603 name
-# the *shape* of the pass, which is the point.
-"engine/tests/test_fault_injection.py" = ["S105", "S106", "S107", "S603"]
