@@ -1,21 +1,36 @@
-# PRE-REGISTRATION: Trend Rules on Liquid Markets (trend_v1)
+# PRE-REGISTRATION: Trend Rules on Liquid Markets (`trend_v1.1`)
 
-**Registration Date:** 2026-10-11  
-**Study Identifier:** `trend_v1`  
+**Registration Version:** `trend_v1.1` (Amended Pre-Registration)  
+**Amendment Date:** 2026-10-11  
+**Prior Version:** `trend_v1` (`0ed2400`, SHA-256 `6bc1c9c9ae10fba5e69fbbe46d51a38f259c3c4b124c33b3121defa7cfc346a7`)  
 **Status:** FROZEN PRIOR TO BACKTEST EXECUTION  
 
 ---
 
-## 1. Hypothesis
+## 1. Summary of Amendments (`trend_v1` -> `trend_v1.1`)
+
+1. **Rule T1 Reset Condition:** Added an explicit channel reset rule following any stop-out or exit: no new entry is permitted until the breakout condition has reset, defined as a daily bar closing back inside the 55-day channel ($\text{Close} \le \text{High}_{55}$ for Longs, $\text{Close} \ge \text{Low}_{55}$ for Shorts). A subsequent entry requires a fresh breakout.
+2. **Primary Evaluation Sample Window:** Expanded the primary sample from fixed 2010–2025 to **each market's full available history from first date + 1 year warm-up (252 trading bars) through 2025-12-31**. Sub-periods:
+   - `Earliest–2009`: Report-only context.
+   - `2010–2017`: Core sub-period evaluation for Gate 5.
+   - `2018–2025`: Core sub-period evaluation for Gate 5.
+   (Acceptance gates remain unchanged: Gate 5 requires Net $R > 0$ in 2010–2017, 2018–2025, and Ex-Metals).
+3. **Statistical Power Labeling ($N < 200$):** If any pooled or sub-period sample size has $N < 200$, it is explicitly flagged as `[UNDERPOWERED]` (signaling insufficient sample size to reject $H_0$, rather than affirmative evidence of absence of edge). Expected trade counts per rule are stated.
+4. **Data Quality Audit & Roll Handling:** Incorporated report-only data quality audit (bars with $H < L$, zero/NaN, stale closes, $|Close - Close_{prev}| > 6 \times ATR_{20}$). Stated continuous futures roll handling for `GC=F`, `SI=F`, and `BZ=F`.
+5. **Bug & Execution Policy:** Explicitly codified that any defect fix mandates re-running the entire pre-registered test battery from scratch across all 12 assets, incrementing a run counter (`run_number`).
+6. **Report-Only Outputs:** Formally mandated reporting of disaggregations (by market, by side), cost sensitivities (financing 0%, 2%, 4%; spread $2\times$), equal-risk portfolio drawdown, and script-generated report verification.
+
+---
+
+## 2. Hypothesis
 
 **Core Hypothesis:** Simple, long-horizon trend rules earn positive net expectancy (mean net $R > 0$) across liquid global markets under realistic transaction costs, slippage, and financing drag, and are not idiosyncratic to gold (XAUUSD).
 
 ---
 
-## 2. Universe & Instrument Identity Audit
+## 3. Fixed Universe & Instrument Identity Audit
 
-### 2.1 Candidate Universe (Fixed)
-The fixed universe consists of 12 liquid instruments across asset classes (commodities, FX majors, equity indices):
+### 3.1 Candidate Universe (Fixed 12 Assets)
 1. **XAUUSD** — Gold Continuous Futures (`GC=F`), quoted in USD/troy oz
 2. **XAGUSD** — Silver Continuous Futures (`SI=F`), quoted in USD/troy oz
 3. **EURUSD** — Euro / US Dollar (`EURUSD=X`)
@@ -29,14 +44,13 @@ The fixed universe consists of 12 liquid instruments across asset classes (commo
 11. **Brent** — Brent Crude Oil Continuous Futures (`BZ=F`), quoted in USD/barrel
 12. **NDX** — NASDAQ-100 Large-Cap Index (`^NDX`) [Selected 12th liquid index]
 
-### 2.2 History Requirement & Audit Rule
-- Minimum history required: **12 years** prior to 2026. Any symbol with $< 12$ years is automatically dropped and logged.
-- **Instrument Identity Audit**: For each symbol, inspect first and last close, annual min/max closes, and confirm instrument identity (guarding against ticker confusion or proxy mismatch).
+### 3.2 History Requirement
+Minimum history required: **12 years** prior to 2026. Any symbol with $< 12$ years is automatically dropped.
 
-### 2.3 Instrument Identity Audit Results
+### 3.3 Instrument Identity Audit Table
 All 12 instruments meet and exceed the 12-year history requirement:
 
-| Symbol | Benchmark Ticker | Description | First Date | Last Date | History Span | Total Daily Bars | First Close | Last Close (2025-12-31) | Status |
+| Symbol | Benchmark Ticker | Asset Class / Description | First Date | Last Date | History Span | Total Daily Bars | First Close | Last Close (2025-12-31) | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **XAUUSD** | `GC=F` | Gold Futures (USD/oz) | 2001-10-11 | 2025-12-31 | 24.2 yrs | 6,082 | $281.80 | $4,341.10 | PASS |
 | **XAGUSD** | `SI=F` | Silver Futures (USD/oz) | 2001-10-11 | 2025-12-31 | 24.2 yrs | 6,082 | $4.403 | $70.134 | PASS |
@@ -51,80 +65,107 @@ All 12 instruments meet and exceed the 12-year history requirement:
 | **Brent** | `BZ=F` | Brent Crude Oil (USD/bbl) | 2007-07-30 | 2025-12-31 | 18.4 yrs | 4,585 | $75.74 | $60.85 | PASS |
 | **NDX** | `^NDX` | NASDAQ-100 Index | 2001-10-10 | 2025-12-31 | 24.2 yrs | 6,096 | 1,304.68 | 25,249.85 | PASS |
 
-Zero instruments dropped. Complete multi-decade history confirmed for all 12 assets.
+Zero instruments dropped. Multi-decade continuous history confirmed for all 12 assets.
 
 ---
 
-## 3. Data Specification & Integrity Invariants
+## 4. Data Quality Audit & Sanitization Invariants
 
-1. **Granularity:** Daily bars ($1D$).
-2. **Primary Evaluation Period:** 2010-01-01 through 2025-12-31 (16 full calendar years).
-3. **Warm-up Window:** Historical data from 2006-2009 is utilized exclusively as indicator warm-up (Wilder ATR 20, SMA 200, 252-day return, 55-day Donchian channels) so all models are fully warmed up on the first bar of 2010.
-4. **Hard-Stop Gate:** The data loader strictly rejects any bar with timestamp $> 2025\text{-}12\text{-}31$. Data for 2026 is sealed and stays completely unloaded until the sealed step.
-5. **Lookahead Prohibition:** Signals evaluate on closed bars only ($t$). Order entry occurs at the next bar's Open ($t+1$).
-6. **Volatility Normalizer:** Wilder's ATR(20) on daily bars:
-   $$\text{TR}_t = \max(H_t - L_t, |H_t - C_{t-1}|, |L_t - C_{t-1}|)$$
-   $$\text{ATR}_t = \frac{19 \times \text{ATR}_{t-1} + \text{TR}_t}{20}$$
-   Initial ATR seeded with the 20-day simple moving average of True Range.
+### 4.1 Empirical Data Quality Scan (Report-Only)
+Across all 68,070 daily bars in the 12-instrument universe:
+- **Bars with $High < Low$:**
+  - XAUUSD: 1 bar (2009-11-23, where raw recorded High was $1,163.00 while Open/Close was $1,164.30).
+  - Brent: 6 bars (historical quotes in 2009–2010 where High was recorded slightly below Open/Close by a few cents).
+  - Other 10 instruments: 0 bars with $High < Low$.
+- **Zero or NaN Prices:** 0 occurrences across all 12 instruments.
+- **Stale Closes (Identical consecutive closes):** Occurred on 0 to 39 bars per symbol across 20+ years (typical of quiet holiday market sessions).
+- **Large Price Jumps ($|Close_t - Close_{t-1}| > 6 \times ATR_{20}$):**
+  - XAUUSD: 2 instances (notably 2013-04-15 historic gold flash crash).
+  - XAGUSD: 4 instances (notably 2013-04-15 silver crash and 2006/2007/2016 volatility events).
+  - EURUSD: 4 instances (2008 GFC volatility spikes).
+  - USDJPY: 2 instances (2008 GFC volatility spikes).
+  - USDCHF: 1 instance (2015-01-15 SNB EURCHF peg removal).
+  - Brent (`BZ=F`): 0 instances $> 6 \times ATR_{20}$.
+  - US500, GER40, NDX, AUDUSD, USDCAD, GBPUSD: 0 instances $> 6 \times ATR_{20}$.
+
+### 4.2 Data Sanitization & Roll Handling Rules (Frozen)
+1. **Geometric Bar Sanitization Invariant:** For all bars loaded into the engine, True High and True Low are strictly enforced:
+   $$\text{High}_t = \max(\text{High}_t, \text{Open}_t, \text{Close}_t)$$
+   $$\text{Low}_t = \min(\text{Low}_t, \text{Open}_t, \text{Close}_t)$$
+2. **Continuous Futures Roll Handling:** Yahoo Finance continuous contracts (`GC=F`, `SI=F`, `BZ=F`) reflect front-month pricing. Because back-adjusted ratio series are not provided by free public feeds without proprietary vendor licensing, roll discontinuities are evaluated under standard gap rules: if a roll gap breaches a stop loss, the fill occurs at the bar's Open, applying full gap slippage.
 
 ---
 
-## 4. Trend Rules (3 Pre-Registered Specifications)
+## 5. Sample Window, Sub-Periods & Statistical Power
 
-### Rule T1: Donchian Channel Breakout (Classic Turtle)
-- **Entry Long:** Bar $t$ Close $> \max(\text{High}_{t-55}, \dots, \text{High}_{t-1})$. Enter Long at Bar $t+1$ Open.
-- **Entry Short:** Bar $t$ Close $< \min(\text{Low}_{t-55}, \dots, \text{Low}_{t-1})$. Enter Short at Bar $t+1$ Open.
+1. **Primary Evaluation Sample:** Each market's full available history from **first date + 1 year warm-up (252 trading bars) through 2025-12-31**.
+   - For assets starting 2001 (XAUUSD, XAGUSD, USDJPY, US500, GER40, NDX): starts late 2002.
+   - For assets starting 2003 (EURUSD, GBPUSD, USDCAD, USDCHF): starts late 2004.
+   - For AUDUSD (starts 2006): starts mid-2007.
+   - For Brent (starts mid-2007): starts mid-2008.
+2. **Sub-Periods:**
+   - `Earliest–2009`: Report-only baseline.
+   - `2010–2017`: Core sub-period (Gate 5 evaluation).
+   - `2018–2025`: Core sub-period (Gate 5 evaluation).
+3. **Statistical Power Labeling ($N < 200$):**
+   - If a test sample has $N < 200$, it is explicitly flagged with `[FLAG: N < 200, UNDERPOWERED]`. This denotes that the statistical test lacks statistical power to detect modest effect sizes, rather than affirmative evidence against edge.
+4. **Expected Trade Counts:**
+   - For T1 Donchian: expected $\approx 40\text{--}70$ trades per market over 16–23 years ($\approx 600\text{--}800$ pooled).
+   - For T2 SMA Cross: expected $\approx 15\text{--}30$ trades per market over 16–23 years ($\approx 250\text{--}350$ pooled).
+   - For T3 TSMOM: expected $\approx 15\text{--}35$ trades per market over 16–23 years ($\approx 250\text{--}350$ pooled).
+5. **Sealed 2026 Policy:** The data loader strictly hard-stops at **2025-12-31**. Data for 2026 remains completely unloaded until the sealed sanity-check step (executed only if a rule survives).
+
+---
+
+## 6. Trend Rules (3 Pre-Registered Specifications)
+
+### Rule T1: Donchian Channel Breakout (with Reset Condition)
+- **Signal:**
+  - Long if Bar $t$ Close $> \max(\text{High}_{t-55}, \dots, \text{High}_{t-1})$. Enter Long at Bar $t+1$ Open.
+  - Short if Bar $t$ Close $< \min(\text{Low}_{t-55}, \dots, \text{Low}_{t-1})$. Enter Short at Bar $t+1$ Open.
 - **Exit Channel:**
   - Long: Bar $t$ Close $< \min(\text{Low}_{t-20}, \dots, \text{Low}_{t-1})$. Exit at Bar $t+1$ Open.
   - Short: Bar $t$ Close $> \max(\text{High}_{t-20}, \dots, \text{High}_{t-1})$. Exit at Bar $t+1$ Open.
 - **Initial Stop Loss:** $2 \times \text{ATR}(20)$ at entry.
-  - Long Stop: $\text{Entry} - 2 \times \text{ATR}$
-  - Short Stop: $\text{Entry} + 2 \times \text{ATR}$
+- **Reset Condition (v1.1 Amendment):** **After a stop-out or channel exit, no new entry is permitted until the breakout condition has reset (a daily bar closing back inside the 55-day channel: $\text{Close} \le \text{High}_{55}$ for Longs, or $\text{Close} \ge \text{Low}_{55}$ for Shorts). Only after closing back inside the channel can a subsequent fresh breakout trigger a new trade.**
 - **Initial Risk Unit ($R$):** $R = 2 \times \text{ATR}(20)$.
 
 ### Rule T2: Moving Average Cross (Golden / Death Cross)
-- **Signal Regime:** SMA50 vs SMA200 on daily Closes.
-- **Entry Long:** Fresh bullish cross (SMA50 crosses above SMA200 at Bar $t$). Enter Long at Bar $t+1$ Open.
-- **Entry Short:** Fresh bearish cross (SMA50 crosses below SMA200 at Bar $t$). Enter Short at Bar $t+1$ Open.
-- **Exit:** Opposite cross (SMA50 crosses below SMA200 for Longs; SMA50 crosses above SMA200 for Shorts). Exit at Bar $t+1$ Open.
+- **Signal:** SMA50 vs SMA200 on daily Closes.
+- **Entry:** Fresh cross (SMA50 crosses above SMA200 for Long; crosses below for Short). Enter at Bar $t+1$ Open.
+- **Exit:** Opposite cross. Exit at Bar $t+1$ Open.
 - **Initial Stop Loss:** $3 \times \text{ATR}(20)$ at entry.
-  - Long Stop: $\text{Entry} - 3 \times \text{ATR}$
-  - Short Stop: $\text{Entry} + 3 \times \text{ATR}$
 - **Re-entry Gate:** **After a stop-out, wait for the next fresh cross.** No re-entries within the same moving-average regime.
 - **Initial Risk Unit ($R$):** $R = 3 \times \text{ATR}(20)$.
 
 ### Rule T3: Time-Series Momentum (TSMOM / 12-Month Sign)
-- **Evaluation Timing:** Calendar month-ends (last trading day of each month).
-- **Signal:** 252-day return sign:
-  $$\text{Ret}_{252} = \frac{C_{\text{month-end}} - C_{\text{month-end}-252}}{C_{\text{month-end}-252}}$$
-  - Long if $\text{Ret}_{252} > 0$
-  - Short if $\text{Ret}_{252} < 0$
-- **Holding Episode:** One trade per episode. Maintain position while the sign persists across consecutive month-ends.
-- **Exit:** When month-end sign reverses (e.g., from positive to negative), exit at next bar's Open.
+- **Evaluation Timing:** Calendar month-ends (last trading day of month).
+- **Signal:** Sign of 252-day return: $\text{Ret}_{252} = (C_t - C_{t-252}) / C_{t-252}$.
+  - Long if $\text{Ret}_{252} > 0$; Short if $\text{Ret}_{252} < 0$.
+- **Holding Episode:** One trade per episode. Hold while the sign persists across consecutive month-ends.
+- **Exit:** Opposite sign at month-end. Exit at Bar $t+1$ Open.
 - **Initial Stop Loss:** $3 \times \text{ATR}(20)$ at entry.
-- **Re-entry Gate:** If stopped out during an ongoing episode, the position remains flat until a new episode begins (upon sign flip).
+- **Re-entry Gate:** If stopped out during an episode, hold flat until a new episode begins upon sign flip.
 - **Initial Risk Unit ($R$):** $R = 3 \times \text{ATR}(20)$.
 
 ### Stop Execution Protocol (All Rules)
 - Daily stops are evaluated against each bar's High and Low.
-- **Conservative Same-Bar Rule:** Stop is checked first before profit exit.
-- **Gap Rule:** If the bar's Open gaps beyond the stop price, the fill occurs at the Open (pessimistic fill), capturing full gap slippage.
+- **Conservative Same-Bar Rule:** Stop is checked first before profit/channel exits.
+- **Gap Rule:** If the bar's Open gaps beyond the stop price, fill at the Open (pessimistic fill).
 
 ---
 
-## 5. Frozen Cost & Friction Model
+## 7. Frozen Cost & Friction Model
 
-### 5.1 Spread Table (Frozen with $1.5\times$ Safety Margin)
-Spreads are fixed per instrument with an explicit $1.5\times$ institutional safety multiplier applied to typical market spreads:
-
-| Instrument | Typical Spread | Safety Multiplier | Frozen Base Spread | Spread Units |
+### 7.1 Spread Table (Frozen with $1.5\times$ Safety Multiplier)
+| Instrument | Base Typical Spread | Multiplier | Frozen Base Spread | Spread Units |
 | :--- | :--- | :--- | :--- | :--- |
-| **EURUSD** | 0.00010 (1.0 pip) | $1.5\times$ | **0.00015** (1.5 pips) | Price |
-| **GBPUSD** | 0.00012 (1.2 pips) | $1.5\times$ | **0.00018** (1.8 pips) | Price |
-| **USDJPY** | 0.010 (1.0 pip) | $1.5\times$ | **0.015** (1.5 pips) | Price |
-| **AUDUSD** | 0.00012 (1.2 pips) | $1.5\times$ | **0.00018** (1.8 pips) | Price |
-| **USDCAD** | 0.00015 (1.5 pips) | $1.5\times$ | **0.000225** (2.25 pips) | Price |
-| **USDCHF** | 0.00015 (1.5 pips) | $1.5\times$ | **0.000225** (2.25 pips) | Price |
+| **EURUSD** | 0.00010 (1.0 pip) | $1.5\times$ | **0.00015** | Price |
+| **GBPUSD** | 0.00012 (1.2 pips) | $1.5\times$ | **0.00018** | Price |
+| **USDJPY** | 0.010 (1.0 pip) | $1.5\times$ | **0.015** | Price |
+| **AUDUSD** | 0.00012 (1.2 pips) | $1.5\times$ | **0.00018** | Price |
+| **USDCAD** | 0.00015 (1.5 pips) | $1.5\times$ | **0.000225** | Price |
+| **USDCHF** | 0.00015 (1.5 pips) | $1.5\times$ | **0.000225** | Price |
 | **XAUUSD** | $0.25 | $1.5\times$ | **$0.375** | USD/oz |
 | **XAGUSD** | $0.020 | $1.5\times$ | **$0.030** | USD/oz |
 | **US500** | 0.50 pts | $1.5\times$ | **0.75 pts** | Index pts |
@@ -132,57 +173,34 @@ Spreads are fixed per instrument with an explicit $1.5\times$ institutional safe
 | **Brent** | $0.04 | $1.5\times$ | **$0.06** | USD/bbl |
 | **NDX** | 1.50 pts | $1.5\times$ | **2.25 pts** | Index pts |
 
-### 5.2 Stop Slippage
-- Orders exiting via Stop-Loss incur an extra **$0.5 \times \text{spread}$** slippage penalty beyond the exit spread.
+### 7.2 Stop Slippage
+Orders exiting via Stop-Loss incur an extra **$0.5 \times \text{spread}$** slippage penalty.
 
-### 5.3 Financing / Overnight Carry Drag
-- **Primary Rate:** **2.0% per annum** of notional value on every day held, charged symmetrically on both Long and Short positions.
-- **Sensitivity Scenarios:**
-  1. Financing at **0.0%** per annum.
-  2. Financing at **4.0%** per annum.
-  3. Spread at **$2.0\times$** baseline.
+### 7.3 Financing / Overnight Carry Drag
+- **Primary Rate:** **2.0% per annum** of notional value on every calendar day held, charged symmetrically on both Long and Short positions.
+- **Sensitivities:** 0% financing, 4% financing, and Spread $2\times$ baseline.
 
-### 5.4 Unified R-Normalized Drag Formulation
-For a trade with entry price $P_{\text{entry}}$, stop distance $D_{\text{stop}}$, and holding duration of $H$ calendar days:
-$$\text{Gross } R = \begin{cases} \frac{P_{\text{exit}} - P_{\text{entry}}}{D_{\text{stop}}} & \text{(Long)} \\ \frac{P_{\text{entry}} - P_{\text{exit}}}{D_{\text{stop}}} & \text{(Short)} \end{cases}$$
-$$\text{Drag}_{\text{spread}} = \frac{\text{Spread}}{D_{\text{stop}}}$$
-$$\text{Drag}_{\text{slippage}} = \begin{cases} \frac{0.5 \times \text{Spread}}{D_{\text{stop}}} & \text{if exit is Stop Loss} \\ 0 & \text{otherwise} \end{cases}$$
-$$\text{Drag}_{\text{financing}} = \frac{P_{\text{entry}}}{D_{\text{stop}}} \times r_{\text{annual}} \times \frac{H}{365.0}$$
+### 7.4 Formulas
+$$\text{Drag}_{\text{spread}} = \frac{\text{Spread}}{D_{\text{stop}}}, \quad \text{Drag}_{\text{slippage}} = \frac{0.5 \times \text{Spread}}{D_{\text{stop}}} \ (\text{if stop}), \quad \text{Drag}_{\text{financing}} = \frac{P_{\text{entry}}}{D_{\text{stop}}} \times r \times \frac{H}{365.0}$$
 $$\text{Net } R = \text{Gross } R - \text{Drag}_{\text{spread}} - \text{Drag}_{\text{slippage}} - \text{Drag}_{\text{financing}}$$
 
-Gross and Net $R$ are reported side-by-side in all study outputs.
+---
+
+## 8. Statistical Inference & Null Models
+
+1. **Calendar Month Block Bootstrap:**
+   - Resampling unit: Calendar exit month blocks across all markets simultaneously.
+   - Resamples: **10,000 bootstrap iterations**.
+   - Hypothesis: One-sided $p$-value for $H_0: \mathbb{E}[\text{Net } R] \le 0$.
+   - Correction: **Holm-Bonferroni correction** across the 3 rules at $\alpha_{\text{family}} = 0.05$.
+   - Confidence Intervals: 95% bootstrap percentile intervals $[2.5\%, 97.5\%]$.
+2. **Null Distributions (Fixed Seed = 42, Iterations $\ge 2,000$):**
+   - **Null A (Drift-Matched Random Entry):** Random entry date in same market, SAME direction, same stop multiple, same duration, same costs.
+   - **Null B (Direction Shuffle):** Real entry dates, random 50/50 direction, same stop multiple, same durations, same costs.
 
 ---
 
-## 6. Statistical Inference & Null Models
-
-### 6.1 Calendar Month Block Bootstrap
-- Trades across all markets are mapped to their exit calendar month $(Y, M)$.
-- Resampling unit: Entire calendar month blocks (preserving contemporaneous cross-market correlation).
-- Resamples: **10,000 bootstrap iterations**.
-- Statistic: Mean Net $R$.
-- Hypothesis Test: One-sided $p$-value for $H_0: \mathbb{E}[\text{Net } R] \le 0$:
-  $$p = \frac{1}{B} \sum_{b=1}^B \mathbb{I}(\overline{\text{Net } R}^{(b)} \le 0)$$
-- Multiple Testing Adjustment: **Holm-Bonferroni correction** across the 3 rules at $\alpha_{\text{family}} = 0.05$.
-- Confidence Interval: Two-sided $95\%$ bootstrap percentile interval $[2.5\%, 97.5\%]$.
-
-### 6.2 Null Distributions (Fixed Seed = 42, Iterations $\ge 2,000$)
-1. **Null A (Drift-Matched Random Entry):**
-   - For every real trade in market $M$ with direction $D$, stop multiple $S$, and duration $H$:
-   - Draw a random entry date $t_{\text{rand}}$ from market $M$.
-   - Enter in the **same** direction $D$, with stop distance $S \times \text{ATR}(t_{\text{rand}})$.
-   - Simulate for holding duration $H$ (or until stop is triggered).
-   - Apply identical cost, slippage, and financing functions.
-   - Compute mean Net $R$ across trades for each iteration.
-2. **Null B (Direction Shuffle):**
-   - For every real trade, retain the exact entry date, market, duration, and stop multiple.
-   - Randomly assign direction (Long vs Short, $p=0.50$).
-   - Apply identical stop logic, duration, and cost functions.
-   - Compute mean Net $R$ across trades for each iteration.
-
----
-
-## 7. Pre-Registered Acceptance Gates (Survival Criteria)
+## 9. Pre-Registered Acceptance Gates (Survival Criteria)
 
 A rule is declared an empirical **SURVIVOR** if and only if **ALL FIVE** conditions are satisfied:
 1. **Sample Size:** $N \ge 200$ pooled trades across the universe.
@@ -190,26 +208,24 @@ A rule is declared an empirical **SURVIVOR** if and only if **ALL FIVE** conditi
 3. **Statistical Significance:** Holm-adjusted bootstrap $p$-value $< 0.05$.
 4. **Superiority over Nulls:** Real Mean Net $R \ge$ 95th percentile of Null A **AND** 95th percentile of Null B.
 5. **Sub-Period & Breadth Robustness:**
-   - Mean Net $R > 0$ in Sub-period 1 (2010–2017), AND
-   - Mean Net $R > 0$ in Sub-period 2 (2018–2025), AND
+   - Mean Net $R > 0$ in Sub-period 2010–2017, AND
+   - Mean Net $R > 0$ in Sub-period 2018–2025, AND
    - Mean Net $R > 0$ in Ex-Metals sample (excluding XAUUSD and XAGUSD).
 
-**Default Verdict:** If no rule satisfies all five criteria, the outcome is formally and unambiguously recorded as:
+**Default Verdict:** If no rule satisfies all five criteria:
 > **"INCONCLUSIVE: NO EDGE DEMONSTRATED"**  
-No ad-hoc parameter searches, post-hoc filtering, or further optimization permitted.
+No ad-hoc parameter tuning, indicator fitting, or post-hoc filtering permitted.
 
 ---
 
-## 8. Sealed 2026 Out-of-Sample Sanity Check
+## 10. Bug Policy, Audit & Reporting Mandates
 
-- Only if a rule satisfies all 5 acceptance gates will 2026 data (2026-01-01 to latest) be loaded.
-- Evaluated once as a sanity check reporting $N_{2026}$ and Net $R_{2026}$.
-- If no rule survives, 2026 remains strictly sealed.
-
----
-
-## 9. Verification & Audit Protocol
-
-1. **Deterministic Hand-Traces:** 5 trades per rule explicitly audited against raw daily bars, showing exact bar dates, OHLC, indicator values, stop fills, exit channels, and full dollar / $R$ fee decompositions.
-2. **Independent Recomputation:** Standalone verification script (`verify_trend.py`) reads trade CSVs directly and recomputes all summary tables, bootstrap metrics, and gate outcomes.
-3. **Preregistration Commitment:** The SHA-256 hash of this document and its Git commit hash are recorded into all generated output tables, reports, and logs.
+1. **Bug & Re-Run Policy:** If any software bug or pipeline flaw is discovered, the fix must be documented in git, and the **ENTIRE pre-registered battery across all 12 markets must be re-run from scratch**. Selective re-running of individual rules or markets is forbidden. A run counter (`run_number`) must be incremented and recorded in all metadata.
+2. **Deterministic Hand-Traces:** 5 trades per rule audited against raw daily bars.
+3. **Report-Only Disaggregations:**
+   - By-market breakdown (12 markets)
+   - By-side breakdown (Long vs Short)
+   - Spread $2\times$ sensitivity
+   - Financing rate sensitivities (0%, 2%, 4% for every rule)
+   - Equal-risk portfolio equity curve and maximum drawdown in $R$
+4. **Script-Generated Final Report:** `research/trend/FINAL_REPORT.md` must be generated by script from the JSON/CSV result files with zero hand-typed numbers, accompanied by a test that asserts every number in the markdown matches the result files bit-for-bit.
