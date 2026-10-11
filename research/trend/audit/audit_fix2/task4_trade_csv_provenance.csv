@@ -1,0 +1,13 @@
+path,commit,mtime,sha256_short,N,sum_net_r_0,long_N,long_mean_0,short_N,short_mean_0
+research/trend/output/T1_DONCHIAN_trades.csv,untracked,2026-10-11 12:56:48 UTC,bc9830870d13,1025,+167.4565,580,+0.3415,445,-0.0688
+research/trend/output/T2_SMA_CROSS_trades.csv,untracked,2026-10-11 12:56:48 UTC,a99e3b0a97c8,374,+211.3690,189,+1.1395,185,-0.0216
+research/trend/output/T3_TSMOM_trades.csv,untracked,2026-10-11 12:56:48 UTC,082c7697ca99,377,+288.8671,191,+1.4148,186,+0.1002
+research/trend/output_fxfixed/T1_DONCHIAN_trades.csv,ad4f432,2026-10-11 13:35:07 UTC,f693d0381e11,1025,+167.4565,580,+0.3415,445,-0.0688
+research/trend/output_fxfixed/T2_SMA_CROSS_trades.csv,ad4f432,2026-10-11 13:35:07 UTC,21a44019b492,374,+211.3690,189,+1.1395,185,-0.0216
+research/trend/output_fxfixed/T3_TSMOM_trades.csv,ad4f432,2026-10-11 13:35:07 UTC,14955f8efaef,373,+294.7467,189,+1.4675,184,+0.0945
+research/trend/output_stopfixed/T1_DONCHIAN_trades.csv,4f68a3d,2026-10-11 15:41:01 UTC,f693d0381e11,1025,+167.4565,580,+0.3415,445,-0.0688
+research/trend/output_stopfixed/T2_SMA_CROSS_trades.csv,4f68a3d,2026-10-11 15:41:01 UTC,21a44019b492,374,+211.3690,189,+1.1395,185,-0.0216
+research/trend/output_stopfixed/T3_TSMOM_trades.csv,4f68a3d,2026-10-11 15:41:01 UTC,8a5470196a95,373,+275.2559,189,+1.4675,184,-0.0115
+research/trend/output_fix2/T1_DONCHIAN_trades.csv,untracked,2026-10-11 16:19:55 UTC,f693d0381e11,1025,+167.4565,580,+0.3415,445,-0.0688
+research/trend/output_fix2/T2_SMA_CROSS_trades.csv,untracked,2026-10-11 16:19:55 UTC,21a44019b492,374,+211.3690,189,+1.1395,185,-0.0216
+research/trend/output_fix2/T3_TSMOM_trades.csv,untracked,2026-10-11 16:19:55 UTC,8a5470196a95,373,+275.2559,189,+1.4675,184,-0.0115
