@@ -57,6 +57,7 @@ def run_forward_day(
     flat_start_date: dt.date | None = None,
     db_path: Path = TREND_DB_PATH,
     bars_db_path: Path = BARS_DB_PATH,
+    current_time: dt.datetime | None = None,
 ) -> dict[str, Any]:
     """Execute forward daily paper test up through as_of_date.
 
@@ -72,7 +73,7 @@ def run_forward_day(
     # Pre-load all bars up through as_of_date
     bars_by_sym: dict[str, list[DailyBar]] = {}
     for sym in SYMBOLS:
-        bars = load_bars_from_db(sym, as_of_date=as_of_date, db_path=bars_db_path)
+        bars = load_bars_from_db(sym, as_of_date=as_of_date, db_path=bars_db_path, current_time=current_time)
         bars_by_sym[sym] = bars
 
     # If as_of_date is not specified, derive from the latest available bar date across markets

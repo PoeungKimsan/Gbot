@@ -70,9 +70,9 @@ def fetch_and_store_bars(
                 bar_dt = dt.datetime.fromtimestamp(ts, tz)
                 bar_date = bar_dt.date()
 
-                # Invariant: Never use a bar that is not yet complete
-                # An incomplete bar is one timestamped on today's current date before session close
-                if bar_date >= today_utc:
+                # Invariant: Never use a bar that is not yet complete in its exchange timezone
+                now_tz = now_utc.astimezone(tz)
+                if bar_date >= now_tz.date():
                     continue
                 if as_of_date and bar_date > as_of_date:
                     continue
@@ -172,6 +172,7 @@ def load_bars_from_db(
     symbol: str,
     as_of_date: dt.date | None = None,
     db_path: Path = BARS_DB_PATH,
+    current_time: dt.datetime | None = None,
 ) -> list[DailyBar]:
     """Load bars from SQLite, sanitize, and compute Wilder ATR20, SMA50, SMA200, Donchian channels."""
     init_bars_db(db_path)
@@ -187,6 +188,16 @@ def load_bars_from_db(
 
     if not rows:
         return []
+
+    # Invariant: drop any bar not yet complete in symbol's own exchange timezone
+    meta = TICKERS_MAP.get(symbol)
+    if meta:
+        tz = zoneinfo.ZoneInfo(meta["exchange_tz"])
+        now_in_tz = current_time.astimezone(tz) if current_time else dt.datetime.now(tz)
+        today_in_tz = now_in_tz.date()
+        rows = [r for r in rows if dt.date.fromisoformat(r["date"]) < today_in_tz]
+        if not rows:
+            return []
 
     n = len(rows)
     dates = [dt.date.fromisoformat(r["date"]) for r in rows]
