@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 This file is the authoritative operating guide for any AI agent or human contributor working on
 this repository. Read it fully before writing code. When this file conflicts with a request,
@@ -122,8 +122,105 @@ connections). Dependencies flow inward toward `domain/`.
 
 ## 4. Current State
 
-> **CURRENT ACTIVE PHASE: Phase 5 (Runtime Supervisor, Control Plane & Projections)**
+> **CURRENT ACTIVE PHASE: Phase 8 (Fault Injection & Soak Validation)**
 
+Phase 8 scope, and only Phase 8 scope:
+
+- `engine/tests/test_fault_injection.py`: six recovery drills, each one an operator story
+  with a machine-checkable ending. A harness child process runs a real supervisor over a
+  real journal and is `SIGKILL`ed, after which the parent verifies the hash chain over
+  whatever committed and restores both the open position and the latched kill-switch from
+  journal events alone. The same harness, sent `SIGTERM` instead, must drain the queue
+  inside the ten-second budget. A 500 ms stall injected into the writer thread's `commit`
+  must not stall the event loop — measured as the wall-clock span between the first and
+  last quote the loop accepted. Quote silence past `STALE_AFTER` forbids entry emission,
+  asserted differentially against the full stream. An HTTP 429 on the advisory scrape is a
+  warning, not a halt. A genuinely saturated bounded queue exits 70, and the engine unit's
+  `RestartPreventExitStatus` is read to prove systemd will not restart into it.
+- `scripts/soak_report.py`: event counts by type, write-latency distribution from the row's
+  own two timestamps, WAL dimensions, `verify_chain()` over the whole journal, and bar
+  continuity from the `bars` counter. Opens the journal `mode=ro`, so a report can be
+  produced while the engine is committing.
+- `engine/tests/deploy/test_soak_report.py`: machine coverage for every summary.
+
+**Phase 8 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `engine/tests/test_fault_injection.py` | a `SIGKILL`ed child leaves a valid hash chain and journal events sufficient to restore the open position and the latched kill-switch; `SIGTERM` and the control-plane `SHUTDOWN` both reach the same drain, with the queue empty and committed == rows, inside the budget |
+| `engine/tests/test_fault_injection.py` | a 500 ms commit stall backs the *queue* up, not the event loop: the quote-delivery span stays under a second while the writer falls behind, and every event still lands with a valid chain |
+| `engine/tests/test_fault_injection.py` | quote silence past `STALE_AFTER` is reported stale at eleven seconds and not at nine, a live heartbeat contradicts quote silence, and a truncated feed emits a strict prefix of the full one's orders |
+| `engine/tests/test_fault_injection.py` | a throttled advisory source logs a warning and the FRED-confirmed events survive; it never creates a blackout |
+| `engine/tests/test_fault_injection.py` | a real bounded queue really overflows through `put_nowait`, `JournalExhausted` escapes, and the run returns 70 — and `xauusd-engine.service` names 70 in `RestartPreventExitStatus` |
+| `scripts/soak_report.py` | a broken chain is reported as broken rather than raised; an unparseable `created_at` is skipped rather than counted as zero latency; bar gaps and regressions are surfaced, not averaged away |
+
+**Not in Phase 8:** a live soak run. Soak validation is confirmed manually on the deployed
+host; this phase ships the drills and the report that make the confirmation meaningful.
+
+*Update this section before starting any new phase.*
+
+---
+
+### Phase 7 (Deployment & Operations) — COMPLETE
+Phase 7 scope, and only Phase 7 scope:
+
+- `systemd/`: four units and one timer. `xauusd-engine` (Type=notify, `xauusd-engine` /
+  `xauusd-journal`, UMask 0007, RestartPreventExitStatus 70 78, WatchdogSec 60,
+  TimeoutStopSec 15, StateDirectory `xauusd/journal` 0770), `xauusd-publisher`
+  (`xauusd-pub` / `xauusd-proj` + `xauusd-journal`, UMask 0027, StateDirectory
+  `xauusd/projection` 0750, ReadOnlyPaths journal / ReadWritePaths projection),
+  `xauusd-web` (`xauusd-web`, `xauusd-proj`, uvicorn on 127.0.0.1:8080), and
+  `xauusd-backup.service` + `.timer` for the nightly fold of `scripts/backup.py`.
+- `scripts/backup.py`: `VACUUM INTO` a consistent copy, `PRAGMA integrity_check` it,
+  verify the row-level hash chain over the copy, and rotate past 14 days keyed on the
+  filename rather than the mtime. A copy that fails either check is deleted.
+- `scripts/publish_loop.py`: the publisher's process. Phase 5 shipped a library; a unit
+  needs something to exec.
+- `scripts/make_release.sh`: a reproducible tarball of the code plus the built `web/dist`,
+  with a `.sha256`. `scripts/deploy_ubuntu.sh`: extract, `uv sync --frozen --no-dev` into
+  `/opt/xauusd/python`, run the gates, repoint `/opt/xauusd/app`, reload and restart.
+- `docs/DEPLOYMENT.md`: the host contract, the account/group layout, the release and
+  rollback procedure, and the three things the shipped engine refuses to do that the
+  deployment currently works around rather than fixes.
+
+**Phase 7 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `engine/tests/deploy/test_systemd_units.py` | every directive the brief specified is present; the web unit is **not** in `xauusd-journal`; only the engine, the publisher and the backup touch the journal; every unit is `ProtectSystem=strict` and `NoNewPrivileges=yes` |
+| `scripts/backup.py` | a copy failing `integrity_check` or the hash chain is deleted, not retained — including when the failure arrives by a route the validators do not expect; the journal is never opened for writing; rotation is boundary-exact and keyed on the filename, not the mtime |
+| `scripts/publish_loop.py` | a missing journal is waited on rather than exited over; a relative projection path is refused; a stop signal arriving *during* a fold still stops the process (the reason `_Stop` is a `BaseException`) |
+| `scripts/deploy_ubuntu.sh` | the gates run before the symlink is repointed — asserted against the *commands*, not against the header comment that also mentions `ln -sfn` |
+| `.github/workflows/ci.yml` | the `deploy` job creates the three accounts and two groups, then `systemd-analyze verify`s all five units on every push |
+
+**Not in Phase 7:** the live OANDA feed, and any change to `engine/` or `api/`. The engine
+still refuses to start without an injected quote source, and the deployment records that
+consequence rather than editing the engine to hide it. See `docs/DEPLOYMENT.md` §4.
+
+---
+
+### Phase 6 (Web Dashboard) — COMPLETE
+**Phase 6 outcomes and the invariants that now have machine coverage:**
+
+| Module | Invariant enforced by tests |
+| --- | --- |
+| `web/src/content/disclosure.ts` | the notice is the file on disk byte for byte; a missing or an empty disclosure fails `vite build` with a named error (verified against missing, empty and whitespace-only) |
+| `web/src/components/Disclosure.tsx` | the disclosure renders verbatim inside **every** performance panel — the hero panel and the expectancy island, in the full, insufficient-sample and no-metrics variants alike |
+| `web/src/components/PerformancePanel.tsx` | `N < 30` prints `INSUFFICIENT DATA (<30 TRADES)` and no bounds, in both panels; at or above 30 it prints the bounds and drops the notice; a payload claiming `COMPLETE` over twelve trades is not believed |
+| `web/src/components/StatusHeader.tsx` | the stale banner appears at 31 s and not at 30 s, and follows the component's own clock rather than the render |
+| `web/src/components/TradeTape.tsx` | stop loss, take profit and slippage render `NOT PUBLISHED BY THIS ENGINE BUILD` for every row against today's `trades.json`, and never a zero |
+| `web/src/api/client.ts` | every request is a relative `/api/*` path — an absolute URL would fail the suite |
+| `web/src/api/contract.ts` | a field the payload does not carry is `null`, never a zero, a default or an empty string |
+| `web/src/lib/decimal.ts` | `20_097_500` ticks at `$0.01` renders `$200,975.00`, not `$200974.99999999997` |
+
+**Not in Phase 6:** engine or API changes. The missing snapshot fields live in
+`docs/PHASE_5X_SPEC.md` and belong to whoever owns `engine/publisher/outbox.py` next.
+
+*Update this section before starting any new phase.*
+
+---
+
+### Phase 5 (Runtime Supervisor, Control Plane & Projections) — COMPLETE
 Phase 5 scope, and only Phase 5 scope:
 
 - `runtime/signals.py`: cross-platform signal router. POSIX uses `loop.add_signal_handler`

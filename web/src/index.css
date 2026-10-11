@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist/index.css";
+@import "@fontsource-variable/plus-jakarta-sans/index.css";
+
+/*
+ * Supabase Minimalist Design Language (DESIGN-supabase.md)
+ *
+ * Quietly technical: minimal chrome, near-monochrome palette with signature
+ * emerald-green (#3ecf8e) as the only chromatic highlight on the page.
+ * Strictly NO neons, NO text gradients, and clean technical hairlines.
+ */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Geist Variable", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  /* Supabase Canonical Palette */
+  --color-primary: #3ecf8e;
+  --color-primary-deep: #24b47e;
+  --color-primary-soft: #4ade80;
+
+  /* Dark Canvas System */
+  --color-canvas-base: #121212;
+  --color-canvas-night: #1c1c1c;
+  --color-canvas-night-soft: #202020;
+  --color-canvas-night-lifted: #262626;
+
+  /* Inks & Borders */
+  --color-ink-primary: #ededed;
+  --color-ink-secondary: #9a9a9a;
+  --color-ink-mute: #707070;
+  --color-border-hairline: #282828;
+  --color-border-strong: #333333;
+
+  /* Functional alert colors */
+  --color-danger: #f43f5e;
+  --color-warning: #eab308;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: var(--color-canvas-base);
+    color: var(--color-ink-primary);
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  th,
+  td,
+  time,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: #3ecf8e;
+    color: #121212;
+  }
+}

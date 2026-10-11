@@ -14,6 +14,8 @@ dependencies = [
     "PyYAML",
     "numpy",
     "tzdata",
+    "metatrader5>=5.0.6231",
+    "websockets>=17.2",
 ]
 
 [dependency-groups]
@@ -108,3 +110,14 @@ select = [
 # controlled argv, which is not untrusted input.
 "scripts/**/*.py" = ["S105"]
 "engine/tests/runtime/test_xauusdctl.py" = ["S603"]
+
+# Phase 7 executes the repository's two shell scripts under `bash -n` and the deploy
+# script's refusal path. Both are the repository's own files at a path the test built,
+# on a controlled argv -- the same argument as test_xauusdctl.py above.
+"engine/tests/deploy/test_release_scripts.py" = ["S603"]
+
+# The fault-injection drills spawn a harness child process and hand it a stand-in control
+# token. Both are the repository's own code and the repository's own token-shaped value:
+# the drill is about crash recovery, not about the credential, so S105/S106/S107/S603 name
+# the *shape* of the pass, which is the point.
+"engine/tests/test_fault_injection.py" = ["S105", "S106", "S107", "S603"]

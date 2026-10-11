@@ -57,6 +57,57 @@ jobs:
       - run: uv sync --frozen
       - run: uv run ruff check .
 
+  # systemd units are verified on a real Linux host: systemd-analyze is not available on
+  # macOS or Windows runners, and the units are only ever run on Ubuntu. The accounts must
+  # exist for `User=`/`Group=` to resolve, so the job creates them.
+  deploy:
+    name: deploy (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+
+      # The three accounts and two groups the units and the deploy script require.
+      # systemd-analyze treats an unknown User= as an error, so they have to exist first.
+      - name: Create the deployment accounts and groups
+        run: |
+          set -euo pipefail
+          for group in xauusd-journal xauusd-proj; do
+            getent group "$group" >/dev/null || groupadd --system "$group"
+          done
+          for user in xauusd-engine xauusd-pub xauusd-web; do
+            id -u "$user" >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin "$user"
+          done
+          # The publisher runs as xauusd-pub in both groups; the web user in one.
+          usermod --append --groups xauusd-journal xauusd-pub
+          usermod --append --groups xauusd-proj xauusd-pub
+          usermod --append --groups xauusd-proj xauusd-web
+
+      - name: Verify units with systemd-analyze
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086
+          systemd-analyze verify systemd/xauusd-*.service systemd/xauusd-*.timer
+
+      - name: Check the deployment scripts
+        run: |
+          set -euo pipefail
+          bash -n scripts/make_release.sh
+          bash -n scripts/deploy_ubuntu.sh
+          test -x scripts/make_release.sh || { echo "make_release.sh is not executable"; exit 1; }
+          test -x scripts/deploy_ubuntu.sh || { echo "deploy_ubuntu.sh is not executable"; exit 1; }
+
+      - name: Unit tests for the deployment
+        run: uv run pytest engine/tests/deploy -m "not slow"
+
+      - name: Fault-injection drills
+        # The POSIX-only drills skip on Windows but run here: the hard-crash drill needs a
+        # real SIGKILL, and CI is the only place this repository has one.
+        run: uv run pytest engine/tests/test_fault_injection.py -m "not slow"
+
   web:
     name: web (ubuntu-latest)
     # No dashboard yet: this job stays dormant until web/package.json exists.

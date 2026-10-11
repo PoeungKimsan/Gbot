@@ -1,0 +1,40 @@
+[Unit]
+Description=XAUUSD journal backup — VACUUM INTO, integrity check, hash-chain verification
+Documentation=https://github.com/xauusd/xauusd-lab
+# The backup is the only process that needs the journal *and* a writable backup directory,
+# so it carries both memberships rather than borrowing a running service's.
+After=xauusd-engine.service
+
+[Service]
+Type=oneshot
+User=xauusd-pub
+Group=xauusd-proj
+SupplementaryGroups=xauusd-journal
+UMask=0027
+
+EnvironmentFile=/etc/xauusd/prod.env
+WorkingDirectory=/opt/xauusd/app
+ExecStart=/opt/xauusd/app/.venv/bin/python /opt/xauusd/app/scripts/backup.py
+
+# A backup that fails must not restart: the nightly timer will run it again, and a retry
+# loop against a journal the reader cannot lock is a way to turn a bad night into a worse
+# one.
+Restart=no
+
+StateDirectory=xauusd/backups
+StateDirectoryMode=0750
+
+ReadOnlyPaths=/var/lib/xauusd/journal
+ReadWritePaths=/var/lib/xauusd/backups
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictSUIDSGID=yes
+# A VACUUM INTO of a live WAL journal can take longer than the default resource ceiling.
+TimeoutStartSec=900
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xauusd-backup

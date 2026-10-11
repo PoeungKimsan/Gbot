@@ -1,0 +1,46 @@
+[Unit]
+Description=XAUUSD engine — ICT strategy, pessimistic fills, hash-chained journal
+Documentation=https://github.com/xauusd/xauusd-lab
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=xauusd-engine
+Group=xauusd-journal
+UMask=0007
+
+EnvironmentFile=/etc/xauusd/prod.env
+WorkingDirectory=/opt/xauusd/app
+ExecStart=/opt/xauusd/app/.venv/bin/python -m engine.runtime.supervisor
+
+# 70 is EX_SOFTWARE: the journal could not accept an event, so the engine has history it
+# cannot finish. 78 is EX_CONFIG: a gate or a config document refused the host. Restarting
+# into either loses or duplicates work, so both are refused rather than retried — which is
+# precisely what AGENTS.md 2.2 and the runtime gates were designed to make distinguishable.
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=70 78
+
+# The supervisor beats the loop and pings systemd only while the event loop, the journal
+# worker thread and the bounded queue are all healthy, so a withheld ping is the signal.
+WatchdogSec=60
+# Phase 5's graceful stop drains the write queue inside 10s; 15 leaves headroom for the
+# unit's own teardown without hanging a systemd stop job.
+TimeoutStopSec=15
+
+StateDirectory=xauusd/journal
+StateDirectoryMode=0770
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xauusd-engine
+
+[Install]
+WantedBy=multi-user.target

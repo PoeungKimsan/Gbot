@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <!-- A dashboard of a live trading engine is not something to index. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="Read-only projection of the XAUUSD engine journal. Simulated / paper trading."
+    />
+    <title>XAUUSD Engine — Simulated / Paper Trading</title>
+    <style>
+      /* Painted before the bundle loads so the first frame is the OLED black field and
+         not a white flash. */
+      html {
+        background-color: #050505;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      This dashboard is a read-only React projection of the trading journal and needs
+      JavaScript to render. Simulated / paper trading.
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

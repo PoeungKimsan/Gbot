@@ -1,0 +1,39 @@
+[Unit]
+Description=XAUUSD dashboard API — read-only HTTP projection of the journal
+Documentation=https://github.com/xauusd/xauusd-lab
+After=xauusd-publisher.service
+Wants=xauusd-publisher.service
+
+[Service]
+Type=simple
+User=xauusd-web
+Group=xauusd-web
+# Reads the projection. Deliberately *not* in xauusd-journal: the dashboard has no path to
+# the trading database at all, which is the property the Phase 5 test suite asserts by
+# deleting journal.db and watching every endpoint still answer 200.
+SupplementaryGroups=xauusd-proj
+UMask=0027
+
+EnvironmentFile=/etc/xauusd/prod.env
+WorkingDirectory=/opt/xauusd/app
+ExecStart=/opt/xauusd/app/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8080
+
+Restart=on-failure
+RestartSec=5
+
+# Everything the dashboard serves is read-only to it: the projection it serves, the
+# `web/dist` bundle it mounts (when present), and the code it was deployed from.
+ReadOnlyPaths=/var/lib/xauusd/projection
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictSUIDSGID=yes
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xauusd-web
+
+[Install]
+WantedBy=multi-user.target

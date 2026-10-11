@@ -28,6 +28,7 @@ import asyncio
 import datetime as dt
 import logging
 import os
+import sys
 import time
 import uuid
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 from engine.domain.events import DomainEvent, EventType
+from engine.journal.schema import ChainError
 from engine.journal.writer import EXIT_JOURNAL_EXHAUSTED as _WRITER_EXIT_JOURNAL
 from engine.journal.writer import JournalExhausted, JournalWriter
 from engine.market.builder import BarAggregator, BarBuilder
@@ -48,7 +50,8 @@ from engine.risk.decimal_yaml import DecimalYamlError, load_decimal_yaml
 from engine.risk.killswitch import KillSwitch
 from engine.risk.sizing import size_position
 from engine.runtime.control import ControlServer
-from engine.runtime.gates import EXIT_BLOCKED, RuntimeGateError, run_all_gates
+from engine.runtime.gates import EXIT_BLOCKED as _GATES_EXIT_BLOCKED
+from engine.runtime.gates import RuntimeGateError, run_all_gates
 from engine.runtime.platform import (
     ControlPlaneError,
     ControlTokenError,
@@ -78,6 +81,9 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "EXIT_BLOCKED",
+    "EXIT_CLEAN",
+    "EXIT_CODES",
+    "EXIT_FEED_FAILED",
     "EXIT_JOURNAL_EXHAUSTED",
     "SHUTDOWN_BUDGET",
     "Supervisor",
@@ -86,12 +92,33 @@ __all__ = [
     "SupervisorSurface",
 ]
 
-#: Host/config failure. Re-exported from gates so a caller needs one import.
-EXIT_BLOCKED = EXIT_BLOCKED
-
-#: Journal exhaustion. Re-exported from the writer that raises it, so the exit code
-#: lives beside the condition it maps.
+# --------------------------------------------------------------------------- #
+# the exit-code contract
+# --------------------------------------------------------------------------- #
+#: One table, and every path through the supervisor returns a code from it.
+#:
+#: This exists because the codes used to be whatever each failure path happened to return: a
+#: dead feed returned 0 on the grounds that systemd should restart it, and an un-wired entry
+#: point returned 1 because ``SystemExit(message)`` defaults to 1. Each was defensible alone
+#: and wrong together — an operator reading ``systemctl status`` could not tell a clean stop
+#: from a crash.
+#:
+#: The distinction that matters operationally is 75 versus 0. 75 is *transient*: the feed
+#: died for a reason outside the engine, so a restart is worth trying. 0 means the engine did
+#: what it was told. That is why 75 must never join ``RestartPreventExitStatus`` — a
+#: preventable restart list is for losses, and a transient blip is not one.
+EXIT_CLEAN: Final[int] = 0
 EXIT_JOURNAL_EXHAUSTED: Final[int] = _WRITER_EXIT_JOURNAL
+EXIT_FEED_FAILED: Final[int] = 75
+EXIT_BLOCKED: Final[int] = _GATES_EXIT_BLOCKED
+
+#: The contract itself, exported so a test asserts the table rather than each caller.
+EXIT_CODES: Final[dict[str, int]] = {
+    "clean_stop": EXIT_CLEAN,
+    "journal_overflow_or_integrity_error": EXIT_JOURNAL_EXHAUSTED,
+    "feed_failed_after_retry_budget": EXIT_FEED_FAILED,
+    "host_or_configuration_failure": EXIT_BLOCKED,
+}
 
 #: The whole graceful shutdown has to finish inside this, whatever it is doing.
 SHUTDOWN_BUDGET: Final[dt.timedelta] = dt.timedelta(seconds=10)
@@ -311,6 +338,9 @@ class Supervisor:
         self._version = None
         self._paused = False
         self._stopping = False
+        # The cause of the last feed failure, if there was one. `run` classifies the stop
+        # from it: a failed feed is EX_TEMPFAIL, not a clean stop.
+        self._feed_failure: BaseException | None = None
         self._last_quote: Quote | None = None
         self._blocked_reason = ""
         self._equity = Decimal("100000")
@@ -510,11 +540,23 @@ class Supervisor:
     async def run(self) -> int:
         """Run the engine until it stops, and return the process exit code.
 
-        The two failure modes are deliberately nested rather than parallel: a *blocked*
-        start is 78 and nothing has been written, while an exhausted journal is 70 and
-        the engine has history it cannot finish. Both end with the same graceful stop,
-        because a journal that cannot accept an event still has events in flight.
+        Every failure mode returns a code from :data:`EXIT_CODES`, and the modes are nested
+        rather than parallel:
+
+        * a *blocked* start is 78 and nothing has been written, because ``_begin`` has not
+          opened the journal yet;
+        * an *exhausted* or *untrustworthy* journal is 70, because the engine has history it
+          cannot finish or cannot verify — and it still drains, because a journal that cannot
+          accept one event may have others in flight;
+        * a *failed feed* is 75, a transient failure the engine did not cause;
+        * anything else is a clean stop, which is 0.
+
+        All of them end in the same ``_end()``, so a caller cannot get a clean stop for the
+        wrong reason.
         """
+        # A feed failure is journalled and turned into a shutdown request by `_run_feed`;
+        # this method is what decides what the stop *meant*.
+        self._feed_failure = None
         try:
             try:
                 await self._begin()
@@ -522,12 +564,18 @@ class Supervisor:
                 logger.error("[engine] BLOCKED: %s", exc)
                 return EXIT_BLOCKED
             await self._run_feed()
-        except JournalExhausted as exc:
-            logger.error("[engine] journal exhausted: %s", exc)
+        except (JournalExhausted, ChainError) as exc:
+            # A queue that cannot accept an event and a chain that cannot be verified are
+            # both "the journal is unusable", and both are 70: restarting into either loses
+            # or duplicates history, which is why neither is 78.
+            logger.error("[engine] journal is unusable: %s", exc)
             return EXIT_JOURNAL_EXHAUSTED
         finally:
             await self._end()
-        return 0
+        if self._feed_failure is not None:
+            logger.error("[engine] feed failed: %s", self._feed_failure)
+            return EXIT_FEED_FAILED
+        return EXIT_CLEAN
 
     async def _run_watchdog(self) -> None:
         """Beat the loop, and ping only while everything is healthy.
@@ -607,9 +655,12 @@ class Supervisor:
             # feed's. Re-raised so ``run`` maps it to 70.
             raise
         except Exception as exc:
-            # The stream going away is a systemd problem, not an engine defect: the
-            # engine stops, drains, and exits 0 having recorded what happened.
+            # The stream going away is not an engine defect, but it is not a clean stop
+            # either. It is journalled as FEED_STATE_CHANGED, the shutdown is requested so the
+            # queue still drains, and the cause is recorded for `run` to classify — which is
+            # what makes it 75 instead of the 0 it used to be.
             logger.error("[engine] feed failed: %s", exc)
+            self._feed_failure = exc
             self._shutdown.request_shutdown("the feed failed")
             self._submit_now(
                 EventType.FEED_STATE_CHANGED,
@@ -964,10 +1015,15 @@ def _require_source() -> object:
     A supervisor without a quote stream would start, build bars out of nothing, and
     report a healthy day. Refusing loudly is the honest instruction.
     """
-    raise SystemExit(
+    # The message is written directly, and only the code is raised: `SystemExit(code,
+    # message)` exits **1** with the tuple printed, because a tuple is neither None (status 0)
+    # nor an integer (status = code). An unconfigured host must exit 78, not 1.
+    print(
         "xauusd-engine: no quote source was injected; the live OANDA feed is wired by "
-        "the phase that runs the engine, not by this module"
+        "the phase that runs the engine, not by this module",
+        file=sys.stderr,
     )
+    raise SystemExit(EXIT_BLOCKED)
 
 
 def _event_id(prefix: str) -> str:

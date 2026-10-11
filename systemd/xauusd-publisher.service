@@ -1,0 +1,48 @@
+[Unit]
+Description=XAUUSD projection publisher — folds the journal into atomic snapshots
+Documentation=https://github.com/xauusd/xauusd-lab
+# The publisher reads what the engine wrote, so it starts after it — but it is designed to
+# survive the engine dying underneath it: a snapshot the publisher cannot extend is simply
+# left as it was, and the API keeps serving the last whole document.
+After=xauusd-engine.service
+Wants=xauusd-engine.service
+
+[Service]
+Type=simple
+User=xauusd-pub
+Group=xauusd-proj
+# The journal is read-only here, and the membership that grants it is separate from the
+# one that grants the projection. The publisher is the only account in both.
+SupplementaryGroups=xauusd-journal
+UMask=0027
+
+EnvironmentFile=/etc/xauusd/prod.env
+WorkingDirectory=/opt/xauusd/app
+ExecStart=/opt/xauusd/app/.venv/bin/python /opt/xauusd/app/scripts/publish_loop.py
+
+Restart=on-failure
+RestartSec=5
+
+StateDirectory=xauusd/projection
+StateDirectoryMode=0750
+
+# Two separate paths, on purpose. The journal is readable and never written: the publisher
+# opens it `mode=ro` (engine/publisher/outbox.py), so a reader that takes a write lock is a
+# dashboard that can stop the trader. The projection is the only thing this unit writes.
+ReadOnlyPaths=/var/lib/xauusd/journal
+ReadWritePaths=/var/lib/xauusd/projection
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+# The publisher never needs to fork; a process that can fork is a process that can
+# accidentally inherit a lock.
+RestrictSUIDSGID=yes
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xauusd-publisher
+
+[Install]
+WantedBy=multi-user.target

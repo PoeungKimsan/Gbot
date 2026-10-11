@@ -1,4 +1,4 @@
-# Assumptions
+﻿# Assumptions
 
 Every judgement call made during Phase 0 (Workspace Provisioning & Gates). Each entry
 is a decision that was not fully determined by the Phase 0 brief, the alternative that
@@ -643,3 +643,203 @@ a filter. `test_no_import_of_the_test_client_emits_a_deprecation` imports `fasta
 in a subprocess with warnings promoted to errors, so the day the dependency is dropped the
 suite goes red rather than quietly nagging. Verified by blocking `httpx2` at import and
 watching that test fail.
+
+---
+
+## Phase 6 (Web Dashboard)
+
+**A100 — Phase 6 was specified before it was built, because the dashboard needed fields the
+engine does not publish.** The brief asked for an engine-state readout, a trade tape with stop
+loss / target / slippage, a setup visualizer and a calendar radar. Three of those four have no
+corresponding snapshot field, and AGENTS.md §1 forbids writing `engine/publisher/` or `api/`
+code during a web phase. Rather than stub them, fabricate defaults, or quietly break phase
+isolation, `docs/PHASE_5X_SPEC.md` records every missing field with its type, endpoint and
+journal provenance, the web layer types them nullable in `web/src/api/contract.ts`, and
+`NotPublished.tsx` renders `NOT PUBLISHED BY THIS ENGINE BUILD` in exactly those cells. When
+the spec is implemented the sentinels disappear with no dashboard change. *Rejected:* blank
+cells, which read as zero; and defaults, which invent a stop-loss nobody computed.
+
+**A101 — Missing fields are `null`, never a default.** `normalizeStatus`/`normalizeTrades`/
+`normalizeMetrics` are total functions: an absent or wrongly-typed field yields `null`, a
+malformed timestamp yields `null` rather than the epoch, and a fractional tick count is
+refused rather than rounded. A snapshot whose `generated_at` silently became 1970 would make a
+healthy engine look permanently stale — the one failure the staleness banner cannot have.
+
+**A102 — Prices are rendered from integer ticks without a float.** `web/src/lib/decimal.ts`
+parses the wire's decimal strings and multiplies tick counts by the tick size on `BigInt`,
+placing the decimal point once at the end. `20_097_500 × $0.01` is `$200,975.00`, not
+`$200974.99999999997`. The only floats in the web layer are the ones the engine's own
+reporting module already made floats (`metrics.json`'s `win_rate`, `profit_factor` and
+bootstrap bounds), which arrive as JSON numbers and are formatted rather than computed with.
+
+**A103 — The entry price is read from `cost`.** `trades.json` spells the fill price `cost` and
+the exit price `price` — both decimal strings. It is `trade.entry_price` verbatim, and
+`supervisor._record_trade` is where the mapping is made. The contract types them as decimal
+strings rather than re-encoding them as ticks, so the new Phase 5.x price fields
+(`stop_loss`, `take_profit`) are tick counts and the existing ones are not. Changing that
+would break a published field to satisfy a naming preference.
+
+**A104 — The disclosure is verified at build time by two independent guards.**
+`vite.config.ts` installs `xauusd-disclosure-guard` (enforced `pre`, so it runs before `?raw`
+resolution and produces a named error rather than an unresolved-import trace), and
+`web/src/content/disclosure.ts` re-checks the text at import. Both were exercised against a
+missing, an empty and a whitespace-only file; all three fail the build. *Rejected:* a lint
+rule alone, which catches the empty file but not the deleted one.
+
+**A105 — Both performance panels render the disclosure, and a test proves it for each.**
+"Adjacent to every performance panel" was taken to mean *inside the panel's subtree*, in every
+variant it has: `PerformancePanel` (full, insufficient-sample, no-metrics) and
+`ExpectancyIsland` (the same three). A notice rendered elsewhere on the page is not adjacent
+to anything. The hero panel and the island are two real performance panels, not a duplicate
+created to satisfy a test.
+
+**A106 — The fixtures are dev-only and provably so.** `web/src/api/fixtures.ts` is reached
+only through a dynamic import guarded by `import.meta.env.DEV && `?fixtures``, which Vite
+replaces with `false` and Rollup eliminates — a grep of `dist/` finds no fixture string.
+Production therefore cannot render invented trading data, and the dev affordance is how a
+human looks at the full UI before Phase 5.x lands.
+
+**A107 — Tailwind v4, without a `tailwind.config.js`.** v4's CSS-first `@theme` is the whole
+configuration, so a second config file would be a second source of truth for the same tokens.
+The `@theme` block in `web/src/index.css` holds the fonts, the bezel radii and the single
+motion curve; nothing in a JS file duplicates it.
+
+
+---
+
+## Phase 7 (Deployment & Operations)
+
+**A108 — The deployment is specified before it is wired, because the engine will not run.**
+`python -m engine.runtime.supervisor` refuses to start: A96 records that a supervisor
+without a quote stream "would start, build bars out of nothing, and report a healthy day",
+so `_require_source` raises `SystemExit` with a message. That is correct, and its exit code
+is 1 — which is *not* on the `RestartPreventExitStatus=70 78` list the Phase 7 brief
+specified. The unit therefore restarts every five seconds until a feed is injected. The
+restart policy was left exactly as specified rather than edited to hide it, and
+`docs/DEPLOYMENT.md` §4.1 records the consequence, the `journalctl` line that shows it, and
+whose phase owns the fix. *Rejected:* broadening `RestartPreventExitStatus` to swallow exit 1,
+which would also swallow a genuine crash on the day a feed *is* wired.
+
+**A109 — The two runtime paths are supplied as symlinks, at deploy time, nowhere else.**
+`SupervisorSettings.journal_path` and `create_app(projection_path=...)` have no environment
+hook in the shipped engine. Rather than edit `engine/` during a web-and-deployment phase,
+`deploy_ubuntu.sh` links `journal.db` and `projection` into the release directory, pointing
+at the state directories that `StateDirectory=` and `ProtectSystem=strict` make writable.
+The alternative — adding `XAUUSD_JOURNAL_PATH` / `XAUUSD_PROJECTION_PATH` to the engine —
+is the cleaner fix and is recorded as such in §4.2, but it is an engine change and this
+phase is not it.
+
+**A110 — The publisher got a process, and it is deliberately small.**
+Phase 5's acceptance was a `ProjectionPublisher` a caller could drive; a systemd unit needs
+something to exec. `scripts/publish_loop.py` is ~150 lines: fold, wait, retry, stop. Its one
+non-obvious decision is `class _Stop(BaseException)`. An `Exception` subclass is caught by
+the loop's own generic `except Exception`, logged as a failed fold, and the loop carries on
+to the next sleep — turning an operator's `systemctl stop` into a warning line in the journal.
+The suite covers exactly that case, by delivering a real SIGTERM from a timer thread so the
+signal path under test is the real one.
+
+**A111 — A backup that fails verification is deleted, in the orchestrator.**
+`VACUUM INTO` copies consistently, `PRAGMA integrity_check` checks the copy, and
+`verify_chain` runs the *same* function Phase 2's tests use to detect tampering — which is
+what makes a backup restorable rather than merely present. Deletion of a failing copy lives
+in `run_backup`, not in either validator, so a failure by *any* route — a `BackupError`, a
+`ChainError`, an unexpected `Error` — removes it. A test that monkeypatches a validator to
+raise proves it: the copy is gone. The alternative leaves a plausibly-named corrupt file in
+the backup directory, which is worse than no backup because it looks like a recovery.
+
+**A112 — Rotation is keyed on the filename, not the mtime, and the interval is 01:17.**
+Age comes from the name (`journal-YYYYMMDDTHHMMSSZ.db`) because a file touched by a restore
+drill has a young mtime and an old name, and deleting on mtime keeps every copy an operator
+ever looked at. The timer fires at 01:17 rather than a round hour because a host whose other
+crons fire on the hour has 01:00 as its busiest minute, and the backup's whole job is to
+read the journal while nobody else is writing. `Persistent=true` runs a missed night on the
+next boot instead of skipping history.
+
+**A113 — `systemd-analyze verify` runs in CI, and the accounts are created first.**
+The units are only ever run on Ubuntu, and `systemd-analyze` is not available on the macOS or
+Windows runners the other jobs use. So the `deploy` job creates the three accounts and two
+groups, then verifies all five units. The accounts are not optional: `systemd-analyze`
+treats an unknown `User=` as an error, so a CI run that skips creating them would pass on a
+host that cannot start the units.
+
+**A114 — The deploy asserts the *ordering* of its steps against the commands, not the prose.**
+`deploy_ubuntu.sh`'s header comment mentions `ln -sfn`, so a test comparing character
+positions in the raw file would pass a deploy whose gates ran *after* the switch. The test
+strips comments first. Likewise `make_release.sh`: the `web/node_modules` exclusion is
+asserted on the exact string the script uses, so a rename breaks the test.
+
+**A115 — The engine unit's restart policy was left as specified, and documented as a defect
+surface.** See A108. The one thing deliberately *not* done was to make the unit look healthy:
+no `ExecStartPre` that touches a feed, no `RestartPreventExitStatus=1` to silence the
+crash-loop, and no comment claiming the unit is ready for production. The unit is correct for
+the engine that has a feed, and the gap between the two is written down where an operator
+will find it.
+
+
+---
+
+## Phase 8 (Fault Injection & Soak Validation)
+
+**A116 — The crash drill kills a real child process, because a simulated kill proves nothing
+about durability.** `engine/tests/test_fault_injection.py` writes a harness to a temp file,
+runs it as a subprocess, and waits for a *ready marker* before signalling. The marker is only
+written after the harness's own separate `mode=ro` connection has observed both a
+`position_opened` row and a TRIPPED `risk_killswitch` row — and a WAL reader only ever sees
+committed transactions. So what survives the `SIGKILL` is durable by construction, and the
+assertion "every row that survived before the kill survives it" cannot be flaky. *Rejected:*
+catching an in-process exception and calling that a crash, which tests the exception path,
+not the recovery.
+
+**A117 — The harness trips the kill-switch through the engine's own call.**
+`supervisor._kill_switch.record_realized_r(Decimal("-9"))` is the same call
+`runtime/supervisor.py:_record_trade` makes after a close, with the same argument types,
+through the kill-switch's own sink — so the journalled `risk_killswitch` row is the engine's
+row, not the test's. The alternative was fabricating a losing canonical day, which would
+have tested the Phase 4 strategy rather than crash recovery.
+
+**A118 — The control token is an autouse fixture, mirroring the runtime suite.** The engine
+resolves a control token in `_begin`, so a drill without one exits 78 before it reaches the
+fault it is injecting. `engine/tests/runtime/test_supervisor.py` already supplies an autouse
+`_control_token`; this file supplies its own for the same reason and the same value.
+
+**A119 — The disk-stall injection patches `connect_writer`, not `time.sleep`.**
+`JournalWriter` takes a `sleeper` parameter but, as shipped, never calls it — the worker's
+`wait` is `queue.get(timeout=...)`, and the flush loop has no injectable delay. Patching
+`engine.journal.writer.connect_writer` to return a proxy whose **commit** sleeps 500 ms puts
+the stall exactly where a real disk stall lives: the fsync, on the writer's thread, and
+nowhere else. The proxy delegates every other operation to a real `sqlite3` connection, so
+the schema, the pragmas and the row shapes are the engine's own. This is the one place the
+suite reaches into module internals, and it is deliberate: there is no other seam.
+*Rejected:* patching `time.sleep` globally, which would also stall the test's own event loop
+and invalidate the measurement.
+
+**A120 — A stop signal must survive the loop's own `except Exception`.**
+`scripts/publish_loop.py` raises `_Stop(BaseException)` rather than `_Stop(Exception)`. An
+`Exception` subclass would be caught by the loop's generic handler, logged as a failed fold,
+and the loop would carry on to the next sleep — turning an operator's `systemctl stop` into a
+warning line in the journal. The test delivers a real `SIGTERM` from a timer thread so the
+signal path under test is the real one.
+
+**A121 — Bar continuity reads the `bars` counter, not a bar-event stream.** The engine
+journals `EQUITY_SNAPSHOT` with a `bars` count, and no bar-level event exists. The counter
+must advance by exactly one per snapshot; a delta greater than one is a gap the strategy
+never saw, and a negative delta is a replay or a bug. Both are surfaced as counts rather than
+averaged, because a single gap is the finding. *Rejected:* inferring continuity from
+timestamp spacing, which would report gaps as normal session breaks.
+
+**A122 — A lagged journal is *inserted*, not updated.** The append-only triggers correctly
+refuse an `UPDATE`, and `mode=ro` refuses a write, so a soak latency cannot be produced by
+back-dating a row the writer already committed. The test writes the rows directly with the
+`created_at` already in place, computing the hash chain as it goes — so the result is a
+journal `verify_chain` considers valid. This is also why the soak report's `_parse` accepts a
+naive timestamp: the writer's own `created_at` DEFAULT is `strftime('%Y-%m-%dT%H:%M:%S.%fZ')`,
+which carries a `Z` but not the `+00:00` `fromisoformat` wants, and subtracting it from an
+aware `occurred_at` raises `TypeError`.
+
+**A123 — `posix_only` does not skip.** The marker is registered in `pyproject.toml` and its
+description says it "is automatically skipped on Windows (see engine/tests/conftest.py)", but
+no `pytest_collection_modifyitems` hook exists. The Phase 8 drills use an explicit
+`skipif(os.name == "nt")`, as `engine/tests/runtime/test_signals.py` already does. On Windows
+`os.kill(SIGTERM)` terminates the process outright, so a drill that used the registered
+marker would kill the test runner rather than skip — which is how the marker was found to be
+inert. Fixing the marker itself is a Phase 0 concern and out of Phase 8's scope.
