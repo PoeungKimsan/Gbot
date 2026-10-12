@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import datetime as dt
 from pathlib import Path
+import sys
 from typing import Any
 
 import MetaTrader5 as mt5  # noqa: N813
@@ -34,13 +35,14 @@ def load_symbols() -> dict[str, dict[str, Any]]:
 def fetch_and_clean_d1_bars(
     broker_symbol: str,
     max_bars: int = 1500,
+    mt5_client: Any = mt5,
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
     """Fetch MT5 D1 bars, filter flat/duplicate bars, enforce geometric sanity."""
     flags = {"duplicate_bars": 0, "flat_bars": 0, "total_raw": 0, "cleaned_bars": 0}
 
-    mt5.symbol_select(broker_symbol, True)
+    mt5_client.symbol_select(broker_symbol, True)
     # Start at pos 1 to strictly fetch completed/closed bars (index 0 is still-forming)
-    rates = mt5.copy_rates_from_pos(broker_symbol, mt5.TIMEFRAME_D1, 1, max_bars)
+    rates = mt5_client.copy_rates_from_pos(broker_symbol, mt5_client.TIMEFRAME_D1, 1, max_bars)
     if rates is None or len(rates) == 0:
         return [], flags
 
@@ -465,15 +467,27 @@ def evaluate_t3_tsmom(
     return forward_trades
 
 
-def run_forward_log() -> None:
+def run_forward_log(
+    log_csv_path: Path = LOG_CSV_PATH,
+    run_log_path: Path = RUN_LOG_PATH,
+    mt5_client: Any = mt5,
+) -> None:
     print("=" * 100)
     print("TASK C: Forward Daily Trade Log Runner (trend_v1.2 T2 & T3 per commit f1affec)")
     print(f"Timestamp UTC: {dt.datetime.now(dt.UTC).isoformat()}")
     print("=" * 100)
 
-    if not mt5.initialize():
-        print(f"FATAL: MT5 failed to initialize: {mt5.last_error()}")
-        return
+    now_iso = dt.datetime.now(dt.UTC).isoformat()
+    today_str = dt.date.today().isoformat()
+
+    if not mt5_client.initialize():
+        last_err = mt5_client.last_error() if hasattr(mt5_client, "last_error") else "Unknown"
+        err_msg = f"MT5 failed to initialize: {last_err}"
+        print(f"FATAL: {err_msg}")
+        run_log_line = f"timestamp={now_iso} | date={today_str} | status=FAILED | error={err_msg}\n"
+        with open(run_log_path, "a", encoding="utf-8") as f:
+            f.write(run_log_line)
+        sys.exit(1)
 
     symbols_map = load_symbols()
     print(f"Config loaded: {len(symbols_map)} markets from {CONFIG_PATH}\n")
@@ -483,7 +497,7 @@ def run_forward_log() -> None:
 
     for research_sym, meta in symbols_map.items():
         broker_sym = meta["broker_symbol"]
-        cleaned_bars, flags = fetch_and_clean_d1_bars(broker_sym, max_bars=1200)
+        cleaned_bars, flags = fetch_and_clean_d1_bars(broker_sym, max_bars=1200, mt5_client=mt5_client)
 
         insufficient_flag = len(cleaned_bars) < REQUIRED_WARMUP_BARS
         insufficient_str = f"[FLAG: BARS < {REQUIRED_WARMUP_BARS}]" if insufficient_flag else "OK"
@@ -510,7 +524,31 @@ def run_forward_log() -> None:
         all_forward_records.extend(t2_records)
         all_forward_records.extend(t3_records)
 
-    mt5.shutdown()
+    mt5_client.shutdown()
+
+    # Check if new bars arrived
+    total_bars_used = sum(a["cleaned_bars"] for a in market_audit)
+    latest_bar_date = max(
+        (a["last_bar_date"] for a in market_audit if a.get("last_bar_date")),
+        default=None,
+    )
+
+    no_new_bars = False
+    if total_bars_used == 0 or latest_bar_date is None:
+        no_new_bars = True
+    elif run_log_path.is_file():
+        with open(run_log_path, encoding="utf-8") as f:
+            for line in reversed(f.readlines()):
+                if "status=FAILED" not in line and f"latest_bar={latest_bar_date}" in line:
+                    no_new_bars = True
+                    break
+
+    if no_new_bars:
+        print(f"NO NEW BARS: latest closed bar {latest_bar_date} already processed.")
+        run_log_line = f"timestamp={now_iso} | date={today_str} | status=NO_NEW_BARS | bars_used={total_bars_used} | rows_added=0\n"
+        with open(run_log_path, "a", encoding="utf-8") as f:
+            f.write(run_log_line)
+        sys.exit(2)
 
     # Print Data Quality & Invariant Table
     print(f"{'Market':<8} | {'Exness Sym':<9} | {'Raw':<5} | {'Clean':<5} | {'Dup':<4} | {'Flat':<5} | {'Warmup':<15} | {'Last Bar Date':<13}")
@@ -527,22 +565,19 @@ def run_forward_log() -> None:
     print("=" * 60)
 
     # Append records to forward_log.csv idempotently
-    new_appended = append_forward_log_records(all_forward_records, csv_path=LOG_CSV_PATH)
-    print(f"forward_log.csv status: updated -> {LOG_CSV_PATH.resolve()}")
+    new_appended = append_forward_log_records(all_forward_records, csv_path=log_csv_path)
+    print(f"forward_log.csv status: updated -> {log_csv_path.resolve()}")
     print(f"New rows written: {new_appended}")
 
     # Append every run record to forward_run.log
-    total_bars_used = sum(a["cleaned_bars"] for a in market_audit)
-    now_iso = dt.datetime.now(dt.UTC).isoformat()
-    today_str = dt.date.today().isoformat()
-    run_log_line = f"timestamp={now_iso} | date={today_str} | bars_used={total_bars_used} | rows_added={new_appended}\n"
-    with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
+    run_log_line = f"timestamp={now_iso} | date={today_str} | latest_bar={latest_bar_date} | bars_used={total_bars_used} | rows_added={new_appended}\n"
+    with open(run_log_path, "a", encoding="utf-8") as f:
         f.write(run_log_line)
     print(f"forward_run.log entry: {run_log_line.strip()}")
 
-    if LOG_CSV_PATH.is_file():
+    if log_csv_path.is_file():
         print("\nCurrent forward_log.csv content:")
-        with open(LOG_CSV_PATH, encoding="utf-8") as f:
+        with open(log_csv_path, encoding="utf-8") as f:
             print(f.read())
 
 
@@ -552,6 +587,10 @@ def append_forward_log_records(
 ) -> int:
     """Append forward records idempotently. Returns count of new rows added."""
     fieldnames = ["date", "market", "rule", "signal", "entry", "stop", "exit", "R", "R_gross", "R_net"]
+
+    def _norm(v: Any) -> str:
+        return "" if v is None else str(v)
+
     existing_keys = set()
     file_existed = csv_path.is_file()
     if file_existed:
@@ -559,11 +598,12 @@ def append_forward_log_records(
             reader = csv.DictReader(f)
             for row in reader:
                 existing_keys.add((
-                    str(row.get("date")),
-                    str(row.get("market")),
-                    str(row.get("rule")),
-                    str(row.get("signal")),
-                    str(row.get("entry")),
+                    _norm(row.get("date")),
+                    _norm(row.get("market")),
+                    _norm(row.get("rule")),
+                    _norm(row.get("signal")),
+                    _norm(row.get("entry")),
+                    _norm(row.get("exit")),
                 ))
 
     new_appended = 0
@@ -574,11 +614,12 @@ def append_forward_log_records(
 
         for rec in records:
             key = (
-                str(rec.get("date")),
-                str(rec.get("market")),
-                str(rec.get("rule")),
-                str(rec.get("signal")),
-                str(rec.get("entry")),
+                _norm(rec.get("date")),
+                _norm(rec.get("market")),
+                _norm(rec.get("rule")),
+                _norm(rec.get("signal")),
+                _norm(rec.get("entry")),
+                _norm(rec.get("exit")),
             )
             if key not in existing_keys:
                 writer.writerow({

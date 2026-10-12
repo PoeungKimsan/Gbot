@@ -6,10 +6,15 @@ import csv
 import datetime as dt
 from pathlib import Path
 
+from unittest.mock import MagicMock
+
+import pytest
+
 from forward.forward_log import (
     append_forward_log_records,
     compute_indicators,
     evaluate_t2_sma_cross,
+    run_forward_log,
 )
 
 
@@ -144,4 +149,102 @@ def test_running_twice_does_not_duplicate_rows(tmp_path: Path) -> None:
     with open(test_csv, encoding="utf-8") as f:
         reader = list(csv.DictReader(f))
         assert len(reader) == 3
+
+
+def test_mt5_init_failure_exits_nonzero_and_logs(tmp_path: Path) -> None:
+    """Requirement 3: If MT5 init fails, append a FAILED line to forward_run.log and exit non-zero."""
+    test_csv = tmp_path / "forward_log.csv"
+    test_run_log = tmp_path / "forward_run.log"
+
+    mock_mt5 = MagicMock()
+    mock_mt5.initialize.return_value = False
+    mock_mt5.last_error.return_value = (-10004, "Terminal connection refused")
+
+    with pytest.raises(SystemExit) as exc_info:
+        run_forward_log(log_csv_path=test_csv, run_log_path=test_run_log, mt5_client=mock_mt5)
+
+    assert exc_info.value.code != 0
+    assert exc_info.value.code == 1
+
+    assert test_run_log.is_file()
+    log_content = test_run_log.read_text(encoding="utf-8")
+    assert "status=FAILED" in log_content
+    assert "MT5 failed to initialize" in log_content
+
+
+def test_no_new_bars_exits_nonzero_and_logs(tmp_path: Path) -> None:
+    """Requirement 3: If no new bars arrive, append a NO_NEW_BARS line to forward_run.log and exit non-zero."""
+    test_csv = tmp_path / "forward_log.csv"
+    test_run_log = tmp_path / "forward_run.log"
+
+    mock_mt5 = MagicMock()
+    mock_mt5.initialize.return_value = True
+    # copy_rates_from_pos returns empty rates (0 new bars)
+    mock_mt5.copy_rates_from_pos.return_value = []
+
+    with pytest.raises(SystemExit) as exc_info:
+        run_forward_log(log_csv_path=test_csv, run_log_path=test_run_log, mt5_client=mock_mt5)
+
+    assert exc_info.value.code != 0
+    assert exc_info.value.code == 2
+
+    assert test_run_log.is_file()
+    log_content = test_run_log.read_text(encoding="utf-8")
+    assert "status=NO_NEW_BARS" in log_content
+
+
+def test_open_run1_close_run2_not_dropped(tmp_path: Path) -> None:
+    """Requirement 4: Confirm trade open on run 1 and close on run 2 is not dropped by duplicate check."""
+    test_csv = tmp_path / "forward_log.csv"
+
+    # Run 1: Trade is opened on 2026-10-12
+    open_record = {
+        "date": "2026-10-12",
+        "market": "EURUSD",
+        "rule": "T2_SMA_CROSS",
+        "signal": "BUY",
+        "entry": "1.05000",
+        "stop": "1.04000",
+        "exit": "OPEN",
+        "R": "N/A",
+        "R_gross": "N/A",
+        "R_net": "N/A",
+    }
+    added_run1 = append_forward_log_records([open_record], csv_path=test_csv)
+    assert added_run1 == 1
+
+    with open(test_csv, encoding="utf-8") as f:
+        rows_1 = list(csv.DictReader(f))
+        assert len(rows_1) == 1
+        assert rows_1[0]["exit"] == "OPEN"
+        assert rows_1[0]["date"] == "2026-10-12"
+
+    # Run 2: Trade closes on 2026-10-15 (both open record and closed record returned by evaluator)
+    exit_record = {
+        "date": "2026-10-15",
+        "market": "EURUSD",
+        "rule": "T2_SMA_CROSS",
+        "signal": "BUY",
+        "entry": "1.05000",
+        "stop": "1.04000",
+        "exit": "1.06000",
+        "R": "+1.0000",
+        "R_gross": "+1.0500",
+        "R_net": "+1.0000",
+    }
+    records_run2 = [open_record, exit_record]
+    added_run2 = append_forward_log_records(records_run2, csv_path=test_csv)
+
+    # Exactly 1 row added on run 2 (the exit row; open_record deduped)
+    assert added_run2 == 1
+
+    # Confirm the exit row is present in the CSV and not dropped
+    with open(test_csv, encoding="utf-8") as f:
+        rows_2 = list(csv.DictReader(f))
+        assert len(rows_2) == 2, f"Expected 2 rows, found {len(rows_2)}"
+        assert rows_2[0]["exit"] == "OPEN"
+        assert rows_2[0]["date"] == "2026-10-12"
+        assert rows_2[1]["exit"] == "1.06000"
+        assert rows_2[1]["date"] == "2026-10-15"
+
 
