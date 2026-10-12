@@ -526,28 +526,60 @@ def run_forward_log() -> None:
     print(f"Total trades/signals evaluated on or after {START_FORWARD_DATE}: {len(all_forward_records)}")
     print("=" * 60)
 
-    # Prepare forward_log.csv
-    # Fields: date, market, rule, signal, entry, stop, exit, R (and labeled R_gross, R_net per RULE 1)
-    fieldnames = ["date", "market", "rule", "signal", "entry", "stop", "exit", "R", "R_gross", "R_net"]
+    # Append records to forward_log.csv idempotently
+    new_appended = append_forward_log_records(all_forward_records, csv_path=LOG_CSV_PATH)
+    print(f"forward_log.csv status: updated -> {LOG_CSV_PATH.resolve()}")
+    print(f"New rows written: {new_appended}")
 
-    # Read existing rows if forward_log.csv already exists to avoid duplicates
-    existing_keys = set()
-    file_existed = LOG_CSV_PATH.is_file()
-    if file_existed:
+    # Append every run record to forward_run.log
+    total_bars_used = sum(a["cleaned_bars"] for a in market_audit)
+    now_iso = dt.datetime.now(dt.UTC).isoformat()
+    today_str = dt.date.today().isoformat()
+    run_log_line = f"timestamp={now_iso} | date={today_str} | bars_used={total_bars_used} | rows_added={new_appended}\n"
+    with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(run_log_line)
+    print(f"forward_run.log entry: {run_log_line.strip()}")
+
+    if LOG_CSV_PATH.is_file():
+        print("\nCurrent forward_log.csv content:")
         with open(LOG_CSV_PATH, encoding="utf-8") as f:
+            print(f.read())
+
+
+def append_forward_log_records(
+    records: list[dict[str, Any]],
+    csv_path: Path = LOG_CSV_PATH,
+) -> int:
+    """Append forward records idempotently. Returns count of new rows added."""
+    fieldnames = ["date", "market", "rule", "signal", "entry", "stop", "exit", "R", "R_gross", "R_net"]
+    existing_keys = set()
+    file_existed = csv_path.is_file()
+    if file_existed:
+        with open(csv_path, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                existing_keys.add((row.get("date"), row.get("market"), row.get("rule"), row.get("signal"), row.get("entry")))
+                existing_keys.add((
+                    str(row.get("date")),
+                    str(row.get("market")),
+                    str(row.get("rule")),
+                    str(row.get("signal")),
+                    str(row.get("entry")),
+                ))
 
-    # Append new records
     new_appended = 0
-    with open(LOG_CSV_PATH, "a" if file_existed else "w", newline="", encoding="utf-8") as f:
+    with open(csv_path, "a" if file_existed else "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if not file_existed:
             writer.writeheader()
 
-        for rec in all_forward_records:
-            key = (rec["date"], rec["market"], rec["rule"], rec["signal"], rec["entry"])
+        for rec in records:
+            key = (
+                str(rec.get("date")),
+                str(rec.get("market")),
+                str(rec.get("rule")),
+                str(rec.get("signal")),
+                str(rec.get("entry")),
+            )
             if key not in existing_keys:
                 writer.writerow({
                     "date": rec["date"],
@@ -564,23 +596,7 @@ def run_forward_log() -> None:
                 existing_keys.add(key)
                 new_appended += 1
 
-    print(f"forward_log.csv status: {'appended' if file_existed else 'created'} -> {LOG_CSV_PATH.resolve()}")
-    print(f"New rows written: {new_appended}")
-    print(f"Total rows in forward_log.csv: {len(existing_keys)}")
-
-    # Append every run record to forward_run.log
-    total_bars_used = sum(a["cleaned_bars"] for a in market_audit)
-    now_iso = dt.datetime.now(dt.UTC).isoformat()
-    today_str = dt.date.today().isoformat()
-    run_log_line = f"timestamp={now_iso} | date={today_str} | bars_used={total_bars_used} | rows_added={new_appended}\n"
-    with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(run_log_line)
-    print(f"forward_run.log entry: {run_log_line.strip()}")
-
-    if LOG_CSV_PATH.is_file():
-        print("\nCurrent forward_log.csv content:")
-        with open(LOG_CSV_PATH, encoding="utf-8") as f:
-            print(f.read())
+    return new_appended
 
 
 if __name__ == "__main__":
