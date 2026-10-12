@@ -1,0 +1,25 @@
+# Alpaca Markets Broker Configuration (VAR_117 ETF Rotation)
+# Note: For security, API keys should be set in environment variables:
+# APCA_API_KEY_ID and APCA_API_SECRET_KEY.
+
+paper_mode: true
+base_url: "https://paper-api.alpaca.markets"
+rebalance_frequency: "monthly"
+universe:
+  - "SPY"
+  - "QQQ"
+  - "IWM"
+  - "EFA"
+  - "EEM"
+  - "IEF"
+  - "TLT"
+  - "SHY"
+  - "LQD"
+  - "VNQ"
+  - "GLD"
+  - "DBC"
+top_k: 3
+momentum_lookback_days: 189
+volatility_lookback_days: 252
+cash_filter: true
+max_portfolio_drawdown_pct: "0.10"

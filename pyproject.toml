@@ -1,7 +1,7 @@
 [project]
 name = "xauusd-lab"
 version = "0.0.0"
-description = "Automated XAUUSD trading engine: MetaTrader 5 feed and execution, ICT Judas Swing strategy, Decimal risk controls, live dashboard."
+description = "Automated Multi-Asset ETF Momentum Rotation Engine (VAR_117): Alpaca feed and execution, Decimal risk controls, live dashboard."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic>=2",
@@ -14,7 +14,6 @@ dependencies = [
     "PyYAML",
     "numpy",
     "tzdata",
-    "metatrader5>=5.0.6231",
     "websockets>=17.2",
 ]
 

@@ -1,5 +1,0 @@
-rule,carry,period_end_count,period_end_summed_r,period_end_pct_of_total,ex_period_end_n,ex_period_end_mean_r,ex_ci_95_low,ex_ci_95_high,bootstrap_p_val
-T2_SMA_CROSS,0%,8,+75.1239,35.54%,366,+0.3723,0.0179,0.7668,0.0198
-T2_SMA_CROSS,2%,8,+70.9585,68.32%,366,+0.0899,-0.2292,0.4415,0.3123
-T3_TSMOM,0%,8,+98.1805,33.31%,365,+0.5385,0.0712,1.1073,0.0102
-T3_TSMOM,2%,8,+92.3395,52.43%,365,+0.2295,-0.1886,0.7427,0.1664

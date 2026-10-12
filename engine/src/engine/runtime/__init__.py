@@ -1,4 +1,4 @@
-"""Process runtime: the live MT5 trader (:mod:`engine.runtime.live_trader`)."""
+"""Process runtime: the live ETF trader (:mod:`engine.runtime.live_trader`)."""
 
 import os
 from pathlib import Path

@@ -47,7 +47,7 @@ export function LiveTradeTape({
           <div className="rounded-md border border-dashed border-[#282828] bg-[#171717] p-6 text-center text-[#707070] flex flex-col items-center gap-1 font-mono text-xs">
             <span className="text-[#9a9a9a]">No trades executed yet today</span>
             <span className="text-[11px] text-[#707070]">
-              Orders will log here automatically when an ICT setup fills.
+              Orders will log here automatically when a portfolio rebalance fills.
             </span>
           </div>
         ) : (
@@ -72,7 +72,7 @@ export function LiveTradeTape({
                     <td className="py-2.5 text-[#9a9a9a]">#{t.id}</td>
                     <td className="py-2.5">
                       <span className="rounded bg-[#242424] px-1.5 py-0.5 text-[11px] text-[#ededed] border border-[#333333]">
-                        {t.strategy || "ICT"}
+                        {t.strategy || "VAR_117"}
                       </span>
                     </td>
                     <td className="py-2.5">

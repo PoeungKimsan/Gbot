@@ -127,46 +127,18 @@ def _string_nodes(tree: ast.Module) -> Iterator[ast.Constant | ast.JoinedStr]:
 
 
 #: Rule (a): The single named boundary helper allowed to call float() for MT5 C-API requests
-#: (AGENTS.md section 2.1).
-_ALLOWED_FLOAT_HELPER: tuple[str, str] = (
-    "engine/src/engine/execution/mt5_broker.py",
-    "_to_mt5_float",
-)
-
-
 def _float_offences(source: str, filename: str) -> list[str]:
     """Return one message per ``float()`` call or float literal in ``source``."""
     tree = ast.parse(source, filename=filename)
     offenders: list[str] = []
-    normalized_file = Path(filename).as_posix()
 
     class FloatVisitor(ast.NodeVisitor):
-        def __init__(self) -> None:
-            self.current_func: str | None = None
-
-        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-            prev = self.current_func
-            self.current_func = node.name
-            self.generic_visit(node)
-            self.current_func = prev
-
-        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-            prev = self.current_func
-            self.current_func = node.name
-            self.generic_visit(node)
-            self.current_func = prev
-
         def visit_Call(self, node: ast.Call) -> None:
             is_builtin_float = (
                 isinstance(node.func, ast.Name) and node.func.id == "float"
             )
             if is_builtin_float:
-                is_exempt = (
-                    normalized_file.endswith(_ALLOWED_FLOAT_HELPER[0])
-                    and self.current_func == _ALLOWED_FLOAT_HELPER[1]
-                )
-                if not is_exempt:
-                    offenders.append(f"{filename}:{node.lineno}: float() call")
+                offenders.append(f"{filename}:{node.lineno}: float() call")
             self.generic_visit(node)
 
         def visit_Constant(self, node: ast.Constant) -> None:
@@ -293,13 +265,15 @@ def test_no_builtin_hash_calls_in_engine() -> None:
 # --------------------------------------------------------------------------- #
 # rule (d): no AF_UNIX anywhere in the source tree
 # --------------------------------------------------------------------------- #
-def test_the_float_conversion_exemption_is_strictly_the_mt5_boundary_helper() -> None:
-    """The float() exemption must stay strictly narrow to AGENTS.md 2.1."""
-    broker_path = REPO_ROOT / _ALLOWED_FLOAT_HELPER[0]
-    assert broker_path.is_file()
-    tree = ast.parse(broker_path.read_text(encoding="utf-8"), filename=str(broker_path))
-    funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
-    assert _ALLOWED_FLOAT_HELPER[1] in funcs
+def test_zero_float_exemptions_in_engine() -> None:
+    """AGENTS.md 2.1 - With MT5 removed, zero float exemptions exist in the engine."""
+    for package in FLOAT_FREE_PACKAGES:
+        root = SRC_ROOT / package
+        if not root.is_dir():
+            continue
+        for path in _iter_files(root, ".py"):
+            offenders = _float_offences(path.read_text(encoding="utf-8"), _rel(path))
+            assert not offenders, f"Unexpected float found in {path}: {offenders}"
 
 
 def test_no_af_unix_sockets_in_source() -> None:

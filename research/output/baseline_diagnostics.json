@@ -1,0 +1,30 @@
+{
+  "timestamp_utc": "2026-10-11T07:19:36.529250+00:00",
+  "spread_distance_assumed": "0.20",
+  "judas_swing": {
+    "strategy": "Asian Judas Swing",
+    "total_trades": 484,
+    "share_reaching_1r_mfe": 0.5475,
+    "count_reaching_1r": 265,
+    "share_reaching_2r_mfe": 0.343,
+    "count_reaching_2r": 166,
+    "share_reaching_3r_mfe": 0.188,
+    "count_reaching_3r": 91,
+    "total_stop_outs": 393,
+    "stops_within_spread_distance": 77,
+    "share_stops_within_spread": 0.1959
+  },
+  "silver_bullet": {
+    "strategy": "ICT Silver Bullet",
+    "total_trades": 27,
+    "share_reaching_1r_mfe": 0.5926,
+    "count_reaching_1r": 16,
+    "share_reaching_2r_mfe": 0.4074,
+    "count_reaching_2r": 11,
+    "share_reaching_3r_mfe": 0.037,
+    "count_reaching_3r": 1,
+    "total_stop_outs": 18,
+    "stops_within_spread_distance": 0,
+    "share_stops_within_spread": 0.0
+  }
+}

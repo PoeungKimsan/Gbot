@@ -1,0 +1,825 @@
+{
+  "item1_reconciliation": {
+    "step0_cost_lt_010r": {
+      "n": 389,
+      "net_exp": -0.0131
+    },
+    "c1_post_filtered": {
+      "n": 465,
+      "net_exp": -0.1929
+    },
+    "c1_resimulated": {
+      "n": 465,
+      "net_exp": -0.1929
+    },
+    "in_between_stop_200_250": {
+      "n": 93,
+      "wins": 17,
+      "losses": 76
+    }
+  },
+  "item2_weekday_test": {
+    "2015-2019 (Extra Validation)": {
+      "Monday": {
+        "n": 151,
+        "mean_net_r": -0.4975,
+        "median_net_r": -1.2343,
+        "trimmed_5pct_net_r": -0.8251,
+        "avg_dollar_pnl": -28.92
+      },
+      "Tuesday": {
+        "n": 165,
+        "mean_net_r": -0.2556,
+        "median_net_r": -1.2336,
+        "trimmed_5pct_net_r": -0.7274,
+        "avg_dollar_pnl": -24.3
+      },
+      "Wednesday": {
+        "n": 176,
+        "mean_net_r": -0.2184,
+        "median_net_r": -1.2439,
+        "trimmed_5pct_net_r": -0.4885,
+        "avg_dollar_pnl": -9.32
+      },
+      "Thursday": {
+        "n": 176,
+        "mean_net_r": -0.1143,
+        "median_net_r": -1.2019,
+        "trimmed_5pct_net_r": -0.4714,
+        "avg_dollar_pnl": -4.67
+      },
+      "Friday": {
+        "n": 170,
+        "mean_net_r": -0.1165,
+        "median_net_r": -1.1707,
+        "trimmed_5pct_net_r": -0.322,
+        "avg_dollar_pnl": 5.02
+      }
+    },
+    "2020-2022 (Development)": {
+      "Monday": {
+        "n": 94,
+        "mean_net_r": 0.3194,
+        "median_net_r": -1.1019,
+        "trimmed_5pct_net_r": -0.0317,
+        "avg_dollar_pnl": 59.61
+      },
+      "Tuesday": {
+        "n": 103,
+        "mean_net_r": 0.277,
+        "median_net_r": -1.1121,
+        "trimmed_5pct_net_r": -0.2828,
+        "avg_dollar_pnl": 9.05
+      },
+      "Wednesday": {
+        "n": 126,
+        "mean_net_r": -0.4826,
+        "median_net_r": -1.1362,
+        "trimmed_5pct_net_r": -0.7808,
+        "avg_dollar_pnl": -70.82
+      },
+      "Thursday": {
+        "n": 106,
+        "mean_net_r": -0.2789,
+        "median_net_r": -1.1384,
+        "trimmed_5pct_net_r": -0.7116,
+        "avg_dollar_pnl": -74.88
+      },
+      "Friday": {
+        "n": 98,
+        "mean_net_r": -0.4941,
+        "median_net_r": -1.1287,
+        "trimmed_5pct_net_r": -0.7083,
+        "avg_dollar_pnl": -151.02
+      }
+    },
+    "2023-2025 (Confirmation)": {
+      "Monday": {
+        "n": 89,
+        "mean_net_r": 0.5323,
+        "median_net_r": -1.0716,
+        "trimmed_5pct_net_r": -0.1534,
+        "avg_dollar_pnl": 11.02
+      },
+      "Tuesday": {
+        "n": 100,
+        "mean_net_r": -0.0686,
+        "median_net_r": -1.0893,
+        "trimmed_5pct_net_r": -0.4624,
+        "avg_dollar_pnl": -11.36
+      },
+      "Wednesday": {
+        "n": 99,
+        "mean_net_r": -0.4598,
+        "median_net_r": -1.0984,
+        "trimmed_5pct_net_r": -0.6064,
+        "avg_dollar_pnl": -105.19
+      },
+      "Thursday": {
+        "n": 102,
+        "mean_net_r": -0.661,
+        "median_net_r": -1.1262,
+        "trimmed_5pct_net_r": -0.8486,
+        "avg_dollar_pnl": -67.45
+      },
+      "Friday": {
+        "n": 102,
+        "mean_net_r": 0.1517,
+        "median_net_r": -1.0893,
+        "trimmed_5pct_net_r": -0.3524,
+        "avg_dollar_pnl": 13.34
+      }
+    }
+  },
+  "item3_outliers_top20": {
+    "outliers_gt_10r": [
+      {
+        "trade_id": "judas-0149",
+        "entry_time": "2015-11-02T07:55:00+00:00",
+        "date": "2015-11-02",
+        "weekday": "Monday",
+        "entry_price": 1141.8,
+        "stop_loss": 1142.49,
+        "take_profit": 1134.15,
+        "exit_time": "2015-11-02T14:25:00+00:00",
+        "exit_price": 1134.15,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.6900000000000546,
+        "raw_pnl": 7.65,
+        "dollar_pnl": 745.0,
+        "gross_r": 11.086956521738253,
+        "cost_drag_r": 0.2898550724637452,
+        "net_r": 10.797101449274509,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0233",
+        "entry_time": "2016-05-03T06:00:00+00:00",
+        "date": "2016-05-03",
+        "weekday": "Tuesday",
+        "entry_price": 1289.53,
+        "stop_loss": 1289.14,
+        "take_profit": 1296.86,
+        "exit_time": "2016-05-03T06:50:00+00:00",
+        "exit_price": 1296.86,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.38999999999987267,
+        "raw_pnl": 7.33,
+        "dollar_pnl": 713.0,
+        "gross_r": 18.79487179487793,
+        "cost_drag_r": 0.5128205128206803,
+        "net_r": 18.28205128205725,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0309",
+        "entry_time": "2016-11-15T08:40:00+00:00",
+        "date": "2016-11-15",
+        "weekday": "Tuesday",
+        "entry_price": 1230.52,
+        "stop_loss": 1231.46,
+        "take_profit": 1220.33,
+        "exit_time": "2016-11-15T14:10:00+00:00",
+        "exit_price": 1220.33,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.9400000000000546,
+        "raw_pnl": 10.19,
+        "dollar_pnl": 999.0,
+        "gross_r": 10.840425531914264,
+        "cost_drag_r": 0.21276595744679616,
+        "net_r": 10.627659574467467,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0319",
+        "entry_time": "2016-12-01T07:15:00+00:00",
+        "date": "2016-12-01",
+        "weekday": "Thursday",
+        "entry_price": 1175.06,
+        "stop_loss": 1176.09,
+        "take_profit": 1161.94,
+        "exit_time": "2016-12-01T14:50:00+00:00",
+        "exit_price": 1161.94,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 1.0299999999999727,
+        "raw_pnl": 13.12,
+        "dollar_pnl": 1292.0,
+        "gross_r": 12.73786407767024,
+        "cost_drag_r": 0.19417475728155856,
+        "net_r": 12.543689320388681,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0349",
+        "entry_time": "2017-02-10T07:30:00+00:00",
+        "date": "2017-02-10",
+        "weekday": "Friday",
+        "entry_price": 1222.21,
+        "stop_loss": 1221.53,
+        "take_profit": 1229.2,
+        "exit_time": "2017-02-10T15:05:00+00:00",
+        "exit_price": 1229.2,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.6800000000000637,
+        "raw_pnl": 6.99,
+        "dollar_pnl": 679.0,
+        "gross_r": 10.27941176470492,
+        "cost_drag_r": 0.294117647058796,
+        "net_r": 9.985294117646124,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0506",
+        "entry_time": "2018-01-30T07:05:00+00:00",
+        "date": "2018-01-30",
+        "weekday": "Tuesday",
+        "entry_price": 1335.05,
+        "stop_loss": 1334.52,
+        "take_profit": 1342.0,
+        "exit_time": "2018-01-30T09:55:00+00:00",
+        "exit_price": 1342.0,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.5299999999999727,
+        "raw_pnl": 6.95,
+        "dollar_pnl": 675.0,
+        "gross_r": 13.113207547170486,
+        "cost_drag_r": 0.3773584905660572,
+        "net_r": 12.73584905660443,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0535",
+        "entry_time": "2018-03-29T06:00:00+00:00",
+        "date": "2018-03-29",
+        "weekday": "Thursday",
+        "entry_price": 1328.1,
+        "stop_loss": 1328.31,
+        "take_profit": 1323.86,
+        "exit_time": "2018-03-29T06:45:00+00:00",
+        "exit_price": 1323.86,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.21000000000003638,
+        "raw_pnl": 4.24,
+        "dollar_pnl": 404.0,
+        "gross_r": 20.190476190472694,
+        "cost_drag_r": 0.9523809523807875,
+        "net_r": 19.238095238091905,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0591",
+        "entry_time": "2018-07-30T06:35:00+00:00",
+        "date": "2018-07-30",
+        "weekday": "Monday",
+        "entry_price": 1219.21,
+        "stop_loss": 1218.84,
+        "take_profit": 1223.86,
+        "exit_time": "2018-07-30T13:55:00+00:00",
+        "exit_price": 1223.86,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.37000000000011823,
+        "raw_pnl": 4.65,
+        "dollar_pnl": 445.00000000000006,
+        "gross_r": 12.567567567563552,
+        "cost_drag_r": 0.5405405405403678,
+        "net_r": 12.027027027023184,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0632",
+        "entry_time": "2018-10-16T06:05:00+00:00",
+        "date": "2018-10-16",
+        "weekday": "Tuesday",
+        "entry_price": 1225.45,
+        "stop_loss": 1225.15,
+        "take_profit": 1228.46,
+        "exit_time": "2018-10-16T07:30:00+00:00",
+        "exit_price": 1228.46,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.2999999999999545,
+        "raw_pnl": 3.01,
+        "dollar_pnl": 281.0,
+        "gross_r": 10.033333333334854,
+        "cost_drag_r": 0.6666666666667678,
+        "net_r": 9.366666666668086,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0713",
+        "entry_time": "2019-04-10T06:55:00+00:00",
+        "date": "2019-04-10",
+        "weekday": "Wednesday",
+        "entry_price": 1304.918,
+        "stop_loss": 1305.298,
+        "take_profit": 1301.098,
+        "exit_time": "2019-04-10T12:35:00+00:00",
+        "exit_price": 1301.098,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.38000000000010914,
+        "raw_pnl": 3.82,
+        "dollar_pnl": 362.0,
+        "gross_r": 10.052631578944482,
+        "cost_drag_r": 0.5263157894735331,
+        "net_r": 9.52631578947095,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0759",
+        "entry_time": "2019-07-23T06:05:00+00:00",
+        "date": "2019-07-23",
+        "weekday": "Tuesday",
+        "entry_price": 1415.985,
+        "stop_loss": 1415.085,
+        "take_profit": 1425.565,
+        "exit_time": "2019-07-23T12:30:00+00:00",
+        "exit_price": 1425.565,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.8999999999998636,
+        "raw_pnl": 9.58,
+        "dollar_pnl": 938.0,
+        "gross_r": 10.644444444446059,
+        "cost_drag_r": 0.22222222222225593,
+        "net_r": 10.422222222223803,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0825",
+        "entry_time": "2019-12-03T07:05:00+00:00",
+        "date": "2019-12-03",
+        "weekday": "Tuesday",
+        "entry_price": 1460.815,
+        "stop_loss": 1460.555,
+        "take_profit": 1463.848,
+        "exit_time": "2019-12-03T08:45:00+00:00",
+        "exit_price": 1463.848,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.2599999999999909,
+        "raw_pnl": 3.033,
+        "dollar_pnl": 283.3,
+        "gross_r": 11.665384615385022,
+        "cost_drag_r": 0.7692307692307961,
+        "net_r": 10.896153846154226,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0089",
+        "entry_time": "2020-06-30T06:45:00+00:00",
+        "date": "2020-06-30",
+        "weekday": "Tuesday",
+        "entry_price": 1773.435,
+        "stop_loss": 1773.755,
+        "take_profit": 1768.668,
+        "exit_time": "2020-06-30T11:40:00+00:00",
+        "exit_price": 1768.668,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.3200000000001637,
+        "raw_pnl": 4.767,
+        "dollar_pnl": 456.70000000000005,
+        "gross_r": 14.89687499999238,
+        "cost_drag_r": 0.6249999999996803,
+        "net_r": 14.2718749999927,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0091",
+        "entry_time": "2020-07-02T06:00:00+00:00",
+        "date": "2020-07-02",
+        "weekday": "Thursday",
+        "entry_price": 1766.055,
+        "stop_loss": 1765.645,
+        "take_profit": 1772.075,
+        "exit_time": "2020-07-02T09:00:00+00:00",
+        "exit_price": 1772.075,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.41000000000008185,
+        "raw_pnl": 6.02,
+        "dollar_pnl": 582.0,
+        "gross_r": 14.68292682926536,
+        "cost_drag_r": 0.4878048780486831,
+        "net_r": 14.195121951216677,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0166",
+        "entry_time": "2020-12-24T08:20:00+00:00",
+        "date": "2020-12-24",
+        "weekday": "Thursday",
+        "entry_price": 1879.708,
+        "stop_loss": 1880.545,
+        "take_profit": 1870.778,
+        "exit_time": "2020-12-24T14:20:00+00:00",
+        "exit_price": 1870.778,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.8369999999999891,
+        "raw_pnl": 8.93,
+        "dollar_pnl": 873.0,
+        "gross_r": 10.66905615292726,
+        "cost_drag_r": 0.23894862604540337,
+        "net_r": 10.430107526881857,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0393",
+        "entry_time": "2022-04-12T07:05:00+00:00",
+        "date": "2022-04-12",
+        "weekday": "Tuesday",
+        "entry_price": 1958.648,
+        "stop_loss": 1959.508,
+        "take_profit": 1949.702,
+        "exit_time": "2022-04-12T09:25:00+00:00",
+        "exit_price": 1949.702,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.8600000000001273,
+        "raw_pnl": 8.946,
+        "dollar_pnl": 874.6,
+        "gross_r": 10.402325581393809,
+        "cost_drag_r": 0.2325581395348493,
+        "net_r": 10.16976744185896,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0418",
+        "entry_time": "2022-05-31T08:25:00+00:00",
+        "date": "2022-05-31",
+        "weekday": "Tuesday",
+        "entry_price": 1856.728,
+        "stop_loss": 1857.118,
+        "take_profit": 1845.838,
+        "exit_time": "2022-05-31T12:00:00+00:00",
+        "exit_price": 1845.838,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.38999999999987267,
+        "raw_pnl": 10.89,
+        "dollar_pnl": 1069.0,
+        "gross_r": 27.92307692308604,
+        "cost_drag_r": 0.5128205128206803,
+        "net_r": 27.410256410265358,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0441",
+        "entry_time": "2022-07-13T06:25:00+00:00",
+        "date": "2022-07-13",
+        "weekday": "Wednesday",
+        "entry_price": 1722.804,
+        "stop_loss": 1722.248,
+        "take_profit": 1728.654,
+        "exit_time": "2022-07-13T09:15:00+00:00",
+        "exit_price": 1728.654,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.55600000000004,
+        "raw_pnl": 5.85,
+        "dollar_pnl": 565.0,
+        "gross_r": 10.521582733812192,
+        "cost_drag_r": 0.35971223021580145,
+        "net_r": 10.16187050359639,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0475",
+        "entry_time": "2022-09-12T06:10:00+00:00",
+        "date": "2022-09-12",
+        "weekday": "Monday",
+        "entry_price": 1712.551,
+        "stop_loss": 1711.904,
+        "take_profit": 1720.058,
+        "exit_time": "2022-09-12T07:00:00+00:00",
+        "exit_price": 1720.058,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.6469999999999345,
+        "raw_pnl": 7.507,
+        "dollar_pnl": 730.6999999999999,
+        "gross_r": 11.602782071098547,
+        "cost_drag_r": 0.3091190108191967,
+        "net_r": 11.29366306027935,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0005",
+        "entry_time": "2023-01-13T07:30:00+00:00",
+        "date": "2023-01-13",
+        "weekday": "Friday",
+        "entry_price": 1894.925,
+        "stop_loss": 1894.605,
+        "take_profit": 1900.855,
+        "exit_time": "2023-01-13T08:10:00+00:00",
+        "exit_price": 1900.855,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.31999999999993634,
+        "raw_pnl": 5.93,
+        "dollar_pnl": 573.0,
+        "gross_r": 18.531250000003688,
+        "cost_drag_r": 0.6250000000001243,
+        "net_r": 17.906250000003563,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0039",
+        "entry_time": "2023-03-13T06:05:00+00:00",
+        "date": "2023-03-13",
+        "weekday": "Monday",
+        "entry_price": 1872.195,
+        "stop_loss": 1871.228,
+        "take_profit": 1888.775,
+        "exit_time": "2023-03-13T08:30:00+00:00",
+        "exit_price": 1888.775,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.9669999999998709,
+        "raw_pnl": 16.58,
+        "dollar_pnl": 1637.9999999999998,
+        "gross_r": 17.14581178904055,
+        "cost_drag_r": 0.2068252326784144,
+        "net_r": 16.938986556362135,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0118",
+        "entry_time": "2023-09-01T06:30:00+00:00",
+        "date": "2023-09-01",
+        "weekday": "Friday",
+        "entry_price": 1938.655,
+        "stop_loss": 1938.265,
+        "take_profit": 1944.005,
+        "exit_time": "2023-09-01T09:30:00+00:00",
+        "exit_price": 1944.005,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.38999999999987267,
+        "raw_pnl": 5.35,
+        "dollar_pnl": 515.0,
+        "gross_r": 13.717948717953195,
+        "cost_drag_r": 0.5128205128206803,
+        "net_r": 13.205128205132516,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0119",
+        "entry_time": "2023-09-04T06:25:00+00:00",
+        "date": "2023-09-04",
+        "weekday": "Monday",
+        "entry_price": 1945.925,
+        "stop_loss": 1946.235,
+        "take_profit": 1939.274,
+        "exit_time": "2023-09-04T13:05:00+00:00",
+        "exit_price": 1939.274,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.30999999999994543,
+        "raw_pnl": 6.651,
+        "dollar_pnl": 645.1,
+        "gross_r": 21.454838709681194,
+        "cost_drag_r": 0.6451612903226942,
+        "net_r": 20.8096774193585,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0246",
+        "entry_time": "2024-06-21T06:00:00+00:00",
+        "date": "2024-06-21",
+        "weekday": "Friday",
+        "entry_price": 2364.428,
+        "stop_loss": 2365.008,
+        "take_profit": 2356.998,
+        "exit_time": "2024-06-21T07:05:00+00:00",
+        "exit_price": 2356.998,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.5799999999999272,
+        "raw_pnl": 7.43,
+        "dollar_pnl": 723.0,
+        "gross_r": 12.810344827587814,
+        "cost_drag_r": 0.3448275862069398,
+        "net_r": 12.465517241380875,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0247",
+        "entry_time": "2024-06-25T08:05:00+00:00",
+        "date": "2024-06-25",
+        "weekday": "Tuesday",
+        "entry_price": 2323.395,
+        "stop_loss": 2322.685,
+        "take_profit": 2334.395,
+        "exit_time": "2024-06-25T10:10:00+00:00",
+        "exit_price": 2334.395,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 0.7100000000000364,
+        "raw_pnl": 11.0,
+        "dollar_pnl": 1080.0,
+        "gross_r": 15.49295774647808,
+        "cost_drag_r": 0.281690140845056,
+        "net_r": 15.211267605633024,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0415",
+        "entry_time": "2025-06-23T07:15:00+00:00",
+        "date": "2025-06-23",
+        "weekday": "Monday",
+        "entry_price": 3352.395,
+        "stop_loss": 3351.365,
+        "take_profit": 3396.648,
+        "exit_time": "2025-06-23T20:45:00+00:00",
+        "exit_price": 3370.605,
+        "exit_reason": "DYNAMIC_CLOSE_1645",
+        "stop_distance": 1.0300000000002,
+        "raw_pnl": 18.21,
+        "dollar_pnl": 1801.0,
+        "gross_r": 17.679611650482002,
+        "cost_drag_r": 0.19417475728151568,
+        "net_r": 17.485436893200486,
+        "is_win": true
+      },
+      {
+        "trade_id": "judas-0425",
+        "entry_time": "2025-07-14T07:35:00+00:00",
+        "date": "2025-07-14",
+        "weekday": "Monday",
+        "entry_price": 3373.205,
+        "stop_loss": 3374.905,
+        "take_profit": 3353.575,
+        "exit_time": "2025-07-14T12:40:00+00:00",
+        "exit_price": 3353.575,
+        "exit_reason": "TAKE_PROFIT",
+        "stop_distance": 1.7000000000002728,
+        "raw_pnl": 19.63,
+        "dollar_pnl": 1943.0,
+        "gross_r": 11.547058823527557,
+        "cost_drag_r": 0.11764705882351054,
+        "net_r": 11.429411764704046,
+        "is_win": true
+      }
+    ],
+    "top_20_sum_net_r": 299.7702,
+    "total_positive_net_r": 1496.6044,
+    "pct_of_positive_r": 20.03,
+    "total_net_r": -332.8392
+  },
+  "item4_portfolio_sim": {
+    "activity": {
+      "total_trades": 1073,
+      "trading_days": 1026,
+      "trades_per_day": 1.0458,
+      "daily_corr": 0.0139
+    },
+    "rules": {
+      "unconstrained": {
+        "n": 1073,
+        "gross_r": 49.112,
+        "net_r": -145.6256,
+        "max_dd": 157.6647,
+        "r_per_year": {
+          "2020": {
+            "n": 176,
+            "gross_r": 5.1813,
+            "net_r": -26.1642
+          },
+          "2021": {
+            "n": 186,
+            "gross_r": -25.3794,
+            "net_r": -59.0248
+          },
+          "2022": {
+            "n": 192,
+            "gross_r": 43.0417,
+            "net_r": 0.0741
+          },
+          "2023": {
+            "n": 173,
+            "gross_r": 41.2506,
+            "net_r": 4.7487
+          },
+          "2024": {
+            "n": 184,
+            "gross_r": 16.0612,
+            "net_r": -15.1912
+          },
+          "2025": {
+            "n": 162,
+            "gross_r": -31.0433,
+            "net_r": -50.0681
+          }
+        }
+      },
+      "daily_limit_2r": {
+        "n": 1073,
+        "gross_r": 49.112,
+        "net_r": -145.6256,
+        "max_dd": 157.6647,
+        "r_per_year": {
+          "2020": {
+            "n": 176,
+            "gross_r": 5.1813,
+            "net_r": -26.1642
+          },
+          "2021": {
+            "n": 186,
+            "gross_r": -25.3794,
+            "net_r": -59.0248
+          },
+          "2022": {
+            "n": 192,
+            "gross_r": 43.0417,
+            "net_r": 0.0741
+          },
+          "2023": {
+            "n": 173,
+            "gross_r": 41.2506,
+            "net_r": 4.7487
+          },
+          "2024": {
+            "n": 184,
+            "gross_r": 16.0612,
+            "net_r": -15.1912
+          },
+          "2025": {
+            "n": 162,
+            "gross_r": -31.0433,
+            "net_r": -50.0681
+          }
+        }
+      },
+      "weekly_limit_5r": {
+        "n": 1063,
+        "gross_r": 45.957,
+        "net_r": -147.8819,
+        "max_dd": 159.9211,
+        "r_per_year": {
+          "2020": {
+            "n": 176,
+            "gross_r": 5.1813,
+            "net_r": -26.1642
+          },
+          "2021": {
+            "n": 184,
+            "gross_r": -23.3794,
+            "net_r": -56.8491
+          },
+          "2022": {
+            "n": 189,
+            "gross_r": 40.5312,
+            "net_r": -2.1408
+          },
+          "2023": {
+            "n": 173,
+            "gross_r": 41.2506,
+            "net_r": 4.7487
+          },
+          "2024": {
+            "n": 181,
+            "gross_r": 16.0612,
+            "net_r": -14.8961
+          },
+          "2025": {
+            "n": 160,
+            "gross_r": -33.6878,
+            "net_r": -52.5804
+          }
+        }
+      }
+    }
+  },
+  "item5_silver_bullet_instruments": {
+    "XAUUSD": {
+      "n": 23,
+      "date_range": "2021-09-23 to 2024-08-21",
+      "cost_drag_r": 0.1317,
+      "gross_exp": 0.4348,
+      "net_exp": 0.3031
+    },
+    "EURUSD": {
+      "n": 29,
+      "date_range": "2021-10-01 to 2024-09-27",
+      "cost_drag_r": 0.123,
+      "gross_exp": 0.2308,
+      "net_exp": 0.1078
+    },
+    "GBPUSD": {
+      "n": 36,
+      "date_range": "2021-08-06 to 2024-09-30",
+      "cost_drag_r": 0.1116,
+      "gross_exp": 0.2695,
+      "net_exp": 0.1579
+    },
+    "USDJPY": {
+      "n": 23,
+      "date_range": "2021-10-06 to 2024-08-07",
+      "cost_drag_r": 0.1771,
+      "gross_exp": -0.2743,
+      "net_exp": -0.4514
+    },
+    "ES": {
+      "n": 7,
+      "date_range": "2022-09-20 to 2024-01-03",
+      "cost_drag_r": 2.7676,
+      "gross_exp": -0.5714,
+      "net_exp": -3.339
+    }
+  },
+  "item6_pooled_v0_2015_2025": {
+    "n": 1857,
+    "gross_exp": 0.056,
+    "net_exp": -0.1792,
+    "bootstrap_ci_95": [
+      -0.2957,
+      -0.0593
+    ]
+  }
+}

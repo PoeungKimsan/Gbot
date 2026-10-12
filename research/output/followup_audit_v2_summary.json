@@ -1,0 +1,308 @@
+{
+  "item1_item2_sb_no_es": {
+    "limit": {
+      "by_instrument": {
+        "XAUUSD": {
+          "n": 23,
+          "dates": "2021-09-23 to 2024-08-21",
+          "cost_drag_r": 0.1317,
+          "gross_exp": 0.4348,
+          "net_exp": 0.3031
+        },
+        "EURUSD": {
+          "n": 29,
+          "dates": "2021-10-01 to 2024-09-27",
+          "cost_drag_r": 0.123,
+          "gross_exp": 0.2308,
+          "net_exp": 0.1078
+        },
+        "GBPUSD": {
+          "n": 36,
+          "dates": "2021-08-06 to 2024-09-30",
+          "cost_drag_r": 0.1116,
+          "gross_exp": 0.2695,
+          "net_exp": 0.1579
+        },
+        "USDJPY": {
+          "n": 23,
+          "dates": "2021-10-06 to 2024-08-07",
+          "cost_drag_r": 0.1771,
+          "gross_exp": -0.2743,
+          "net_exp": -0.4514
+        }
+      },
+      "pooled": {
+        "n": 111,
+        "gross_exp": 0.181,
+        "net_exp": 0.0486,
+        "cost_drag_r": 0.1323,
+        "date_clustered_ci_95": [
+          -0.2214,
+          0.3233
+        ]
+      }
+    },
+    "market": {
+      "by_instrument": {
+        "XAUUSD": {
+          "n": 57,
+          "dates": "2021-08-04 to 2024-08-21",
+          "cost_drag_r": 0.0513,
+          "gross_exp": 0.1064,
+          "net_exp": 0.0551
+        },
+        "EURUSD": {
+          "n": 53,
+          "dates": "2021-10-01 to 2024-09-27",
+          "cost_drag_r": 0.0628,
+          "gross_exp": 0.1009,
+          "net_exp": 0.038
+        },
+        "GBPUSD": {
+          "n": 62,
+          "dates": "2021-08-06 to 2024-09-30",
+          "cost_drag_r": 0.0618,
+          "gross_exp": 0.0183,
+          "net_exp": -0.0435
+        },
+        "USDJPY": {
+          "n": 49,
+          "dates": "2021-08-04 to 2024-09-30",
+          "cost_drag_r": 0.0607,
+          "gross_exp": 0.0038,
+          "net_exp": -0.0569
+        }
+      },
+      "pooled": {
+        "n": 221,
+        "gross_exp": 0.0576,
+        "net_exp": -0.0015,
+        "cost_drag_r": 0.0591,
+        "date_clustered_ci_95": [
+          -0.1115,
+          0.1106
+        ]
+      }
+    }
+  },
+  "item3_sizing_audit": {
+    "10000": {
+      "0.21": {
+        "stop_distance": 0.21,
+        "raw_lots": 4.76,
+        "assigned_lots": 4.76,
+        "clamped_to_max": false,
+        "notional_usd": 952000.0,
+        "effective_leverage": 95.2
+      },
+      "0.30": {
+        "stop_distance": 0.3,
+        "raw_lots": 3.33,
+        "assigned_lots": 3.33,
+        "clamped_to_max": false,
+        "notional_usd": 666000.0,
+        "effective_leverage": 66.6
+      },
+      "0.50": {
+        "stop_distance": 0.5,
+        "raw_lots": 2.0,
+        "assigned_lots": 2.0,
+        "clamped_to_max": false,
+        "notional_usd": 400000.0,
+        "effective_leverage": 40.0
+      },
+      "1.00": {
+        "stop_distance": 1.0,
+        "raw_lots": 1.0,
+        "assigned_lots": 1.0,
+        "clamped_to_max": false,
+        "notional_usd": 200000.0,
+        "effective_leverage": 20.0
+      }
+    },
+    "50000": {
+      "0.21": {
+        "stop_distance": 0.21,
+        "raw_lots": 23.8,
+        "assigned_lots": 10.0,
+        "clamped_to_max": true,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 40.0
+      },
+      "0.30": {
+        "stop_distance": 0.3,
+        "raw_lots": 16.66,
+        "assigned_lots": 10.0,
+        "clamped_to_max": true,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 40.0
+      },
+      "0.50": {
+        "stop_distance": 0.5,
+        "raw_lots": 10.0,
+        "assigned_lots": 10.0,
+        "clamped_to_max": false,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 40.0
+      },
+      "1.00": {
+        "stop_distance": 1.0,
+        "raw_lots": 5.0,
+        "assigned_lots": 5.0,
+        "clamped_to_max": false,
+        "notional_usd": 1000000.0,
+        "effective_leverage": 20.0
+      }
+    },
+    "100000": {
+      "0.21": {
+        "stop_distance": 0.21,
+        "raw_lots": 47.61,
+        "assigned_lots": 10.0,
+        "clamped_to_max": true,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 20.0
+      },
+      "0.30": {
+        "stop_distance": 0.3,
+        "raw_lots": 33.33,
+        "assigned_lots": 10.0,
+        "clamped_to_max": true,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 20.0
+      },
+      "0.50": {
+        "stop_distance": 0.5,
+        "raw_lots": 20.0,
+        "assigned_lots": 10.0,
+        "clamped_to_max": true,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 20.0
+      },
+      "1.00": {
+        "stop_distance": 1.0,
+        "raw_lots": 10.0,
+        "assigned_lots": 10.0,
+        "clamped_to_max": false,
+        "notional_usd": 2000000.0,
+        "effective_leverage": 20.0
+      }
+    }
+  },
+  "item4_judas_realism_floor": {
+    "unfiltered": {
+      "n": 1857,
+      "gross_exp": 0.056,
+      "net_exp": -0.1792,
+      "cost_drag_r": 0.2352,
+      "avg_dollar_pnl": -27.57
+    },
+    "realism_floored": {
+      "n": 1568,
+      "gross_exp": 0.0006,
+      "net_exp": -0.166,
+      "cost_drag_r": 0.1666,
+      "avg_dollar_pnl": -30.28
+    }
+  },
+  "item5_pretrade_diagnostics": {
+    "stop_distance": {
+      "<$1.00": {
+        "n": 242,
+        "net_exp": -0.06,
+        "se": 0.2721,
+        "avg_pnl_usd": -5.54
+      },
+      "$1.00-$2.00": {
+        "n": 312,
+        "net_exp": -0.1056,
+        "se": 0.1475,
+        "avg_pnl_usd": -10.99
+      },
+      "$2.00-$3.00": {
+        "n": 166,
+        "net_exp": -0.3066,
+        "se": 0.1268,
+        "avg_pnl_usd": -66.27
+      },
+      ">=$3.00": {
+        "n": 299,
+        "net_exp": -0.1298,
+        "se": 0.0895,
+        "avg_pnl_usd": -85.09
+      }
+    },
+    "ar_atr_ratio": {
+      "Ratio < 0.40": {
+        "n": 639,
+        "net_exp": -0.1647,
+        "se": 0.0939,
+        "avg_pnl_usd": -17.78
+      },
+      "Ratio 0.40-0.60": {
+        "n": 270,
+        "net_exp": -0.219,
+        "se": 0.1908,
+        "avg_pnl_usd": -114.76
+      },
+      "Ratio >= 0.60": {
+        "n": 110,
+        "net_exp": 0.247,
+        "se": 0.3333,
+        "avg_pnl_usd": 10.29
+      }
+    },
+    "hour_window": {
+      "02:00-03:00": {
+        "n": 605,
+        "net_exp": -0.1372,
+        "se": 0.1125,
+        "avg_pnl_usd": -34.6
+      },
+      "03:00-04:00": {
+        "n": 288,
+        "net_exp": -0.1522,
+        "se": 0.1373,
+        "avg_pnl_usd": -18.46
+      },
+      "04:00-05:00": {
+        "n": 126,
+        "net_exp": -0.0823,
+        "se": 0.2985,
+        "avg_pnl_usd": -118.77
+      }
+    },
+    "weekday": {
+      "Monday": {
+        "n": 183,
+        "net_exp": 0.4229,
+        "se": 0.2707,
+        "avg_pnl_usd": 35.98
+      },
+      "Tuesday": {
+        "n": 203,
+        "net_exp": 0.1068,
+        "se": 0.2275,
+        "avg_pnl_usd": -1.0
+      },
+      "Wednesday": {
+        "n": 225,
+        "net_exp": -0.4726,
+        "se": 0.1188,
+        "avg_pnl_usd": -85.94
+      },
+      "Thursday": {
+        "n": 208,
+        "net_exp": -0.4663,
+        "se": 0.1447,
+        "avg_pnl_usd": -71.24
+      },
+      "Friday": {
+        "n": 200,
+        "net_exp": -0.1647,
+        "se": 0.1805,
+        "avg_pnl_usd": -67.19
+      }
+    }
+  }
+}

@@ -1,2 +1,0 @@
-daemon_role,registered_strategy,instrument,journal_table,trade_count,access_mode
-Live MT5 Daemon,JudasSwingStrategy,XAUUSD (Gold),journal,0,READ-ONLY (SELECT)

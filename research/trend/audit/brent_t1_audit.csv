@@ -1,3 +1,0 @@
-symbol,rule,side,n,sum_net_r_0,mean_net_r_0,sum_net_r_2,mean_net_r_2,low_n_flag
-Brent,T1_DONCHIAN,LONG,31,14.811452,0.477789,12.605338,0.406624,LOW N
-Brent,T1_DONCHIAN,SHORT,36,17.335593,0.481544,15.637809,0.434384,LOW N

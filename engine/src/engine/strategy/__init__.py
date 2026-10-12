@@ -1,5 +1,21 @@
-"""The ICT strategy layer.
+"""The quantitative ETF momentum strategy layer.
 
-* :mod:`engine.strategy.judas_swing` -- the Asian-range Judas Swing setup, evaluated
-  on closed M5 bars and consumed by :mod:`engine.runtime.live_trader`.
+* :mod:`engine.strategy.etf_momentum` -- VAR_117 Multi-Asset ETF Momentum Rotation
+  with inverse-volatility weighting and Cash Filter.
 """
+
+from engine.strategy.etf_momentum import (
+    DEFAULT_UNIVERSE,
+    ETF_METADATA,
+    PortfolioAllocationSignal,
+    TickerScore,
+    VAR117Strategy,
+)
+
+__all__ = [
+    "DEFAULT_UNIVERSE",
+    "ETF_METADATA",
+    "PortfolioAllocationSignal",
+    "TickerScore",
+    "VAR117Strategy",
+]

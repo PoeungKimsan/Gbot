@@ -1,0 +1,119 @@
+diff --git a/config/risk.yaml b/config/risk.yaml
+--- a/config/risk.yaml
++++ b/config/risk.yaml
+@@ -10,3 +10,12 @@ risk_per_trade: "0.01"
+ # Daily loss limit, in R. Reaching -3R for the trading day trips the kill-switch,
+ # which latches until the day rolls over at 17:00 America/New_York.
+ daily_loss_limit_r: "3"
++
++# Minimum stop-loss distance in price units: max(broker_minimum, 3x spread).
++# Rejects and logs any signal whose stop distance is below this realism floor.
++min_stop_distance: "0.60"
++
++# Maximum allowable leverage ratio (notional / equity).
++max_leverage_ratio: "30.0"
++
++# Maximum lot size clamp per order.
++max_lot_size: "10.00"
+diff --git a/engine/src/engine/risk/config.py b/engine/src/engine/risk/config.py
+--- a/engine/src/engine/risk/config.py
++++ b/engine/src/engine/risk/config.py
+@@ -46,6 +46,9 @@ class RiskConfig:
+     risk_per_trade: Decimal
+     daily_loss_limit_r: Decimal
++    min_stop_distance: Decimal = Decimal("0.60")
++    max_leverage_ratio: Decimal = Decimal("30.0")
++    max_lot_size: Decimal = Decimal("10.00")
+ 
+     def __post_init__(self) -> None:
+-        for field in ("risk_per_trade", "daily_loss_limit_r"):
++        for field in ("risk_per_trade", "daily_loss_limit_r", "min_stop_distance", "max_leverage_ratio", "max_lot_size"):
+             try:
+                 require_decimal(getattr(self, field), field=field, positive=True)
+             except RoundingError as exc:
+                 raise RiskConfigError(str(exc)) from exc
+@@ -88,4 +91,7 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_CONFIG_PATH) -> RiskConfig:
+     return RiskConfig(
+         risk_per_trade=decimal_scalar(document, "risk_per_trade"),
+         daily_loss_limit_r=decimal_scalar(document, "daily_loss_limit_r"),
++        min_stop_distance=decimal_scalar(document, "min_stop_distance") if "min_stop_distance" in document else Decimal("0.60"),
++        max_leverage_ratio=decimal_scalar(document, "max_leverage_ratio") if "max_leverage_ratio" in document else Decimal("30.0"),
++        max_lot_size=decimal_scalar(document, "max_lot_size") if "max_lot_size" in document else Decimal("10.00"),
+     )
+diff --git a/engine/src/engine/runtime/live_trader.py b/engine/src/engine/runtime/live_trader.py
+--- a/engine/src/engine/runtime/live_trader.py
++++ b/engine/src/engine/runtime/live_trader.py
+@@ -465,18 +465,36 @@ class LiveTrader:
+         equity: Decimal,
++        spread: Decimal = Decimal("0.20"),
+     ) -> Decimal:
+-        """Calculate dynamic lot size from risk budget and MT5 gold contract size."""
++        """Calculate dynamic lot size with realism floor, leverage cap, and risk recomputation."""
+         stop_distance = abs(entry - stop_loss)
+-        if stop_distance <= Decimal("0"):
+-            return self.lot_size if self.lot_size is not None else Decimal("0.01")
++
++        # 1. Enforce minimum stop: max(broker minimum, 3x spread)
++        broker_min_stop = Decimal("0.20")
++        min_stop_floor = max(broker_min_stop, Decimal("3") * spread, self.risk_config.min_stop_distance)
++        if stop_distance < min_stop_floor:
++            logger.warning(
++                "Order REFUSED: stop distance %s is below minimum realism floor %s (max(broker_min, 3x spread)); signal rejected",
++                stop_distance,
++                min_stop_floor,
++            )
++            return Decimal("0")
+ 
+         try:
+             # 1 standard lot = 100 troy oz on MT5 XAUUSD.
+             contract_size = Decimal("100")
+             risk_amount = self.risk_config.risk_amount(equity)
+             dollar_risk_per_lot = stop_distance * contract_size
+             if dollar_risk_per_lot <= Decimal("0"):
+                 return Decimal("0")
+ 
+             raw_lots = floor_to_step(risk_amount / dollar_risk_per_lot, precision=2)
+             if raw_lots < Decimal("0.01"):
+                 logger.warning(
+                     "Dynamic lot size %s below venue minimum 0.01 (risk=$%s, stop_dist=$%s); signal rejected",
+                     raw_lots,
+                     risk_amount,
+                     stop_distance,
+                 )
+                 return Decimal("0")
+-            return min(raw_lots, Decimal("10.00"))
++
++            # 2. Leverage cap by equity
++            max_notional = equity * self.risk_config.max_leverage_ratio
++            max_lots_by_leverage = floor_to_step(max_notional / (contract_size * entry), precision=2)
++            if raw_lots > max_lots_by_leverage:
++                logger.warning(
++                    "Leverage cap triggered: raw lots %s implies leverage %sx exceeding cap %sx; clamping to %s lots",
++                    raw_lots,
++                    (raw_lots * contract_size * entry) / equity,
++                    self.risk_config.max_leverage_ratio,
++                    max_lots_by_leverage,
++                )
++
++            # Apply both clamps: leverage cap and hard max_lot_size
++            clamped_lots = min(raw_lots, max_lots_by_leverage, self.risk_config.max_lot_size)
++
++            # 3. Recompute effective risk % after clamping
++            effective_dollar_risk = clamped_lots * dollar_risk_per_lot
++            effective_risk_pct = (effective_dollar_risk / equity) * Decimal("100")
++            if clamped_lots < raw_lots:
++                logger.warning(
++                    "Dynamic lot size clamped: raw %s lots -> %s lots. Effective risk recomputed: %s%% (target %s%%)",
++                    raw_lots,
++                    clamped_lots,
++                    effective_risk_pct,
++                    self.risk_config.risk_per_trade * Decimal("100"),
++                )
++
++            if clamped_lots < Decimal("0.01"):
++                logger.warning("Order REFUSED: clamped lot size %s below minimum 0.01", clamped_lots)
++                return Decimal("0")
++
++            return clamped_lots
+         except Exception as exc:
+             logger.warning(

@@ -1,0 +1,1 @@
+trade_id,strategy,side,entry_time,entry_price,stop_loss,take_profit,exit_time,exit_price,pnl_dollars,r_multiple,status,exit_reason,spread_paid,slippage_paid,news_filtered,in_sample

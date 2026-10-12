@@ -1,2 +1,0 @@
-symbol,date,open,high,low,close,volume,fetch_timestamp,sanitized_hl,roll_gap_warn
-EURUSD,2026-10-09,1.121705,1.124606,1.119194,1.120574,0,2026-10-11T14:19:33.515672+00:00,0,0

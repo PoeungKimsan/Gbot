@@ -1,9 +1,0 @@
-rule,group,n_trades,sum_net_r_0,pct_share_net_r_0,sum_net_r_2,pct_share_net_r_2,low_n_flag
-T2_SMA_CROSS,Metals,63,81.63,38.62,68.26,65.72,LOW N
-T2_SMA_CROSS,Equities,79,115.28,54.54,93.17,89.71,LOW N
-T2_SMA_CROSS,FX,197,14.5,6.86,-54.44,-52.42,LOW N
-T2_SMA_CROSS,Brent,35,-0.04,-0.02,-3.12,-3.01,LOW N
-T3_TSMOM,Metals,66,151.8,52.55,132.97,77.85,LOW N
-T3_TSMOM,Equities,64,105.05,36.37,80.47,47.11,LOW N
-T3_TSMOM,FX,219,20.06,6.95,-50.45,-29.54,OK
-T3_TSMOM,Brent,28,11.96,4.14,7.83,4.58,LOW N

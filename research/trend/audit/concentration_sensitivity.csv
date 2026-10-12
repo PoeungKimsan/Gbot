@@ -1,3 +1,0 @@
-rule,best_market,best_market_sum_net_0,ex_best_market_n,ex_best_market_mean_net_0,ex_best_market_mean_net_2,best_year,best_year_sum_net_0,ex_best_year_n,ex_best_year_mean_net_0,ex_best_year_mean_net_2
-T2_SMA_CROSS,XAGUSD,71.55,341,0.41,0.1146,2025,74.75,354,0.3859,0.1034
-T3_TSMOM,XAUUSD,82.03,350,0.591,0.2881,2025,96.2,358,0.5382,0.2338

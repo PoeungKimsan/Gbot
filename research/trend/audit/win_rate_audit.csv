@@ -1,4 +1,0 @@
-rule,n_trades,win_rate_gross_pct,win_rate_net_0_pct,win_rate_net_2_pct,rec0_mean_net_r,rec0_avg_winner_r,rec0_avg_loser_r,rec0_implied_win_rate_pct,rec2_mean_net_r,rec2_avg_winner_r,rec2_avg_loser_r,rec2_implied_win_rate_pct,gap_net0_vs_net2_pct,low_n_flag
-T1_DONCHIAN,1025,30.54,29.95,27.51,0.1634,2.76,-0.9469,29.95,0.0409,2.7127,-0.9732,27.51,2.44,OK
-T2_SMA_CROSS,374,28.88,28.88,27.27,0.5652,4.3227,-0.9604,28.88,0.2777,3.8505,-1.0621,27.27,1.61,OK
-T3_TSMOM,377,26.79,26.79,23.34,0.7662,5.1251,-0.8289,26.79,0.4531,5.0282,-0.94,23.34,3.45,OK

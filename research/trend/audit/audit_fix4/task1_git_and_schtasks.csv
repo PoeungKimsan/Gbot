@@ -1,2 +1,0 @@
-target,commit,commit_time,author,subject,windows_schtasks_found,status
-forward_trend_v1.2.md,4f68a3d,2026-10-11 22:52:21 +0700,PoeungKimsan,"feat(prereg): freeze forward_trend_v1.2, fix short stop bug, independent full verification, and canonical stop-fixed audits",0,PASS (0 scheduled tasks exist)

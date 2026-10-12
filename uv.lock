@@ -319,17 +319,6 @@ wheels = [
 ]
 
 [[package]]
-name = "metatrader5"
-version = "5.0.6231"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/ed/525a69afbc050f5b19342a6ddada4f086e2aa9ef63b987bef5d723f29586/metatrader5-5.0.6231-cp312-cp312-win_amd64.whl", hash = "sha256:b94b1f8f52087ae36dfac5f352a96f5d04fe308704d9515f82cf5d1470bc31d4", size = 47968, upload-time = "2026-09-27T12:22:35.219Z" },
-]
-
-[[package]]
 name = "multidict"
 version = "6.9.1"
 source = { registry = "https://pypi.org/simple" }
@@ -694,7 +683,6 @@ dependencies = [
     { name = "aiohttp" },
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "metatrader5" },
     { name = "numpy" },
     { name = "pyarrow" },
     { name = "pydantic" },
@@ -719,7 +707,6 @@ requires-dist = [
     { name = "aiohttp" },
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "metatrader5", specifier = ">=5.0.6231" },
     { name = "numpy" },
     { name = "pyarrow" },
     { name = "pydantic", specifier = ">=2" },

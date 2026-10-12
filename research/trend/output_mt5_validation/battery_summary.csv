@@ -1,9 +1,0 @@
-rule,sample,carry_model,N,mean_net_r,sum_net_r,ci_95,ci_lower,sub_2018_2021,sub_2022_2026,ex_metals,crit1_stat_edge,crit2_temporal_pos
-T2_SMA_CROSS,Full List,0% Carry,156,0.0469,7.3184,"[-0.3577, +0.4808]",-0.3577,-0.2636,0.1367,0.1024,False,False
-T2_SMA_CROSS,Full List,Broker Swaps,156,-0.5109,-79.6927,"[-0.9087, -0.0979]",-0.9087,-0.7617,-0.4383,-0.4898,False,False
-T2_SMA_CROSS,Realized-Only,0% Carry,150,0.0067,1.0098,"[-0.4021, +0.4607]",-0.4021,-0.2636,0.089,0.057,False,False
-T2_SMA_CROSS,Realized-Only,Broker Swaps,150,-0.5574,-83.6165,"[-0.9556, -0.1321]",-0.9556,-0.7617,-0.4953,-0.5397,False,False
-T3_TSMOM,Full List,0% Carry,155,0.5898,91.4142,"[-0.1820, +1.5166]",-0.182,-0.0328,0.9519,0.394,False,False
-T3_TSMOM,Full List,Broker Swaps,155,-0.1876,-29.0726,"[-0.8114, +0.5073]",-0.8114,-0.6779,0.0976,-0.3014,False,False
-T3_TSMOM,Realized-Only,0% Carry,147,0.3722,54.7187,"[-0.1934, +1.0430]",-0.1934,-0.0328,0.6288,0.1282,False,False
-T3_TSMOM,Realized-Only,Broker Swaps,147,-0.3217,-47.293,"[-0.8249, +0.2434]",-0.8249,-0.6779,-0.0961,-0.4573,False,False

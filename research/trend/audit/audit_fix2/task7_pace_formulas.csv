@@ -1,3 +1,0 @@
-metric,formula,inputs,result,context
-17.24 trades/yr,T2_N / Mean(Eval_Span_Years across 12 markets after 252-bar warmup),"N = 374, Mean(Eval_Years) = 21.6943 yrs",17.2396 trades/yr,Market-specific post-warmup evaluation window pace (used in forward_trend_v1.2)
-16.1 trades/yr,T2_N / Fixed_Horizon_Years (2002-10-01 to 2025-12-31 without market warmup deduction),"N = 374, Horizon_Years = 23.2470 yrs",16.0881 trades/yr,Fixed calendar benchmark horizon pace (used in forward_trend_v1.0)

@@ -1,0 +1,10 @@
+{
+  "null_a_gross_mean": 0.0179,
+  "null_a_net_mean": -0.181,
+  "null_b_gross_mean": 0.0125,
+  "null_b_net_mean": -0.1894,
+  "avg_fade_mirror_gross": 0.0008,
+  "avg_fade_mirror_net": -0.2009,
+  "pct_fade_null_b": 67.1,
+  "pct_mirror_null_b": 25.4
+}

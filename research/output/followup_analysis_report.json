@@ -1,0 +1,134 @@
+{
+  "timestamp_utc": "2026-10-11T08:02:17.252763+00:00",
+  "part_1_v11_audit": {
+    "trades_v0_count": 525,
+    "trades_v11_count": 525,
+    "is_identical": true,
+    "high_sweeps_analyzed": 10385,
+    "high_sweeps_filtered": 3855,
+    "low_sweeps_analyzed": 16738,
+    "low_sweeps_filtered": 6895,
+    "explanation": "Because an Asian High sweep requires bar.high >= asian_high + 0.05, and Asian High is the upper ceiling of the preceding 6-hour range, London opening price (at 02:00) is virtually always below Asian High. Therefore, high < session_open_price is mathematically impossible on a high sweep bar unless London opened with a massive gap above Asian High. Consequently, the filter condition evaluated to False on 100% of candidate bars, producing zero filtered trades."
+  },
+  "part_2_mirror_v10": {
+    "n_trades": 525,
+    "win_rate": 0.2438,
+    "avg_r": -0.0537,
+    "ci_95": [
+      -0.2327,
+      0.1352
+    ],
+    "profit_factor": 0.93,
+    "t_stat": -0.5769,
+    "p_value": 0.563983,
+    "max_drawdown_r": 89.4,
+    "null_model_a_p_val": 0.68,
+    "null_model_b_p_val": 0.946,
+    "min_r_observed": -1.188,
+    "max_r_observed": 13.15
+  },
+  "part_3_null_b_fair": {
+    "null_b_mean_r": -0.1535,
+    "null_b_std_r": 0.0891,
+    "null_b_ci_95": [
+      -0.3323,
+      0.0188
+    ],
+    "v0_real_avg_r": -0.0631,
+    "v0_fair_percentile": 83.6,
+    "v0_fair_p_value": 0.164,
+    "cost_model_applied": "Identical to V0: $0.20 spread on all trades + $0.05 slippage on stops"
+  },
+  "part_4_silver_bullet_validation": {
+    "n_filled_trades": 27,
+    "total_setups": 56,
+    "unfilled_orders": 29,
+    "unfilled_rate": 0.5179,
+    "realized_win_rate": 0.3333,
+    "realized_avg_r": -0.0894,
+    "ci_95": [
+      -0.5769,
+      0.4377
+    ],
+    "profit_factor": 0.87,
+    "hypothetical_unfilled_analysis": {
+      "evaluated_setups": 29,
+      "hypothetical_wins": 27,
+      "hypothetical_losses": 2,
+      "hypothetical_win_rate": 0.931,
+      "hypothetical_avg_r": 1.7554
+    }
+  },
+  "part_5_yearly_table": [
+    {
+      "year": "2020",
+      "n_trades": 166,
+      "avg_stop_dollars": 2.65,
+      "avg_asian_range_dollars": 12.3,
+      "avg_cost_r": 0.1622,
+      "win_rate": 0.1867,
+      "expectancy_r": -0.0452,
+      "profit_factor": 0.95
+    },
+    {
+      "year": "2021",
+      "n_trades": 174,
+      "avg_stop_dollars": 2.48,
+      "avg_asian_range_dollars": 8.78,
+      "avg_cost_r": 0.1674,
+      "win_rate": 0.2069,
+      "expectancy_r": -0.2853,
+      "profit_factor": 0.68
+    },
+    {
+      "year": "2022",
+      "n_trades": 185,
+      "avg_stop_dollars": 1.95,
+      "avg_asian_range_dollars": 8.93,
+      "avg_cost_r": 0.1986,
+      "win_rate": 0.2162,
+      "expectancy_r": 0.13,
+      "profit_factor": 1.14
+    },
+    {
+      "year": "2023",
+      "n_trades": 166,
+      "avg_stop_dollars": 2.31,
+      "avg_asian_range_dollars": 8.0,
+      "avg_cost_r": 0.1863,
+      "win_rate": 0.2289,
+      "expectancy_r": 0.0345,
+      "profit_factor": 1.04
+    },
+    {
+      "year": "2024",
+      "n_trades": 171,
+      "avg_stop_dollars": 3.0,
+      "avg_asian_range_dollars": 12.36,
+      "avg_cost_r": 0.1528,
+      "win_rate": 0.2515,
+      "expectancy_r": -0.0249,
+      "profit_factor": 0.97
+    },
+    {
+      "year": "2025",
+      "n_trades": 151,
+      "avg_stop_dollars": 4.9,
+      "avg_asian_range_dollars": 29.21,
+      "avg_cost_r": 0.1104,
+      "win_rate": 0.1589,
+      "expectancy_r": -0.359,
+      "profit_factor": 0.61
+    },
+    {
+      "year": "2026 (YTD)",
+      "n_trades": "[SEALED]",
+      "avg_stop_dollars": "[SEALED]",
+      "avg_asian_range_dollars": "[SEALED]",
+      "avg_cost_r": "[SEALED]",
+      "win_rate": "[SEALED]",
+      "expectancy_r": "[SEALED]",
+      "profit_factor": "[SEALED]"
+    }
+  ]
+}

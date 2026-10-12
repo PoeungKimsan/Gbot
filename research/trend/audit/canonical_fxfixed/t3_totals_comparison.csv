@@ -1,4 +1,0 @@
-list_label,path,N,sum_net_r_0,mean_net_r_0,sum_net_r_2,mean_net_r_2
-Old Unfixed (Run #1/#2),research/trend/output/T3_TSMOM_trades.csv,377,+288.8671,+0.7662,+170.8174,+0.4531
-Canonical Fixed (373),research/trend/output_fxfixed/T3_TSMOM_trades.csv,373,+294.7467,+0.7902,+176.1045,+0.4721
-Implied by period_end_audit.csv,research/trend/audit/canonical_fxfixed/period_end_audit.csv,373,+294.7330,+0.7902,+176.1070,+0.4721

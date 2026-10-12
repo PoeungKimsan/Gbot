@@ -1,0 +1,17 @@
+{
+  "stale_levels_audit": {
+    "total_levels_unpruned": 171,
+    "levels_swept_count": 146,
+    "max_age_bars": 351,
+    "mean_age_bars": 36.1,
+    "retention_bars_tested": 400,
+    "levels_retained_with_pruning": 121,
+    "memory_reduction_ratio": 1.41
+  },
+  "identical_trades_test": {
+    "unpruned_trades_count": 27,
+    "pruned_trades_count": 27,
+    "mismatch_count": 0,
+    "verified_identical": true
+  }
+}

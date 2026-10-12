@@ -1,0 +1,17 @@
+{
+  "journal_status": "connected_read_only",
+  "journal_total_rows": 0,
+  "paper_trades_count": 0,
+  "replay_trades_count": 0,
+  "matched_trades_count": 0,
+  "unmatched_paper_trades": 0,
+  "unmatched_replay_trades": 0,
+  "discrepancies": [],
+  "cost_model_comparison": {
+    "model_spread": 0.2,
+    "model_stop_slippage": 0.05,
+    "observed_avg_spread": null,
+    "observed_avg_slippage": null
+  },
+  "notes": "Live journal.db has 0 committed trade records (daemon running in clean paper-trading mode). Replay of identical period matches with 0 trades. No live executions have deviated from model."
+}

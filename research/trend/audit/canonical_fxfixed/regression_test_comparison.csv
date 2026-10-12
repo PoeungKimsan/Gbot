@@ -1,4 +1,0 @@
-test_config,data_source,target_output,t2_expected_n,t2_actual_n,t2_result,t3_expected_n,t3_actual_n,t3_result
-Fixed Calendar (Canonical),data_fxfixed,output_fxfixed,374,374,PASS,373,373,PASS
-Old Unfixed Calendar,data,output,374,374,PASS,377,377,PASS
-Cross-Check (Fixed data vs Old output),data_fxfixed,output,374,374,FAIL,377,373,FAIL

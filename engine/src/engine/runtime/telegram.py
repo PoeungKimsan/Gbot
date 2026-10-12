@@ -78,8 +78,8 @@ class TelegramNotifier:
         entry_price: Decimal | str,
         stop_loss: Decimal | str,
         take_profit: Decimal | str,
-        symbol: str = "XAUUSDm",
-        strategy: str = "ICT Judas Swing",
+        symbol: str = "ETF",
+        strategy: str = "VAR_117 ETF Momentum",
         reason: str = "",
     ) -> bool:
         """Send notification when a new trade is executed."""

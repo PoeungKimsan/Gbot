@@ -1,0 +1,230 @@
+[
+  {
+    "equity": 10000,
+    "stop_distance": 0.21,
+    "raw_lots": 4.76,
+    "clamped_lots": 4.76,
+    "clamp_binds": false,
+    "eff_risk_pct": 0.9996,
+    "eff_risk_dollars": 99.96,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 952000.0,
+      "leverage": 95.2
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 1951600.0,
+      "leverage": 195.16
+    }
+  },
+  {
+    "equity": 10000,
+    "stop_distance": 0.3,
+    "raw_lots": 3.33,
+    "clamped_lots": 3.33,
+    "clamp_binds": false,
+    "eff_risk_pct": 0.999,
+    "eff_risk_dollars": 99.9,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 666000.0,
+      "leverage": 66.6
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 1365300.0,
+      "leverage": 136.53
+    }
+  },
+  {
+    "equity": 10000,
+    "stop_distance": 0.5,
+    "raw_lots": 2.0,
+    "clamped_lots": 2.0,
+    "clamp_binds": false,
+    "eff_risk_pct": 1.0,
+    "eff_risk_dollars": 100.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 400000.0,
+      "leverage": 40.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 820000.0,
+      "leverage": 82.0
+    }
+  },
+  {
+    "equity": 10000,
+    "stop_distance": 1.0,
+    "raw_lots": 1.0,
+    "clamped_lots": 1.0,
+    "clamp_binds": false,
+    "eff_risk_pct": 1.0,
+    "eff_risk_dollars": 100.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 200000.0,
+      "leverage": 20.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 410000.0,
+      "leverage": 41.0
+    }
+  },
+  {
+    "equity": 50000,
+    "stop_distance": 0.21,
+    "raw_lots": 23.8,
+    "clamped_lots": 10.0,
+    "clamp_binds": true,
+    "eff_risk_pct": 0.42,
+    "eff_risk_dollars": 210.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 40.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 82.0
+    }
+  },
+  {
+    "equity": 50000,
+    "stop_distance": 0.3,
+    "raw_lots": 16.66,
+    "clamped_lots": 10.0,
+    "clamp_binds": true,
+    "eff_risk_pct": 0.6,
+    "eff_risk_dollars": 300.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 40.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 82.0
+    }
+  },
+  {
+    "equity": 50000,
+    "stop_distance": 0.5,
+    "raw_lots": 10.0,
+    "clamped_lots": 10.0,
+    "clamp_binds": false,
+    "eff_risk_pct": 1.0,
+    "eff_risk_dollars": 500.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 40.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 82.0
+    }
+  },
+  {
+    "equity": 50000,
+    "stop_distance": 1.0,
+    "raw_lots": 5.0,
+    "clamped_lots": 5.0,
+    "clamp_binds": false,
+    "eff_risk_pct": 1.0,
+    "eff_risk_dollars": 500.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 1000000.0,
+      "leverage": 20.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 2050000.0,
+      "leverage": 41.0
+    }
+  },
+  {
+    "equity": 100000,
+    "stop_distance": 0.21,
+    "raw_lots": 47.61,
+    "clamped_lots": 10.0,
+    "clamp_binds": true,
+    "eff_risk_pct": 0.21,
+    "eff_risk_dollars": 210.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 20.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 41.0
+    }
+  },
+  {
+    "equity": 100000,
+    "stop_distance": 0.3,
+    "raw_lots": 33.33,
+    "clamped_lots": 10.0,
+    "clamp_binds": true,
+    "eff_risk_pct": 0.3,
+    "eff_risk_dollars": 300.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 20.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 41.0
+    }
+  },
+  {
+    "equity": 100000,
+    "stop_distance": 0.5,
+    "raw_lots": 20.0,
+    "clamped_lots": 10.0,
+    "clamp_binds": true,
+    "eff_risk_pct": 0.5,
+    "eff_risk_dollars": 500.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 20.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 41.0
+    }
+  },
+  {
+    "equity": 100000,
+    "stop_distance": 1.0,
+    "raw_lots": 10.0,
+    "clamped_lots": 10.0,
+    "clamp_binds": false,
+    "eff_risk_pct": 1.0,
+    "eff_risk_dollars": 1000.0,
+    "at_2000": {
+      "gold_price": 2000,
+      "notional_usd": 2000000.0,
+      "leverage": 20.0
+    },
+    "at_4100": {
+      "gold_price": 4100,
+      "notional_usd": 4100000.0,
+      "leverage": 41.0
+    }
+  }
+]

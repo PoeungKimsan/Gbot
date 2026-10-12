@@ -1,5 +1,5 @@
 /**
- * XAUUSD Institutional Trading Dashboard — Supabase Minimalist Design System.
+ * VAR_117 Multi-Asset ETF Momentum Rotation Dashboard.
  *
  * Designed according to DESIGN-supabase.md:
  * - Minimalist chrome, near-monochrome palette (#1c1c1c on #121212)
@@ -8,25 +8,45 @@
  * - Clean technical 1px hairline borders
  */
 
-import type { ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
+import { Clock } from "lucide-react";
 import { useLiveTrader } from "./hooks/useLiveTrader";
-import { LiveTickerCard } from "./components/LiveTickerCard";
-import { TradingViewChart } from "./components/TradingViewChart";
-import { LivePositionPnL } from "./components/LivePositionPnL";
-import { StrategyRadar } from "./components/StrategyRadar";
-import { LiveTradeTape } from "./components/LiveTradeTape";
+import { PortfolioSummaryCards } from "./components/PortfolioSummaryCards";
+import { HoldingsTable } from "./components/HoldingsTable";
+import { ETFRadar } from "./components/ETFRadar";
+import { RebalanceTimeline } from "./components/RebalanceTimeline";
 
-export interface AppProps {
-  readonly snapshot?: any;
+function getNyTime(): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date());
+  } catch {
+    return new Date().toLocaleTimeString();
+  }
 }
 
-export function App(_props: AppProps = {}): ReactElement {
-  const { connected, snapshot, latestTick, priceFlash } = useLiveTrader();
+export function App(): ReactElement {
+  const { connected, snapshot, triggerRebalance, isRebalancing } = useLiveTrader();
+  const [nyTime, setNyTime] = useState<string>(getNyTime);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNyTime(getNyTime());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const brokerMode = snapshot?.broker_mode || "Simulated Paper";
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#ededed] antialiased">
       {/* Top Navigation */}
-      <header className="border-b border-[#242424] bg-[#171717] px-6 py-3">
+      <header className="border-b border-[#242424] bg-[#171717] px-6 py-3 sticky top-0 z-50">
         <div className="mx-auto flex max-w-[94rem] items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-7 w-7 items-center justify-center rounded bg-[#3ecf8e] text-[#121212] font-bold text-xs tracking-tight">
@@ -38,12 +58,25 @@ export function App(_props: AppProps = {}): ReactElement {
               </span>
               <span className="text-[#333333]">/</span>
               <span className="font-mono text-xs text-[#9a9a9a]">
-                XAUUSD ICT Lab
+                VAR_117 Multi-Asset ETF Momentum
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3 font-mono text-xs">
+            {/* NY Algorithmic Clock */}
+            <div className="hidden sm:flex items-center gap-2 rounded bg-[#202020] px-3 py-1 border border-[#282828] text-[#9a9a9a]">
+              <Clock className="h-3.5 w-3.5 text-[#3ecf8e]" />
+              <span>NY: {nyTime}</span>
+            </div>
+
+            {/* Broker Badge */}
+            <div className="flex items-center rounded bg-[#202020] px-3 py-1 border border-[#282828] text-[#ededed]">
+              <span className="text-[#707070] mr-1.5">Broker:</span>
+              <span className="font-semibold text-[#3ecf8e]">{brokerMode}</span>
+            </div>
+
+            {/* Engine WebSocket Connection Status */}
             <div className="flex items-center gap-2 rounded bg-[#202020] px-3 py-1 border border-[#282828]">
               <span
                 className={`h-2 w-2 rounded-full ${
@@ -51,69 +84,39 @@ export function App(_props: AppProps = {}): ReactElement {
                 }`}
               />
               <span className="text-[#9a9a9a]">
-                {connected ? "MetaTrader 5 Connected" : "Connecting to Engine..."}
+                {connected ? "Engine Live" : "Connecting..."}
               </span>
-            </div>
-
-            <div className="hidden sm:flex items-center rounded bg-[#202020] px-3 py-1 border border-[#282828] text-[#707070]">
-              <span>Demo #414431426</span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div className="mx-auto flex max-w-[94rem] flex-col gap-6 px-6 py-6">
-        {/* Hero Section: Live Ticker Card */}
-        <section>
-          <LiveTickerCard
-            snapshot={snapshot}
-            tick={latestTick}
-            connected={connected}
-            priceFlash={priceFlash}
-          />
-        </section>
+      {/* Main Content Dashboard */}
+      <main className="mx-auto max-w-[94rem] p-6 flex flex-col gap-6">
+        {/* Metric Cards Banner */}
+        <PortfolioSummaryCards snapshot={snapshot} />
 
-        {/* Technical Grid Layout */}
-        <main className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Real-Time Interactive Candlestick Chart (7 cols) */}
-          <section className="lg:col-span-7">
-            <TradingViewChart
-              bars={snapshot?.recent_bars ?? []}
-              tick={latestTick}
-              asianRange={snapshot?.asian_range ?? null}
-              className="h-full"
+        {/* 2-Column Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Active Holdings & Rebalance Tape */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            <HoldingsTable holdings={snapshot?.holdings || []} />
+            <RebalanceTimeline
+              rebalanceInfo={snapshot?.rebalance_info || null}
+              recentOrders={snapshot?.recent_orders || []}
             />
-          </section>
+          </div>
 
-          {/* Live Position & Today's PnL Island (5 cols) */}
-          <section className="lg:col-span-5">
-            <LivePositionPnL snapshot={snapshot} className="h-full" />
-          </section>
-
-          {/* Strategy Radar (5 cols) */}
-          <section className="lg:col-span-5">
-            <StrategyRadar
-              asianRange={snapshot?.asian_range ?? null}
-              latestSignal={snapshot?.latest_signal ?? null}
-              className="h-full"
+          {/* Right Column: 12-ETF Momentum Strategy Radar */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <ETFRadar
+              scores={snapshot?.radar || []}
+              onRebalance={triggerRebalance}
+              isRebalancing={isRebalancing}
             />
-          </section>
-
-          {/* Trade History (7 cols) */}
-          <section className="lg:col-span-7">
-            <LiveTradeTape
-              trades={snapshot?.completed_trades ?? []}
-              className="h-full"
-            />
-          </section>
-        </main>
-
-        {/* Minimalist Technical Footer */}
-        <footer className="mt-8 border-t border-[#242424] pt-4 pb-6 text-center font-mono text-[11px] text-[#707070]">
-          GBOT Quantitative Research · ICT Asian Judas Swing & Silver Bullet · MetaTrader 5 Bridge
-        </footer>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,10 +1,12 @@
 """Tests for FastAPI real-time service (api.main).
 
 Verifies:
-1. REST endpoints (/api/status, /api/bars, /api/positions, /api/trades) serve state.
-2. WebSocket (/ws/live) yields initial snapshot on connect and receives live broadcasts.
-3. CORS headers are enabled for Vite dev client.
-4. Lifespan properly manages LiveTrader lifecycle.
+1. REST endpoints (/api/status, /api/portfolio, /api/radar, /api/positions, /api/trades,
+   /api/bars) serve state.
+2. Rebalance trigger endpoint (/api/rebalance/execute) functions correctly.
+3. WebSocket (/ws/live) yields initial snapshot on connect and receives live broadcasts.
+4. CORS headers are enabled for Vite dev client.
+5. Lifespan properly manages LiveTrader lifecycle.
 """
 
 from __future__ import annotations
@@ -21,11 +23,32 @@ def test_get_status_endpoint() -> None:
         resp = client.get("/api/status")
         assert resp.status_code == 200
         data = resp.json()
-        assert "symbol" in data
-        assert "bid" in data
-        assert "ask" in data
+        assert "strategy" in data
+        assert "account_equity" in data
+        assert "cash_balance" in data
         assert "killswitch" in data
         assert data["killswitch"]["state"] in ("ARMED", "TRIPPED")
+
+
+def test_get_portfolio_endpoint() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        resp = client.get("/api/portfolio")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "account_equity" in data
+        assert "cash_balance" in data
+        assert "holdings" in data
+        assert "rebalance_info" in data
+
+
+def test_get_radar_endpoint() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        resp = client.get("/api/radar")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
 
 
 def test_get_bars_endpoint() -> None:
@@ -57,6 +80,33 @@ def test_get_trades_endpoint() -> None:
         assert "realized_pnl_today" in data
 
 
+def test_trigger_rebalance_endpoint() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        # Unauthorized without PIN
+        unauth_resp = client.post("/api/rebalance/execute")
+        assert unauth_resp.status_code == 401
+
+        # Authorized with correct PIN
+        import os
+
+        pin = os.getenv("ADMIN_PIN", "1234")
+        with patch(
+            "engine.runtime.live_trader.global_trader.execute_rebalance",
+            new_callable=AsyncMock,
+            return_value=[{"client_order_id": "ord-1", "ticker": "SPY", "side": "buy"}],
+        ) as mock_exec:
+            resp = client.post(
+                "/api/rebalance/execute?force=true",
+                headers={"X-Admin-Pin": pin},
+            )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["status"] == "success"
+            assert data["orders_count"] == 1
+            mock_exec.assert_called_once_with(force=True)
+
+
 def test_cors_headers_present() -> None:
     app = create_app()
     with TestClient(app) as client:
@@ -80,23 +130,20 @@ def test_websocket_live_stream_initial_message_and_broadcast() -> None:
         init_msg = ws.receive_json()
         assert init_msg["type"] == "init"
         assert "data" in init_msg
-        assert init_msg["data"]["symbol"] == global_trader.symbol
+        assert "account_equity" in init_msg["data"]
 
-        # 2. Trader broadcasting a tick reaches the websocket client
+        # 2. Trader broadcasting reaches the websocket client
         global_trader.broadcast(
-            "tick",
+            "portfolio_update",
             {
-                "bid": "2700.50",
-                "ask": "2700.70",
-                "mid": "2700.60",
-                "spread_ticks": 20,
-                "time": 1710000000,
+                "equity": "100000.00",
+                "cash": "50000.00",
             },
         )
 
-        tick_msg = ws.receive_json()
-        assert tick_msg["type"] == "tick"
-        assert tick_msg["data"]["bid"] == "2700.50"
+        update_msg = ws.receive_json()
+        assert update_msg["type"] == "portfolio_update"
+        assert update_msg["data"]["equity"] == "100000.00"
 
 
 def test_lifespan_starts_and_stops_trader() -> None:

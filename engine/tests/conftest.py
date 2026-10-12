@@ -182,13 +182,16 @@ def bar_factory() -> Callable[..., Any]:
 
 
 @pytest.fixture(autouse=True)
-def _no_real_io() -> Iterator[None]:
+def _no_real_io(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Assert that no Phase 1 test performs real network or wall-clock I/O.
 
     The guard is advisory: it patches ``socket.getaddrinfo`` to refuse connections, so a
     test that forgets to inject a transport fails loudly instead of silently hanging.
     """
     import socket
+
+    monkeypatch.delenv("APCA_API_KEY_ID", raising=False)
+    monkeypatch.delenv("APCA_API_SECRET_KEY", raising=False)
 
     original = socket.getaddrinfo
 

@@ -1,9 +1,0 @@
-rule,carry,metric,old_unfixed,fixed_full,fixed_realized
-T3_TSMOM,2%,Null A Mean,+0.0407,+0.0247,+0.0207
-T3_TSMOM,2%,Null A p95,+0.2813,+0.2779,+0.2590
-T3_TSMOM,2%,Null B Mean,+0.1208,+0.1484,+0.0289
-T3_TSMOM,2%,Null B p95,+0.3458,+0.3832,+0.2233
-T3_TSMOM,0%,Null A Mean,+0.1693,+0.1538,+0.1471
-T3_TSMOM,0%,Null A p95,+0.4168,+0.4160,+0.3996
-T3_TSMOM,0%,Null B Mean,+0.3040,+0.3333,+0.2094
-T3_TSMOM,0%,Null B p95,+0.5316,+0.5880,+0.4264

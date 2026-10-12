@@ -1,0 +1,717 @@
+{
+  "metadata": {
+    "git_head_commit": "59067a49fa0c9e46e22b84a84a0b90ecf1fd5604",
+    "generated_at_utc": "2026-10-11T07:04:54.099919+00:00",
+    "data_date_range": "2023-01-01 to 2025-12-31 (3 Full Years)",
+    "random_seed": 42,
+    "assumptions": {
+      "base_spread_dollars": "0.20",
+      "stop_slippage_dollars": "0.05",
+      "fill_model": "Conservative (trade THROUGH limit, stop hit first on bar conflict)",
+      "timezone_handling": "zoneinfo America/New_York algorithmic session alignment",
+      "train_test_split": "75% in-sample / 25% out-of-sample holdout"
+    }
+  },
+  "live_trades": {
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "avg_r": 0.0,
+    "median_r": 0.0,
+    "expectancy": 0.0,
+    "ci_95_lower": null,
+    "ci_95_upper": null,
+    "t_stat": null,
+    "p_value": null,
+    "profit_factor": 0.0,
+    "max_drawdown_r": 0.0,
+    "max_drawdown_pct": 0.0,
+    "longest_losing_streak": 0,
+    "daily_stats": {
+      "days_count": 0,
+      "mean_daily_r": 0.0,
+      "std_daily_r": 0.0,
+      "days_tripped_3r": 0,
+      "max_trades_per_day": 0
+    },
+    "costs": {
+      "avg_spread_entry": 0.0,
+      "max_spread_entry": 0.0,
+      "avg_slippage": 0.0,
+      "avg_stop_distance_dollars": 0.0,
+      "total_cost_r": 0.0
+    },
+    "unfilled_rate": 0.0,
+    "breakdown_weekday": {},
+    "breakdown_direction": {},
+    "breakdown_news_filter": {}
+  },
+  "backtest_judas": {
+    "all": {
+      "n_trades": 484,
+      "win_rate": 0.188,
+      "avg_r": -0.1296,
+      "median_r": -1.0589,
+      "expectancy": -0.1296,
+      "ci_95_lower": -0.3518,
+      "ci_95_upper": 0.1191,
+      "t_stat": -1.0806,
+      "p_value": 0.279869,
+      "profit_factor": 0.8563,
+      "max_drawdown_r": 99.3364,
+      "max_drawdown_pct": 65.5856,
+      "longest_losing_streak": 21,
+      "daily_stats": {
+        "days_count": 483,
+        "mean_daily_r": -0.1299,
+        "std_daily_r": 2.6367,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 2
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0406,
+        "avg_stop_distance_dollars": 3.3777,
+        "total_cost_r": 72.386
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 235,
+          "win_rate": 0.2043,
+          "avg_r": -0.093
+        },
+        "SHORT": {
+          "n": 249,
+          "win_rate": 0.1727,
+          "avg_r": -0.1642
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 484,
+          "win_rate": 0.188,
+          "avg_r": -0.1296
+        }
+      }
+    },
+    "in_sample": {
+      "n_trades": 382,
+      "win_rate": 0.1963,
+      "avg_r": -0.1033,
+      "median_r": -1.0682,
+      "expectancy": -0.1033,
+      "ci_95_lower": -0.3577,
+      "ci_95_upper": 0.1906,
+      "t_stat": -0.7374,
+      "p_value": 0.46089,
+      "profit_factor": 0.8855,
+      "max_drawdown_r": 73.0603,
+      "max_drawdown_pct": 54.501,
+      "longest_losing_streak": 21,
+      "daily_stats": {
+        "days_count": 381,
+        "mean_daily_r": -0.1035,
+        "std_daily_r": 2.7348,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 2
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0402,
+        "avg_stop_distance_dollars": 2.8338,
+        "total_cost_r": 62.8186
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 178,
+          "win_rate": 0.2135,
+          "avg_r": -0.0253
+        },
+        "SHORT": {
+          "n": 204,
+          "win_rate": 0.1814,
+          "avg_r": -0.1713
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 382,
+          "win_rate": 0.1963,
+          "avg_r": -0.1033
+        }
+      }
+    },
+    "out_of_sample": {
+      "n_trades": 102,
+      "win_rate": 0.1569,
+      "avg_r": -0.2283,
+      "median_r": -1.0391,
+      "expectancy": -0.2283,
+      "ci_95_lower": -0.6215,
+      "ci_95_upper": 0.2334,
+      "t_stat": -1.0288,
+      "p_value": 0.303593,
+      "profit_factor": 0.7463,
+      "max_drawdown_r": 26.2761,
+      "max_drawdown_pct": 24.3623,
+      "longest_losing_streak": 14,
+      "daily_stats": {
+        "days_count": 102,
+        "mean_daily_r": -0.2283,
+        "std_daily_r": 2.23,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 1
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0422,
+        "avg_stop_distance_dollars": 5.4148,
+        "total_cost_r": 9.5674
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 57,
+          "win_rate": 0.1754,
+          "avg_r": -0.3046
+        },
+        "SHORT": {
+          "n": 45,
+          "win_rate": 0.1333,
+          "avg_r": -0.1316
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 102,
+          "win_rate": 0.1569,
+          "avg_r": -0.2283
+        }
+      }
+    },
+    "cost_sensitivity": {
+      "0.0x": {
+        "expectancy": -0.1296,
+        "win_rate": 0.188,
+        "profit_factor": 0.8563,
+        "total_cost_r": 0.0
+      },
+      "1.0x": {
+        "expectancy": -0.2292,
+        "win_rate": 0.188,
+        "profit_factor": 0.7689,
+        "total_cost_r": 72.386
+      },
+      "1.5x": {
+        "expectancy": -0.279,
+        "win_rate": 0.188,
+        "profit_factor": 0.7308,
+        "total_cost_r": 108.579
+      },
+      "2.0x": {
+        "expectancy": -0.3288,
+        "win_rate": 0.188,
+        "profit_factor": 0.696,
+        "total_cost_r": 144.772
+      }
+    },
+    "null_models": {
+      "model_a": {
+        "real_avg_r": -0.1296,
+        "null_mean": -0.0342,
+        "null_std": 0.0649,
+        "null_median": -0.0333,
+        "null_ci_95": [
+          -0.1602,
+          0.0905
+        ],
+        "percentile": 7.3,
+        "p_value": 0.927,
+        "iterations": 1000
+      },
+      "model_b": {
+        "real_avg_r": -0.1296,
+        "null_mean": -0.0091,
+        "null_std": 0.0574,
+        "null_median": -0.0099,
+        "null_ci_95": [
+          -0.1187,
+          0.108
+        ],
+        "percentile": 1.6,
+        "p_value": 0.984,
+        "iterations": 1000
+      }
+    },
+    "monte_carlo_risk": {
+      "n_simulations": 10000,
+      "observed_mean_r": -0.1296,
+      "observed_std_r": 2.6389,
+      "mdd_pct_95th": 74.14,
+      "mdd_pct_median": 64.45,
+      "mdd_r_95th": 127.86,
+      "mdd_r_median": 93.96,
+      "prob_10_loss_streak": 1.0,
+      "prob_daily_stop_triggered": 0.0,
+      "avg_daily_stops_per_run": 0.0,
+      "trades_to_2_se": null
+    }
+  },
+  "backtest_silver_bullet": {
+    "unfiltered": {
+      "n_trades": 27,
+      "win_rate": 0.3333,
+      "avg_r": -0.018,
+      "median_r": -1.0113,
+      "expectancy": -0.018,
+      "ci_95_lower": -0.5724,
+      "ci_95_upper": 0.5427,
+      "t_stat": -0.0643,
+      "p_value": 0.948721,
+      "profit_factor": 0.9737,
+      "max_drawdown_r": 6.2652,
+      "max_drawdown_pct": 6.1598,
+      "longest_losing_streak": 5,
+      "daily_stats": {
+        "days_count": 27,
+        "mean_daily_r": -0.018,
+        "std_daily_r": 1.427,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 1
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0333,
+        "avg_stop_distance_dollars": 3.3257,
+        "total_cost_r": 3.5662
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 15,
+          "win_rate": 0.4,
+          "avg_r": 0.1852
+        },
+        "SHORT": {
+          "n": 12,
+          "win_rate": 0.25,
+          "avg_r": -0.272
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 27,
+          "win_rate": 0.3333,
+          "avg_r": -0.018
+        }
+      }
+    },
+    "news_filtered": {
+      "n_trades": 27,
+      "win_rate": 0.3333,
+      "avg_r": -0.018,
+      "median_r": -1.0113,
+      "expectancy": -0.018,
+      "ci_95_lower": -0.5724,
+      "ci_95_upper": 0.5427,
+      "t_stat": -0.0643,
+      "p_value": 0.948721,
+      "profit_factor": 0.9737,
+      "max_drawdown_r": 6.2652,
+      "max_drawdown_pct": 6.1598,
+      "longest_losing_streak": 5,
+      "daily_stats": {
+        "days_count": 27,
+        "mean_daily_r": -0.018,
+        "std_daily_r": 1.427,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 1
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0333,
+        "avg_stop_distance_dollars": 3.3257,
+        "total_cost_r": 3.5662
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 15,
+          "win_rate": 0.4,
+          "avg_r": 0.1852
+        },
+        "SHORT": {
+          "n": 12,
+          "win_rate": 0.25,
+          "avg_r": -0.272
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 27,
+          "win_rate": 0.3333,
+          "avg_r": -0.018
+        }
+      }
+    },
+    "news_setups_filtered_count": 0,
+    "in_sample": {
+      "n_trades": 20,
+      "win_rate": 0.35,
+      "avg_r": 0.0286,
+      "median_r": -1.0156,
+      "expectancy": 0.0286,
+      "ci_95_lower": -0.5786,
+      "ci_95_upper": 0.6388,
+      "t_stat": 0.0861,
+      "p_value": 0.9314,
+      "profit_factor": 1.0426,
+      "max_drawdown_r": 5.2078,
+      "max_drawdown_pct": 5.1004,
+      "longest_losing_streak": 5,
+      "daily_stats": {
+        "days_count": 20,
+        "mean_daily_r": 0.0286,
+        "std_daily_r": 1.4467,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 1
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0325,
+        "avg_stop_distance_dollars": 2.2033,
+        "total_cost_r": 3.2413
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 12,
+          "win_rate": 0.3333,
+          "avg_r": -0.0169
+        },
+        "SHORT": {
+          "n": 8,
+          "win_rate": 0.375,
+          "avg_r": 0.0968
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 20,
+          "win_rate": 0.35,
+          "avg_r": 0.0286
+        }
+      }
+    },
+    "out_of_sample": {
+      "n_trades": 7,
+      "win_rate": 0.2857,
+      "avg_r": -0.1511,
+      "median_r": -1.0093,
+      "expectancy": -0.1511,
+      "ci_95_lower": -1.0123,
+      "ci_95_upper": 0.7108,
+      "t_stat": -0.272,
+      "p_value": 0.785641,
+      "profit_factor": 0.7909,
+      "max_drawdown_r": 3.0574,
+      "max_drawdown_pct": 3.0552,
+      "longest_losing_streak": 3,
+      "daily_stats": {
+        "days_count": 7,
+        "mean_daily_r": -0.1511,
+        "std_daily_r": 1.3605,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 1
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0357,
+        "avg_stop_distance_dollars": 6.5326,
+        "total_cost_r": 0.3249
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 3,
+          "win_rate": 0.6667,
+          "avg_r": 0.9937
+        },
+        "SHORT": {
+          "n": 4,
+          "win_rate": 0.0,
+          "avg_r": -1.0096
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 7,
+          "win_rate": 0.2857,
+          "avg_r": -0.1511
+        }
+      }
+    },
+    "cost_sensitivity": {
+      "0.0x": {
+        "expectancy": -0.018,
+        "win_rate": 0.3333,
+        "profit_factor": 0.9737,
+        "total_cost_r": 0.0
+      },
+      "1.0x": {
+        "expectancy": -0.093,
+        "win_rate": 0.3333,
+        "profit_factor": 0.874,
+        "total_cost_r": 3.5662
+      },
+      "1.5x": {
+        "expectancy": -0.1306,
+        "win_rate": 0.3333,
+        "profit_factor": 0.8295,
+        "total_cost_r": 5.3492
+      },
+      "2.0x": {
+        "expectancy": -0.1681,
+        "win_rate": 0.3333,
+        "profit_factor": 0.788,
+        "total_cost_r": 7.1323
+      }
+    },
+    "null_models": {
+      "model_a": {
+        "real_avg_r": -0.018,
+        "null_mean": -0.0625,
+        "null_std": 0.2623,
+        "null_median": -0.0587,
+        "null_ci_95": [
+          -0.5783,
+          0.4762
+        ],
+        "percentile": 58.2,
+        "p_value": 0.418,
+        "iterations": 1000
+      },
+      "model_b": {
+        "real_avg_r": -0.018,
+        "null_mean": 0.1462,
+        "null_std": 0.2539,
+        "null_median": 0.0958,
+        "null_ci_95": [
+          -0.3559,
+          0.6543
+        ],
+        "percentile": 28.5,
+        "p_value": 0.715,
+        "iterations": 1000
+      }
+    },
+    "monte_carlo_risk": {
+      "n_simulations": 10000,
+      "observed_mean_r": -0.018,
+      "observed_std_r": 1.4542,
+      "mdd_pct_95th": 10.75,
+      "mdd_pct_median": 7.02,
+      "mdd_r_95th": 11.3,
+      "mdd_r_median": 7.22,
+      "prob_10_loss_streak": 0.0559,
+      "prob_daily_stop_triggered": 0.0,
+      "avg_daily_stops_per_run": 0.0,
+      "trades_to_2_se": null
+    }
+  },
+  "combined": {
+    "all": {
+      "n_trades": 511,
+      "win_rate": 0.1957,
+      "avg_r": -0.1237,
+      "median_r": -1.0536,
+      "expectancy": -0.1237,
+      "ci_95_lower": -0.337,
+      "ci_95_upper": 0.1076,
+      "t_stat": -1.0802,
+      "p_value": 0.280053,
+      "profit_factor": 0.861,
+      "max_drawdown_r": 99.3364,
+      "max_drawdown_pct": 65.5856,
+      "longest_losing_streak": 21,
+      "daily_stats": {
+        "days_count": 489,
+        "mean_daily_r": -0.1293,
+        "std_daily_r": 2.6502,
+        "days_tripped_3r": 0,
+        "max_trades_per_day": 2
+      },
+      "costs": {
+        "avg_spread_entry": 0.2,
+        "max_spread_entry": 0.2,
+        "avg_slippage": 0.0402,
+        "avg_stop_distance_dollars": 3.375,
+        "total_cost_r": 75.9521
+      },
+      "unfilled_rate": 0.0,
+      "breakdown_weekday": {},
+      "breakdown_direction": {
+        "LONG": {
+          "n": 250,
+          "win_rate": 0.216,
+          "avg_r": -0.0763
+        },
+        "SHORT": {
+          "n": 261,
+          "win_rate": 0.1762,
+          "avg_r": -0.1691
+        }
+      },
+      "breakdown_news_filter": {
+        "unfiltered": {
+          "n": 511,
+          "win_rate": 0.1957,
+          "avg_r": -0.1237
+        }
+      }
+    },
+    "monte_carlo_risk": {
+      "n_simulations": 10000,
+      "observed_mean_r": -0.1237,
+      "observed_std_r": 2.5892,
+      "mdd_pct_95th": 74.41,
+      "mdd_pct_median": 64.9,
+      "mdd_r_95th": 128.68,
+      "mdd_r_median": 95.21,
+      "prob_10_loss_streak": 1.0,
+      "prob_daily_stop_triggered": 0.0,
+      "avg_daily_stops_per_run": 0.0,
+      "trades_to_2_se": null
+    }
+  },
+  "validation_report": {
+    "total_bars": 203773,
+    "duplicate_count": 36,
+    "expected_gaps": 3198,
+    "anomalous_gaps_count": 200571,
+    "anomalous_gaps_sample": [
+      {
+        "from": "2023-01-02T23:05:00+00:00",
+        "to": "2023-01-02T23:10:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:10:00+00:00",
+        "to": "2023-01-02T23:15:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:15:00+00:00",
+        "to": "2023-01-02T23:20:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:20:00+00:00",
+        "to": "2023-01-02T23:25:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:25:00+00:00",
+        "to": "2023-01-02T23:30:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:30:00+00:00",
+        "to": "2023-01-02T23:35:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:35:00+00:00",
+        "to": "2023-01-02T23:40:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:40:00+00:00",
+        "to": "2023-01-02T23:45:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:45:00+00:00",
+        "to": "2023-01-02T23:50:00+00:00",
+        "duration_minutes": 5.0
+      },
+      {
+        "from": "2023-01-02T23:50:00+00:00",
+        "to": "2023-01-02T23:55:00+00:00",
+        "duration_minutes": 5.0
+      }
+    ],
+    "dst_mismatch_audit": [
+      {
+        "period": "2023 Spring: US EDT (UTC-4), UK GMT (UTC+0)",
+        "bars_count": 2039,
+        "first_bar_ny": "2023-03-12T17:05:00-04:00",
+        "last_bar_ny": "2023-03-26T23:55:00-04:00",
+        "utc_offset_start": "-0400",
+        "utc_offset_end": "-0400",
+        "session_aligned": true
+      },
+      {
+        "period": "2023 Autumn: UK GMT (UTC+0), US EDT (UTC-4)",
+        "bars_count": 1463,
+        "first_bar_ny": "2023-10-29T17:05:00-04:00",
+        "last_bar_ny": "2023-11-05T23:55:00-05:00",
+        "utc_offset_start": "-0400",
+        "utc_offset_end": "-0500",
+        "session_aligned": true
+      },
+      {
+        "period": "2024 Spring: US EDT (UTC-4), UK GMT (UTC+0)",
+        "bars_count": 3923,
+        "first_bar_ny": "2024-03-10T17:05:00-04:00",
+        "last_bar_ny": "2024-03-31T23:55:00-04:00",
+        "utc_offset_start": "-0400",
+        "utc_offset_end": "-0400",
+        "session_aligned": true
+      },
+      {
+        "period": "2024 Autumn: UK GMT (UTC+0), US EDT (UTC-4)",
+        "bars_count": 1463,
+        "first_bar_ny": "2024-10-27T17:05:00-04:00",
+        "last_bar_ny": "2024-11-03T23:55:00-05:00",
+        "utc_offset_start": "-0400",
+        "utc_offset_end": "-0500",
+        "session_aligned": true
+      },
+      {
+        "period": "2025 Spring: US EDT (UTC-4), UK GMT (UTC+0)",
+        "bars_count": 4199,
+        "first_bar_ny": "2025-03-09T17:05:00-04:00",
+        "last_bar_ny": "2025-03-30T23:55:00-04:00",
+        "utc_offset_start": "-0400",
+        "utc_offset_end": "-0400",
+        "session_aligned": true
+      },
+      {
+        "period": "2025 Autumn: UK GMT (UTC+0), US EDT (UTC-4)",
+        "bars_count": 1463,
+        "first_bar_ny": "2025-10-26T17:05:00-04:00",
+        "last_bar_ny": "2025-11-02T23:55:00-05:00",
+        "utc_offset_start": "-0400",
+        "utc_offset_end": "-0500",
+        "session_aligned": true
+      }
+    ],
+    "status": "WARNING"
+  }
+}
