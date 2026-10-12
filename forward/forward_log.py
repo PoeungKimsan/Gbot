@@ -20,6 +20,7 @@ from research.trend.costs import compute_costs
 # Required universe and config
 CONFIG_PATH = Path("config/trend_symbols.yaml")
 LOG_CSV_PATH = Path("forward_log.csv")
+RUN_LOG_PATH = Path("forward_run.log")
 START_FORWARD_DATE = dt.date(2026, 10, 12)
 REQUIRED_WARMUP_BARS = 252
 
@@ -38,7 +39,8 @@ def fetch_and_clean_d1_bars(
     flags = {"duplicate_bars": 0, "flat_bars": 0, "total_raw": 0, "cleaned_bars": 0}
 
     mt5.symbol_select(broker_symbol, True)
-    rates = mt5.copy_rates_from_pos(broker_symbol, mt5.TIMEFRAME_D1, 0, max_bars)
+    # Start at pos 1 to strictly fetch completed/closed bars (index 0 is still-forming)
+    rates = mt5.copy_rates_from_pos(broker_symbol, mt5.TIMEFRAME_D1, 1, max_bars)
     if rates is None or len(rates) == 0:
         return [], flags
 
@@ -53,6 +55,10 @@ def fetch_and_clean_d1_bars(
     for r in rates:
         bar_dt = dt.datetime.fromtimestamp(r["time"], tz=dt.UTC)
         bar_date = bar_dt.date()
+
+        # Strict invariant: only closed bars prior to today's forming bar
+        if bar_date >= today_utc:
+            continue
 
         # If duplicate date, skip and flag
         if bar_date in seen_dates:
@@ -75,9 +81,6 @@ def fetch_and_clean_d1_bars(
         hi = max(hi, op, cl)
         lo = min(lo, op, cl)
 
-        # Flag whether bar is currently forming (today's forming bar)
-        is_forming = (bar_date >= today_utc)
-
         cleaned.append({
             "date": bar_date,
             "open": op,
@@ -85,7 +88,7 @@ def fetch_and_clean_d1_bars(
             "low": lo,
             "close": cl,
             "volume": vol,
-            "is_forming": is_forming,
+            "is_forming": False,
         })
 
     flags["cleaned_bars"] = len(cleaned)
@@ -564,6 +567,15 @@ def run_forward_log() -> None:
     print(f"forward_log.csv status: {'appended' if file_existed else 'created'} -> {LOG_CSV_PATH.resolve()}")
     print(f"New rows written: {new_appended}")
     print(f"Total rows in forward_log.csv: {len(existing_keys)}")
+
+    # Append every run record to forward_run.log
+    total_bars_used = sum(a["cleaned_bars"] for a in market_audit)
+    now_iso = dt.datetime.now(dt.UTC).isoformat()
+    today_str = dt.date.today().isoformat()
+    run_log_line = f"timestamp={now_iso} | date={today_str} | bars_used={total_bars_used} | rows_added={new_appended}\n"
+    with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(run_log_line)
+    print(f"forward_run.log entry: {run_log_line.strip()}")
 
     if LOG_CSV_PATH.is_file():
         print("\nCurrent forward_log.csv content:")
