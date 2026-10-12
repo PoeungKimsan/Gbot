@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 import MetaTrader5 as mt5  # noqa: N813
@@ -93,8 +93,47 @@ def fetch_and_clean_d1_bars(
             "is_forming": False,
         })
 
+    cleaned = fold_sunday_into_monday(cleaned)
     flags["cleaned_bars"] = len(cleaned)
     return cleaned, flags
+
+
+def fold_sunday_into_monday(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Fold any Sunday D1 bar into the subsequent Monday D1 bar per canonical convention.
+
+    If a Sunday bar is followed by a Monday bar, they are merged into Monday:
+    - date: Monday's date
+    - open: Sunday's open
+    - high: max(Sunday's high, Monday's high)
+    - low: min(Sunday's low, Monday's low)
+    - close: Monday's close
+    - volume: Sunday's volume + Monday's volume
+    """
+    folded: list[dict[str, Any]] = []
+    i = 0
+    n = len(bars)
+    while i < n:
+        curr = bars[i]
+        curr_date = curr["date"]
+        # If curr is Sunday (weekday == 6) and next bar is Monday (weekday == 0)
+        if curr_date.weekday() == 6 and i + 1 < n:
+            nxt = bars[i + 1]
+            if nxt["date"].weekday() == 0:
+                merged_bar = {
+                    "date": nxt["date"],
+                    "open": curr["open"],
+                    "high": max(curr["high"], nxt["high"]),
+                    "low": min(curr["low"], nxt["low"]),
+                    "close": nxt["close"],
+                    "volume": int(curr.get("volume", 0)) + int(nxt.get("volume", 0)),
+                    "is_forming": False,
+                }
+                folded.append(merged_bar)
+                i += 2
+                continue
+        folded.append(dict(curr))
+        i += 1
+    return folded
 
 
 def compute_indicators(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -471,14 +510,17 @@ def run_forward_log(
     log_csv_path: Path = LOG_CSV_PATH,
     run_log_path: Path = RUN_LOG_PATH,
     mt5_client: Any = mt5,
+    now: dt.datetime | None = None,
 ) -> None:
     print("=" * 100)
     print("TASK C: Forward Daily Trade Log Runner (trend_v1.2 T2 & T3 per commit f1affec)")
     print(f"Timestamp UTC: {dt.datetime.now(dt.UTC).isoformat()}")
     print("=" * 100)
 
-    now_iso = dt.datetime.now(dt.UTC).isoformat()
-    today_str = dt.date.today().isoformat()
+    now_dt = now or dt.datetime.now(dt.UTC)
+    now_iso = now_dt.isoformat()
+    today_str = now_dt.date().isoformat()
+    today_weekday = now_dt.date().weekday()
 
     if not mt5_client.initialize():
         last_err = mt5_client.last_error() if hasattr(mt5_client, "last_error") else "Unknown"
@@ -533,6 +575,24 @@ def run_forward_log(
         default=None,
     )
 
+    is_weekend = today_weekday in (5, 6)
+    is_monday_morning = (today_weekday == 0 and latest_bar_date is not None and latest_bar_date.weekday() in (4, 6))
+
+    missing_market_bar = False
+    if not is_weekend and not is_monday_morning:
+        if any(a["cleaned_bars"] == 0 for a in market_audit):
+            missing_market_bar = True
+        elif latest_bar_date and any(a["last_bar_date"] is None or a["last_bar_date"] < latest_bar_date for a in market_audit):
+            missing_market_bar = True
+
+    if missing_market_bar:
+        err_msg = "Market missing bar on a normal trading day"
+        print(f"ERROR: {err_msg}")
+        run_log_line = f"timestamp={now_iso} | date={today_str} | status=FAILED | error={err_msg}\n"
+        with open(run_log_path, "a", encoding="utf-8") as f:
+            f.write(run_log_line)
+        sys.exit(2)
+
     no_new_bars = False
     if total_bars_used == 0 or latest_bar_date is None:
         no_new_bars = True
@@ -544,11 +604,11 @@ def run_forward_log(
                     break
 
     if no_new_bars:
-        print(f"NO NEW BARS: latest closed bar {latest_bar_date} already processed.")
-        run_log_line = f"timestamp={now_iso} | date={today_str} | status=NO_NEW_BARS | bars_used={total_bars_used} | rows_added=0\n"
+        print(f"NO NEW BARS EXPECTED: latest closed bar {latest_bar_date} already processed.")
+        run_log_line = f"timestamp={now_iso} | date={today_str} | status=NO_NEW_BARS_EXPECTED | bars_used={total_bars_used} | rows_added=0\n"
         with open(run_log_path, "a", encoding="utf-8") as f:
             f.write(run_log_line)
-        sys.exit(2)
+        sys.exit(0)
 
     # Print Data Quality & Invariant Table
     print(f"{'Market':<8} | {'Exness Sym':<9} | {'Raw':<5} | {'Clean':<5} | {'Dup':<4} | {'Flat':<5} | {'Warmup':<15} | {'Last Bar Date':<13}")
@@ -579,6 +639,25 @@ def run_forward_log(
         print("\nCurrent forward_log.csv content:")
         with open(log_csv_path, encoding="utf-8") as f:
             print(f.read())
+
+    # Summary performance metrics
+    stats = compute_forward_stats(csv_path=log_csv_path)
+    print("\n" + "=" * 60)
+    print("FORWARD LOG PERFORMANCE SUMMARY (Requirement 4: OPEN + exit = 1 trade):")
+    print(f"  Total Trades: {stats['total_trades']} [FLAG: N < 200, N={stats['total_trades']}]")
+    print(f"  Open Trades: {stats['open_trades']}")
+    print(f"  Closed Trades: {stats['closed_trades']}")
+    if stats["closed_trades"] > 0:
+        print(f"  Win Rate: {stats['win_rate']:.2f}% ({stats['wins']}/{stats['closed_trades']})")
+        print(f"  Mean Net R: {stats['mean_net_r']:+.4f}R")
+        print(f"  Cum Net R: {stats['cum_net_r']:+.4f}R")
+        print(f"  Max Drawdown: {stats['max_dd']:.4f}R")
+    else:
+        print("  Win Rate: N/A (0 closed trades)")
+        print("  Mean Net R: 0.0000R")
+        print("  Cum Net R: 0.0000R")
+        print("  Max Drawdown: 0.0000R")
+    print("=" * 60)
 
 
 def append_forward_log_records(
@@ -640,5 +719,141 @@ def append_forward_log_records(
     return new_appended
 
 
+def compute_forward_stats(csv_path: Path = LOG_CSV_PATH) -> dict[str, Any]:
+    """Compute summary performance statistics on forward_log.csv.
+
+    Invariant (Requirement 4):
+    An OPEN row and its later exit row for the same trade (matched by market, rule,
+    signal, entry, stop) are counted as ONE single trade.
+    """
+    if not csv_path.is_file():
+        return {
+            "total_trades": 0,
+            "open_trades": 0,
+            "closed_trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "win_rate": 0.0,
+            "mean_net_r": 0.0,
+            "cum_net_r": 0.0,
+            "max_dd": 0.0,
+            "trades": [],
+        }
+
+    trades_map: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
+    trade_order: list[tuple[str, str, str, str, str]] = []
+
+    with open(csv_path, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            market = row.get("market", "").strip()
+            rule = row.get("rule", "").strip()
+            signal = row.get("signal", "").strip()
+            entry = row.get("entry", "").strip()
+            stop = row.get("stop", "").strip()
+            exit_val = row.get("exit", "").strip()
+            r_net_str = row.get("R_net", "").strip()
+            r_gross_str = row.get("R_gross", "").strip()
+            row_date = row.get("date", "").strip()
+
+            if not market or not rule:
+                continue
+
+            trade_key = (market, rule, signal, entry, stop)
+
+            if trade_key not in trades_map:
+                trades_map[trade_key] = {
+                    "market": market,
+                    "rule": rule,
+                    "signal": signal,
+                    "entry_date": row_date,
+                    "exit_date": None,
+                    "entry": float(entry) if entry else 0.0,
+                    "stop": float(stop) if stop else 0.0,
+                    "exit": exit_val,
+                    "status": "OPEN" if exit_val == "OPEN" else "CLOSED",
+                    "R_net": None,
+                    "R_gross": None,
+                }
+                trade_order.append(trade_key)
+
+            t = trades_map[trade_key]
+            if exit_val == "OPEN":
+                t["entry_date"] = row_date
+            else:
+                t["exit_date"] = row_date
+                t["exit"] = exit_val
+                t["status"] = "CLOSED"
+                try:
+                    t["R_net"] = float(r_net_str)
+                except (ValueError, TypeError):
+                    t["R_net"] = 0.0
+                try:
+                    t["R_gross"] = float(r_gross_str)
+                except (ValueError, TypeError):
+                    t["R_gross"] = 0.0
+
+    all_trades = [trades_map[k] for k in trade_order]
+    closed_trades = [t for t in all_trades if t["status"] == "CLOSED"]
+    open_trades = [t for t in all_trades if t["status"] == "OPEN"]
+
+    n_closed = len(closed_trades)
+    wins = [t for t in closed_trades if t["R_net"] is not None and t["R_net"] > 0]
+    losses = [t for t in closed_trades if t["R_net"] is not None and t["R_net"] < 0]
+    win_rate = (len(wins) / n_closed * 100.0) if n_closed > 0 else 0.0
+
+    r_vals = [t["R_net"] for t in closed_trades if t["R_net"] is not None]
+    mean_net_r = (sum(r_vals) / n_closed) if n_closed > 0 else 0.0
+    cum_net_r = sum(r_vals) if r_vals else 0.0
+
+    cum_series = []
+    running = 0.0
+    for r in r_vals:
+        running += r
+        cum_series.append(running)
+
+    max_dd = 0.0
+    if cum_series:
+        peak = 0.0
+        for val in cum_series:
+            if val > peak:
+                peak = val
+            dd = peak - val
+            if dd > max_dd:
+                max_dd = dd
+
+    return {
+        "total_trades": len(all_trades),
+        "open_trades": len(open_trades),
+        "closed_trades": n_closed,
+        "wins": len(wins),
+        "losses": len(losses),
+        "win_rate": round(win_rate, 2),
+        "mean_net_r": round(mean_net_r, 4),
+        "cum_net_r": round(cum_net_r, 4),
+        "max_dd": round(max_dd, 4),
+        "trades": all_trades,
+    }
+
+
 if __name__ == "__main__":
-    run_forward_log()
+    if "--stats" in sys.argv or "--summary" in sys.argv:
+        res = compute_forward_stats()
+        print("=" * 60)
+        print("FORWARD LOG PERFORMANCE SUMMARY (Requirement 4: OPEN + exit = 1 trade):")
+        print(f"  Total Trades: {res['total_trades']} [FLAG: N < 200, N={res['total_trades']}]")
+        print(f"  Open Trades: {res['open_trades']}")
+        print(f"  Closed Trades: {res['closed_trades']}")
+        if res["closed_trades"] > 0:
+            print(f"  Win Rate: {res['win_rate']:.2f}% ({res['wins']}/{res['closed_trades']})")
+            print(f"  Mean Net R: {res['mean_net_r']:+.4f}R")
+            print(f"  Cum Net R: {res['cum_net_r']:+.4f}R")
+            print(f"  Max Drawdown: {res['max_dd']:.4f}R")
+        else:
+            print("  Win Rate: N/A (0 closed trades)")
+            print("  Mean Net R: 0.0000R")
+            print("  Cum Net R: 0.0000R")
+            print("  Max Drawdown: 0.0000R")
+        print("=" * 60)
+    else:
+        run_forward_log()
