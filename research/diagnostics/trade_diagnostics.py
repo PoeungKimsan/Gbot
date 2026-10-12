@@ -11,13 +11,12 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
-from decimal import Decimal
 import json
 import logging
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from engine.market.models import Bar
 from research.data.loader import load_all_m5_bars
 
 logger = logging.getLogger("research.diagnostics")
@@ -30,15 +29,33 @@ def run_trade_diagnostics(
     spread_dollars: Decimal = Decimal("0.20"),
 ) -> dict[str, Any]:
     """Calculate MFE reach and spread-vulnerability distribution."""
-    logger.info("Loading trades from %s...", trades_csv_path)
+    trades_path = Path(trades_csv_path)
+    if not trades_path.is_file():
+        logger.warning("Trades file %s does not exist; skipping diagnostics.", trades_path)
+        return {
+            "timestamp_utc": dt.datetime.now(dt.UTC).isoformat(),
+            "status": "NO_TRADES_FILE",
+            "message": f"Trades file {trades_path} not found.",
+        }
+
+    logger.info("Loading trades from %s...", trades_path)
     trades: list[dict[str, str]] = []
-    with open(trades_csv_path, encoding="utf-8") as f:
+    with trades_path.open(encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             trades.append(row)
 
     logger.info("Loaded %d trades. Loading bars from cache...", len(trades))
     bars = load_all_m5_bars(cache_dir=cache_dir, years=["2023", "2024", "2025"])
+    if not bars:
+        logger.info("No bars loaded from %s (pruned).", cache_dir)
+        return {
+            "timestamp_utc": dt.datetime.now(dt.UTC).isoformat(),
+            "status": "NO_BAR_DATA",
+            "message": (
+                "Historical M5 bar cache was pruned; see research/reports/ for archived reports."
+            ),
+        }
 
     # Index bars by timestamp for fast range slicing
     bar_timestamps = [b.timestamp_utc for b in bars]
@@ -109,10 +126,8 @@ def run_trade_diagnostics(
             if mfe_r >= 3.0:
                 reached_3r += 1
 
-            if "STOP" in t["exit_reason"]:
-                # Check if maximum excursion past stop was within spread
-                if max_adverse_past_stop <= spread_dollars:
-                    stops_within_spread += 1
+            if "STOP" in t["exit_reason"] and max_adverse_past_stop <= spread_dollars:
+                stops_within_spread += 1
 
         pct_1r = reached_1r / n_total if n_total > 0 else 0.0
         pct_2r = reached_2r / n_total if n_total > 0 else 0.0
@@ -137,7 +152,7 @@ def run_trade_diagnostics(
     sb_diag = _analyze_subset(sb_trades, "ICT Silver Bullet")
 
     diag_report = {
-        "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "timestamp_utc": dt.datetime.now(dt.UTC).isoformat(),
         "spread_distance_assumed": str(spread_dollars),
         "judas_swing": judas_diag,
         "silver_bullet": sb_diag,
