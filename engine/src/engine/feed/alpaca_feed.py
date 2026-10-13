@@ -129,11 +129,12 @@ class AlpacaFeed:
 
     @staticmethod
     def _compute_file_sha256(path: Path) -> str:
-        """Calculate SHA-256 hash of a file."""
+        """Calculate SHA-256 hash of a file normalized to LF line endings."""
         hasher = hashlib.sha256()
         with path.open("rb") as f:
-            while chunk := f.read(65536):
-                hasher.update(chunk)
+            content = f.read()
+        canonical = content.replace(b"\r\n", b"\n")
+        hasher.update(canonical)
         return hasher.hexdigest()
 
     def _get_headers(self) -> dict[str, str]:

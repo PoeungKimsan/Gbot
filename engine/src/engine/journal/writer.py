@@ -51,6 +51,7 @@ import threading
 import time
 from dataclasses import dataclass
 from decimal import Decimal
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
 from engine.domain.events import DomainEvent, canonical_json_bytes
@@ -389,7 +390,8 @@ class JournalWriter:
         A distinct connection, on the calling thread, so a reader never contends with the
         writer's transaction and never writes.
         """
-        connection = sqlite3.connect(f"file:{self._path}?mode=ro", uri=True)
+        uri = f"{Path(self._path).resolve().as_uri()}?mode=ro"
+        connection = sqlite3.connect(uri, uri=True)
         connection.row_factory = sqlite3.Row
         return connection
 

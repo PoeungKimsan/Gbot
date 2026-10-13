@@ -245,7 +245,9 @@ def build_synthetic_etf_dataset(
                 "Adj Close": str(price),
             })
         with csv_file.open("w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["Date", "Close", "Adj Close"])
+            writer = csv.DictWriter(
+                f, fieldnames=["Date", "Close", "Adj Close"], lineterminator="\n"
+            )
             writer.writeheader()
             writer.writerows(rows)
 

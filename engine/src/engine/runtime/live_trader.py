@@ -96,45 +96,48 @@ def _get_current_time(
 
 def _read_journal_killswitch_events(path: Path) -> list[DomainEvent]:
     """Replay kill-switch transitions from SQLite journal to restore latch across restarts."""
-    if not path.is_file():
+    resolved_path = Path(path).resolve()
+    if not resolved_path.is_file():
         return []
 
     events: list[DomainEvent] = []
+    uri = f"{resolved_path.as_uri()}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True)
     try:
-        conn = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
-        with conn:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='journal'"
-            )
-            if not cur.fetchone():
-                return []
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='journal'"
+        )
+        if not cur.fetchone():
+            return []
 
-            cur.execute(
-                "SELECT event_id, event_type, occurred_at, payload FROM journal "
-                "WHERE event_type='risk_killswitch' ORDER BY sequence ASC"
+        cur.execute(
+            "SELECT event_id, event_type, occurred_at, payload FROM journal "
+            "WHERE event_type='risk_killswitch' ORDER BY sequence ASC"
+        )
+        for row in cur.fetchall():
+            event_id, event_type, occurred_at_str, payload_raw = row
+            parsed = json.loads(payload_raw) if payload_raw else {}
+            inner_payload = (
+                parsed.get("payload", parsed)
+                if isinstance(parsed, dict)
+                else {}
             )
-            for row in cur.fetchall():
-                event_id, event_type, occurred_at_str, payload_raw = row
-                parsed = json.loads(payload_raw) if payload_raw else {}
-                inner_payload = (
-                    parsed.get("payload", parsed)
-                    if isinstance(parsed, dict)
-                    else {}
+            occurred_at = dt.datetime.fromisoformat(occurred_at_str)
+            events.append(
+                DomainEvent(
+                    event_id=event_id,
+                    event_type=EventType(event_type),
+                    occurred_at=occurred_at,
+                    payload=inner_payload,
                 )
-                occurred_at = dt.datetime.fromisoformat(occurred_at_str)
-                events.append(
-                    DomainEvent(
-                        event_id=event_id,
-                        event_type=EventType(event_type),
-                        occurred_at=occurred_at,
-                        payload=inner_payload,
-                    )
-                )
+            )
         return events
     except Exception as exc:
-        logger.error("Could not read journal events from %s: %s", path, exc)
+        logger.error("Could not read journal events from %s: %s", resolved_path, exc)
         raise
+    finally:
+        conn.close()
 
 
 class LiveTrader:

@@ -78,11 +78,12 @@ class ETFDataManifest:
 
 
 def compute_file_sha256(path: Path) -> str:
-    """Calculate SHA-256 hash of a file."""
+    """Calculate SHA-256 hash of a file normalized to LF line endings."""
     hasher = hashlib.sha256()
     with path.open("rb") as f:
-        while chunk := f.read(65536):
-            hasher.update(chunk)
+        content = f.read()
+    canonical = content.replace(b"\r\n", b"\n")
+    hasher.update(canonical)
     return hasher.hexdigest()
 
 
@@ -102,7 +103,7 @@ def atomic_write_csv(
     tmp_path = target_path.with_name(f"{target_path.name}.tmp")
 
     with tmp_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
