@@ -1,14 +1,15 @@
-"""Property test comparing HEAD strategy vs current working copy across 200 seeds and 12 month-ends,
+"""Property test comparing the pre-refactor baseline VAR_117 strategy against current working copy.
+
+Verifies bit-for-bit equivalence across 200 random seeds and 12 real 2025 month-ends,
 plus round-trip refresh (04:00/05:00Z timestamps) -> CSVs -> reader -> strategy.
 """
 
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
+import json
 import random
-import subprocess
-import sys
-import types
 from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
@@ -20,24 +21,180 @@ import pytest
 from engine.feed.alpaca_feed import AlpacaFeed
 from engine.feed.refresh_data import refresh_etf_universe_data
 from engine.market.nyse_calendar import get_nyse_trading_days, is_last_trading_day_of_month
-from engine.strategy.etf_momentum import DEFAULT_UNIVERSE, VAR117Strategy
+from engine.strategy.etf_momentum import (
+    DEFAULT_UNIVERSE,
+    ETF_METADATA,
+    PortfolioAllocationSignal,
+    TickerScore,
+    VAR117Strategy,
+)
 
 NEW_YORK = ZoneInfo("America/New_York")
 
 
+class BaselineVAR117Strategy:
+    """Immutable pre-refactor reference implementation of VAR_117 (from commit 77e9f0f).
+
+    Operates purely on undated close prices, representing the exact baseline grid-search logic.
+    """
+
+    def __init__(
+        self,
+        universe: tuple[str, ...] = DEFAULT_UNIVERSE,
+        momentum_lookback_days: int = 189,
+        volatility_lookback_days: int = 252,
+        top_k: int = 3,
+        cash_filter: bool = True,
+    ) -> None:
+        self.universe = list(universe)
+        self.momentum_lookback_days = momentum_lookback_days
+        self.volatility_lookback_days = volatility_lookback_days
+        self.top_k = top_k
+        self.cash_filter = cash_filter
+
+    @property
+    def min_required_days(self) -> int:
+        return max(self.momentum_lookback_days, self.volatility_lookback_days) + 1
+
+    def compute_allocation(
+        self,
+        price_history: dict[str, list[Decimal]],
+        as_of_date: dt.date | None = None,
+    ) -> PortfolioAllocationSignal:
+        eval_date = as_of_date or dt.datetime.now(dt.UTC).date()
+        min_bars = self.min_required_days
+
+        for ticker in self.universe:
+            prices = price_history.get(ticker)
+            if prices is None or len(prices) < min_bars:
+                bars_count = len(prices) if prices else 0
+                raise ValueError(
+                    f"Insufficient history for {ticker}: got {bars_count} bars, "
+                    f"need at least {min_bars}"
+                )
+
+        moms: dict[str, Decimal] = {}
+        vols: dict[str, Decimal] = {}
+        latest_prices: dict[str, Decimal] = {}
+        annualization_factor = Decimal("252").sqrt()
+
+        for ticker in self.universe:
+            prices = price_history[ticker]
+            latest_p = prices[-1]
+            latest_prices[ticker] = latest_p
+
+            past_p = prices[-1 - self.momentum_lookback_days]
+            mom = Decimal("0") if past_p <= Decimal("0") else (latest_p - past_p) / past_p
+            moms[ticker] = mom
+
+            recent_prices = prices[-1 - self.volatility_lookback_days :]
+            daily_rets: list[Decimal] = []
+            for i in range(1, len(recent_prices)):
+                prev = recent_prices[i - 1]
+                curr = recent_prices[i]
+                if prev > Decimal("0"):
+                    daily_rets.append((curr - prev) / prev)
+                else:
+                    daily_rets.append(Decimal("0"))
+
+            n_rets = len(daily_rets)
+            if n_rets > 1:
+                mean_ret = sum(daily_rets) / Decimal(n_rets)
+                sum_sq_diff = sum((r - mean_ret) ** 2 for r in daily_rets)
+                variance = sum_sq_diff / Decimal(n_rets - 1)
+                daily_std = variance.sqrt()
+                annual_vol = daily_std * annualization_factor
+            else:
+                annual_vol = Decimal("0.15")
+
+            if annual_vol <= Decimal("0"):
+                annual_vol = Decimal("0.0001")
+            vols[ticker] = annual_vol
+
+        sorted_tickers = sorted(
+            self.universe,
+            key=lambda t: (-moms[t], t),
+        )
+        top_assets = sorted_tickers[: self.top_k]
+
+        inv_vols: dict[str, Decimal] = {}
+        for t in top_assets:
+            inv_vols[t] = Decimal("1") / vols[t]
+
+        sum_inv = sum(inv_vols.values())
+
+        weights: dict[str, Decimal] = {}
+        for t in top_assets:
+            raw_w = (inv_vols[t] / sum_inv) if sum_inv > Decimal("0") else Decimal("0")
+            if self.cash_filter:
+                if moms[t] > Decimal("0"):
+                    weights[t] = raw_w.quantize(Decimal("0.0001"))
+                else:
+                    weights[t] = Decimal("0.0000")
+            else:
+                weights[t] = raw_w.quantize(Decimal("0.0001"))
+
+        for t in self.universe:
+            if t not in weights:
+                weights[t] = Decimal("0.0000")
+
+        invested_sum = sum(weights.values())
+        if invested_sum > Decimal("1.0000"):
+            excess = invested_sum - Decimal("1.0000")
+            max_t = max(weights.keys(), key=lambda k: weights[k])
+            weights[max_t] = max(Decimal("0.0000"), weights[max_t] - excess)
+            invested_sum = sum(weights.values())
+
+        cash_weight = max(Decimal("0.0000"), Decimal("1.0000") - invested_sum)
+
+        scores: list[TickerScore] = []
+        for t in sorted_tickers:
+            is_top = t in top_assets
+            rank = (sorted_tickers.index(t) + 1) if is_top else None
+            w = weights.get(t, Decimal("0.0000"))
+            mom_pct = (moms[t] * Decimal("100")).quantize(Decimal("0.01"))
+            vol_pct = (vols[t] * Decimal("100")).quantize(Decimal("0.01"))
+
+            cf_status = ("PASS" if moms[t] > Decimal("0") else "FAIL") if is_top else "N/A"
+            meta = ETF_METADATA.get(t, {"name": t, "category": "ETF"})
+            scores.append(
+                TickerScore(
+                    ticker=t,
+                    name=meta["name"],
+                    category=meta["category"],
+                    close_price=latest_prices[t].quantize(Decimal("0.01")),
+                    mom_9m_pct=mom_pct,
+                    vol_12m_pct=vol_pct,
+                    rank=rank,
+                    cash_filter_status=cf_status,
+                    target_weight=w,
+                )
+            )
+
+        canonical_payload = json.dumps(
+            {
+                "date": str(eval_date),
+                "weights": {k: str(weights[k]) for k in sorted(weights.keys())},
+                "cash": str(cash_weight),
+            },
+            sort_keys=True,
+        )
+        sig_hash = hashlib.sha256(canonical_payload.encode("utf-8")).hexdigest()
+
+        return PortfolioAllocationSignal(
+            as_of_date=eval_date,
+            target_weights=weights,
+            cash_weight=cash_weight,
+            top_assets=top_assets,
+            scores=scores,
+            signal_hash=sig_hash,
+        )
+
+
 @pytest.fixture(scope="module")
 def head_strategy_cls() -> type:
-    """Dynamically load the HEAD version of VAR117Strategy via git show."""
-    git_res = subprocess.run(
-        ["git", "show", "HEAD:engine/src/engine/strategy/etf_momentum.py"],  # noqa: S607
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    mod = types.ModuleType("head_etf_momentum")
-    sys.modules["head_etf_momentum"] = mod
-    exec(git_res.stdout, mod.__dict__)  # noqa: S102
-    return mod.VAR117Strategy
+    """Provide the reference pre-refactor baseline VAR_117 strategy class."""
+    return BaselineVAR117Strategy
 
 
 def _generate_random_price_series(
@@ -66,7 +223,7 @@ def _generate_random_price_series(
 
 
 def test_property_head_vs_current_200_seeds(head_strategy_cls: type) -> None:
-    """Compare HEAD vs current on 200 random seeds for both cash_filter on and off."""
+    """Compare baseline reference vs current on 200 random seeds for both cash_filter on/off."""
     as_of = dt.date(2025, 12, 31)
 
     for seed in range(200):
@@ -104,7 +261,7 @@ def test_property_head_vs_current_200_seeds(head_strategy_cls: type) -> None:
 
 
 def test_head_vs_current_12_month_ends(head_strategy_cls: type) -> None:
-    """Compare HEAD vs current strategy across 12 real month-ends using seed CSVs."""
+    """Compare baseline vs current strategy across 12 real month-ends using seed CSVs."""
     feed = AlpacaFeed(data_dir=Path("engine/data/etf_cache"))
     all_prices = feed.load_historical_prices(min_bars=253)
 
@@ -115,7 +272,6 @@ def test_head_vs_current_12_month_ends(head_strategy_cls: type) -> None:
     assert len(month_ends) == 12
 
     for me in month_ends:
-        # Slice prices up to me
         curr_prices = {
             t: [(d, p) for d, p in series if d <= me]
             for t, series in all_prices.items()
@@ -153,7 +309,6 @@ async def test_round_trip_refresh_alpaca_timestamps_to_strategy(tmp_path: Path) 
     trading_days = get_nyse_trading_days(dt.date(2024, 1, 1), end_date)
     assert len(trading_days) >= 253
 
-    # Handler simulating Alpaca API returning UTC morning timestamps (04:00Z or 05:00Z)
     def handler(request: httpx.Request) -> httpx.Response:
         url_str = str(request.url)
         sym = "SPY"
@@ -165,7 +320,6 @@ async def test_round_trip_refresh_alpaca_timestamps_to_strategy(tmp_path: Path) 
         base_val = Decimal("100") + Decimal(DEFAULT_UNIVERSE.index(sym) * 10)
         bars_json = []
         for i, d in enumerate(trading_days):
-            # Alternate 04:00Z and 05:00Z depending on daylight saving
             hour_str = "04:00:00Z" if d.month in (4, 5, 6, 7, 8, 9, 10) else "05:00:00Z"
             price = base_val + Decimal(i) * Decimal("0.20")
             bars_json.append({
@@ -195,12 +349,10 @@ async def test_round_trip_refresh_alpaca_timestamps_to_strategy(tmp_path: Path) 
     assert manifest is not None
     assert (target_dir / "manifest.json").is_file()
 
-    # Ingest with AlpacaFeed
     feed = AlpacaFeed(data_dir=target_dir, feed="sip")
     prices = feed.load_historical_prices(min_bars=253, expected_as_of_date=end_date)
     assert len(prices) == 12
 
-    # Compute allocation with VAR117Strategy
     strategy = VAR117Strategy()
     signal = strategy.compute_allocation(prices, as_of_date=end_date)
     assert signal.as_of_date == end_date
