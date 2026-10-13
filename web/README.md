@@ -1,32 +1,30 @@
-# web/ — the live trading dashboard
+# web/ — VAR_117 Live Trading Dashboard
 
-A React + Vite + Tailwind dashboard for the MT5 live trader. It reads the live state from
-`api/main.py` (`127.0.0.1:8080`): a WebSocket stream at `/ws/live` for ticks, bars,
-positions and signals, plus REST snapshots under `/api/*`.
+A React + Vite + Tailwind dashboard for the **VAR_117 Multi-Asset ETF Momentum Rotation Engine**. It connects to the FastAPI backend at `127.0.0.1:8080` via a real-time WebSocket stream at `/ws/live` and REST snapshots under `/api/*`.
+
+Styled per [`DESIGN-supabase.md`](../DESIGN-supabase.md) using dark, minimalist Supabase-inspired design tokens.
 
 ## Commands
 
 ```bash
-npm ci            # installs from the committed lockfile
-npm run dev       # vite dev server on :5173, proxying /api to :8080
-npm run build     # typecheck, then emit dist/  ->  web/dist (mounted by the API)
-npm run typecheck # tsc --noEmit, on its own
+npm install       # install dependencies
+npm run dev       # vite dev server on :5173 (proxies /api and /ws to :8080)
+npm run build     # typecheck and compile to dist/ (mounted directly by the API)
+npm run typecheck # run TypeScript check (tsc --noEmit)
 ```
 
-Node 20 is pinned in `.nvmrc`. The visual language follows `DESIGN-supabase.md` at the
-repository root.
+Node 20 is pinned in `.nvmrc`.
 
-## Layout
+## Layout & Components
 
 ```
 src/
-├── App.tsx            page layout
+├── App.tsx                    Main layout, NY session clock, and live status header
 ├── hooks/
-│   └── useLiveTrader.ts   WebSocket connection + snapshot state
+│   └── useLiveTrader.ts       WebSocket connection, reconnection logic, snapshot state
 └── components/
-    ├── LiveTickerCard.tsx    bid/ask/spread hero
-    ├── TradingViewChart.tsx  M5 candles + Asian range (lightweight-charts)
-    ├── LivePositionPnL.tsx   open positions and today's PnL
-    ├── StrategyRadar.tsx     Asian range and latest Judas Swing signal
-    └── LiveTradeTape.tsx     executed trades
+    ├── PortfolioSummaryCards.tsx  Equity, Cash Balance, Invested NAV, PnL, Drawdown %
+    ├── ETFRadar.tsx               12-ETF momentum scores, 12M vol, and Cash Filter radar
+    ├── HoldingsTable.tsx          Active portfolio weights, share quantities, and PnL
+    └── RebalanceTimeline.tsx      Month-end execution schedule and audited order log
 ```
