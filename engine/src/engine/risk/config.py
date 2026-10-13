@@ -10,7 +10,7 @@ from __future__ import annotations
 import dataclasses
 from decimal import Decimal
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from engine.risk.decimal_yaml import decimal_scalar, load_decimal_yaml
 from engine.risk.rounding import RoundingError, require_decimal
@@ -44,13 +44,26 @@ class RiskConfig:
 
     risk_per_trade: Decimal
     daily_loss_limit_r: Decimal
+    max_account_drawdown: Decimal = Decimal("0.10")
+    cash_buffer_min: Decimal = Decimal("50.00")
+    cash_buffer_pct: Decimal = Decimal("0.005")
+    fill_timeout_seconds: int = 120
 
     def __post_init__(self) -> None:
-        for field in ("risk_per_trade", "daily_loss_limit_r"):
-            try:
-                require_decimal(getattr(self, field), field=field, positive=True)
-            except RoundingError as exc:
-                raise RiskConfigError(str(exc)) from exc
+        decimal_fields = (
+            "risk_per_trade",
+            "daily_loss_limit_r",
+            "max_account_drawdown",
+            "cash_buffer_min",
+            "cash_buffer_pct",
+        )
+        for field in decimal_fields:
+            val = getattr(self, field, None)
+            if val is not None:
+                try:
+                    require_decimal(val, field=field, positive=True)
+                except RoundingError as exc:
+                    raise RiskConfigError(str(exc)) from exc
 
         if self.risk_per_trade > _MAX_RISK_FRACTION:
             raise RiskConfigError(
@@ -85,7 +98,17 @@ def load_risk_config(path: Path | str = DEFAULT_RISK_CONFIG_PATH) -> RiskConfig:
         RiskConfigError: if a value is out of policy.
     """
     document = load_decimal_yaml(path)
-    return RiskConfig(
-        risk_per_trade=decimal_scalar(document, "risk_per_trade"),
-        daily_loss_limit_r=decimal_scalar(document, "daily_loss_limit_r"),
-    )
+    kwargs: dict[str, Any] = {
+        "risk_per_trade": decimal_scalar(document, "risk_per_trade"),
+        "daily_loss_limit_r": decimal_scalar(document, "daily_loss_limit_r"),
+    }
+    if "max_account_drawdown" in document:
+        kwargs["max_account_drawdown"] = decimal_scalar(document, "max_account_drawdown")
+    if "cash_buffer_min" in document:
+        kwargs["cash_buffer_min"] = decimal_scalar(document, "cash_buffer_min")
+    if "cash_buffer_pct" in document:
+        kwargs["cash_buffer_pct"] = decimal_scalar(document, "cash_buffer_pct")
+    if "fill_timeout_seconds" in document:
+        kwargs["fill_timeout_seconds"] = int(decimal_scalar(document, "fill_timeout_seconds"))
+    return RiskConfig(**kwargs)
+

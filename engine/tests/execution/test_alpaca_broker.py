@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from engine.execution.alpaca_broker import AlpacaBroker
+from engine.execution.alpaca_broker import AlpacaBroker, AlpacaBrokerError
 
 
 @pytest.mark.asyncio
@@ -131,3 +131,26 @@ async def test_alpaca_mock_dust_liquidation() -> None:
 
     positions = await broker.get_open_positions()
     assert len(positions) == 0
+
+
+def test_mode_url_mismatch() -> None:
+    # 1. paper_mode is True, but base_url points to live endpoint
+    with pytest.raises(AlpacaBrokerError, match=r"Mode/URL mismatch"):
+        AlpacaBroker(
+            mode="paper",
+            paper_mode=True,
+            base_url="https://api.alpaca.markets",
+            api_key="fake_key",
+            api_secret="fake_secret",
+        )
+
+    # 2. mode is live, but base_url points to paper endpoint
+    with pytest.raises(AlpacaBrokerError, match=r"Mode/URL mismatch"):
+        AlpacaBroker(
+            mode="live",
+            paper_mode=False,
+            base_url="https://paper-api.alpaca.markets",
+            api_key="fake_key",
+            api_secret="fake_secret",
+        )
+

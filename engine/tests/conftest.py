@@ -11,6 +11,7 @@ Fixtures provided here are available to every subdirectory of ``engine/tests``.
 from __future__ import annotations
 
 import datetime as dt
+import os
 from collections.abc import Callable, Iterator, Mapping
 from decimal import Decimal
 from pathlib import Path
@@ -18,6 +19,10 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
+
+# Ensure tests run with offline mock broker by default
+os.environ.setdefault("BROKER", "mock")
+os.environ.setdefault("ALPACA_DATA_FEED", "iex")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INSTRUMENT_FIXTURE = REPO_ROOT / "engine" / "tests" / "fixtures" / "instruments" / "XAU_USD.yaml"
@@ -208,3 +213,47 @@ def _no_real_io(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
         yield
     finally:
         socket.getaddrinfo = original  # type: ignore[assignment]
+
+
+def build_synthetic_etf_dataset(
+    target_dir: Path, end_date: dt.date, num_bars: int = 260
+) -> None:
+    """Generate synthetic ETF CSV files with valid NYSE dates ending at end_date."""
+    import csv
+
+    from engine.feed.refresh_data import generate_manifest
+    from engine.market.nyse_calendar import get_nyse_trading_days
+
+    universe = (
+        "SPY", "QQQ", "IWM", "EFA", "EEM", "IEF", "TLT", "SHY", "LQD", "VNQ", "GLD", "DBC"
+    )
+    target_dir.mkdir(parents=True, exist_ok=True)
+    start_search = end_date - dt.timedelta(days=num_bars * 2)
+    all_trading_days = get_nyse_trading_days(start_search, end_date)
+    trading_days = all_trading_days[-num_bars:]
+    assert trading_days[-1] == end_date
+
+    for sym_idx, sym in enumerate(universe):
+        csv_file = target_dir / f"{sym}_daily.csv"
+        rows: list[dict[str, str]] = []
+        base_price = Decimal(100 + sym_idx * 10)
+        for i, d in enumerate(trading_days):
+            price = (base_price + Decimal(i) * Decimal("0.10")).quantize(Decimal("0.01"))
+            rows.append({
+                "Date": d.isoformat(),
+                "Close": str(price),
+                "Adj Close": str(price),
+            })
+        with csv_file.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["Date", "Close", "Adj Close"])
+            writer.writeheader()
+            writer.writerows(rows)
+
+    generate_manifest(target_dir=target_dir, universe=universe)
+
+
+@pytest.fixture
+def build_synthetic_dataset() -> Callable[[Path, dt.date, int], None]:
+    return build_synthetic_etf_dataset
+
+

@@ -1,12 +1,16 @@
 """VAR_117 Multi-Asset ETF Momentum Rotation Strategy with Cash Filter.
 
-Implements the pre-registered winning model:
+Candidate model from systematic 294-variant search (research/reports/FINAL_REPORT_ETF_SEARCH.md):
 1. Universe: 12 US ETFs (SPY, QQQ, IWM, EFA, EEM, IEF, TLT, SHY, LQD, VNQ, GLD, DBC).
 2. Trailing 9-month (189 trading days) momentum ranking.
 3. Top K=3 selection.
-4. Cash Filter (positive momentum hurdle R_9M > 0; non-positive allocated to cash).
-5. 12-month (252 trading days) inverse-volatility weighting among passing assets.
+4. Inverse-volatility weighting computed across selected top-3 assets; failing Cash Filter
+   (R_9M <= 0) assets are zeroed out, with failed allocation held in cash
+   (survivors do not re-expand).
+5. 12-month (252 trading days) inverse-volatility weighting among top-3 assets.
 6. Strictly zero-float: all mathematical operations are performed with exact Decimals.
+7. Dated price history: validates identical date sequences across all 12 ETFs, validates
+   absence of NYSE calendar gaps, and requires an explicit as_of_date.
 """
 
 from __future__ import annotations
@@ -14,19 +18,21 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
-import logging
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 
-logger = logging.getLogger(__name__)
+from engine.market.nyse_calendar import validate_nyse_sequence
 
 __all__ = [
+    "DEFAULT_UNIVERSE",
     "ETF_METADATA",
     "PortfolioAllocationSignal",
     "TickerScore",
+    "VAR117Signal",
     "VAR117Strategy",
 ]
 
+# 12 liquid ETFs covering Equities, Fixed Income, and Real Assets
 ETF_METADATA: dict[str, dict[str, str]] = {
     "SPY": {"name": "SPDR S&P 500 ETF", "category": "US Large Cap Equity"},
     "QQQ": {"name": "Invesco QQQ Trust", "category": "US Tech / Growth Equity"},
@@ -97,8 +103,8 @@ class VAR117Strategy:
     def __init__(
         self,
         universe: tuple[str, ...] = DEFAULT_UNIVERSE,
-        momentum_lookback_days: int = 189,
-        volatility_lookback_days: int = 252,
+        momentum_lookback_days: int = 189,  # 9 Months
+        volatility_lookback_days: int = 252,  # 12 Months
         top_k: int = 3,
         cash_filter: bool = True,
     ) -> None:
@@ -110,35 +116,67 @@ class VAR117Strategy:
 
     @property
     def min_required_days(self) -> int:
-        return max(self.momentum_lookback_days, self.volatility_lookback_days) + 1
+        """Minimum historical daily bars needed to compute signals.
+
+        252 daily returns require 253 daily prices.
+        """
+        return max(self.momentum_lookback_days + 1, self.volatility_lookback_days + 1)
 
     def compute_allocation(
         self,
-        price_history: dict[str, list[Decimal]],
-        as_of_date: dt.date | None = None,
+        price_history: dict[str, list[tuple[dt.date, Decimal]]],
+        as_of_date: dt.date,
     ) -> PortfolioAllocationSignal:
-        """Compute target weights and 12-ETF ranking table from daily price history.
+        """Compute target weights and 12-ETF ranking table from dated daily price history.
 
         Parameters
         ----------
-        price_history : dict[str, list[Decimal]]
-            Mapping of ticker to sorted historical daily close prices (oldest to newest).
+        price_history : dict[str, list[tuple[dt.date, Decimal]]]
+            Mapping of ticker to sorted historical daily close bars (date, adj_close).
             Must have at least `min_required_days` prices for each universe asset.
-        as_of_date : dt.date | None
-            Effective date of signal. Defaults to today's UTC date.
+            All series must share an identical date list with no NYSE calendar gaps.
+        as_of_date : dt.date
+            Explicit effective signal date. Must exactly match the latest date in the series.
         """
-        eval_date = as_of_date or dt.datetime.now(dt.UTC).date()
+        if as_of_date is None:
+            raise ValueError(
+                "as_of_date is required for signal computation; no silent default allowed."
+            )
+
         min_bars = self.min_required_days
 
-        # Validate sufficient history for all universe tickers
+        # Validate sufficient history and asset completeness
         for ticker in self.universe:
-            prices = price_history.get(ticker)
-            if prices is None or len(prices) < min_bars:
-                bars_count = len(prices) if prices else 0
+            bars = price_history.get(ticker)
+            if bars is None or len(bars) < min_bars:
+                bars_count = len(bars) if bars else 0
                 raise ValueError(
                     f"Insufficient history for {ticker}: got {bars_count} bars, "
                     f"need at least {min_bars}"
                 )
+
+        # 0. Validate dated bars alignment across all universe assets
+        ref_ticker = self.universe[0]
+        ref_bars = price_history[ref_ticker]
+        ref_dates = [b[0] for b in ref_bars]
+
+        for ticker in self.universe:
+            bars = price_history[ticker]
+            ticker_dates = [b[0] for b in bars]
+            if ticker_dates != ref_dates:
+                raise ValueError(
+                    f"Date sequence mismatch for {ticker}: series dates do not match {ref_ticker}"
+                )
+
+        # Validate last date matches explicit as_of_date
+        if ref_dates[-1] != as_of_date:
+            raise ValueError(
+                f"Latest date in price history ({ref_dates[-1]}) does not match "
+                f"as_of_date ({as_of_date})"
+            )
+
+        # Validate NYSE calendar sequence (no duplicate dates, strictly sorted, no gaps)
+        validate_nyse_sequence(ref_dates)
 
         # 1. Trailing 9-month momentum and 12-month volatility calculation
         moms: dict[str, Decimal] = {}
@@ -148,13 +186,19 @@ class VAR117Strategy:
         annualization_factor = Decimal("252").sqrt()
 
         for ticker in self.universe:
-            prices = price_history[ticker]
+            bars = price_history[ticker]
+            prices = [b[1] for b in bars]
+
             latest_p = prices[-1]
+            if latest_p <= Decimal("0"):
+                raise ValueError(f"Non-positive latest price for {ticker}: {latest_p}")
             latest_prices[ticker] = latest_p
 
             # 9-month momentum: (P_latest - P_{latest - lookback}) / P_{latest - lookback}
             past_p = prices[-1 - self.momentum_lookback_days]
-            mom = Decimal("0") if past_p <= Decimal("0") else (latest_p - past_p) / past_p
+            if past_p <= Decimal("0"):
+                raise ValueError(f"Non-positive past price for {ticker} at lookback: {past_p}")
+            mom = (latest_p - past_p) / past_p
             moms[ticker] = mom
 
             # 12-month daily returns and sample standard deviation
@@ -163,10 +207,15 @@ class VAR117Strategy:
             for i in range(1, len(recent_prices)):
                 prev = recent_prices[i - 1]
                 curr = recent_prices[i]
-                if prev > Decimal("0"):
-                    daily_rets.append((curr - prev) / prev)
-                else:
-                    daily_rets.append(Decimal("0"))
+                if prev <= Decimal("0"):
+                    raise ValueError(
+                        f"Non-positive price for {ticker} in volatility window: {prev}"
+                    )
+                if curr <= Decimal("0"):
+                    raise ValueError(
+                        f"Non-positive price for {ticker} in volatility window: {curr}"
+                    )
+                daily_rets.append((curr - prev) / prev)
 
             n_rets = len(daily_rets)
             if n_rets > 1:
@@ -178,9 +227,9 @@ class VAR117Strategy:
             else:
                 annual_vol = Decimal("0.15")  # Safe fallback if insufficient variance
 
-            # Guard against zero volatility
+            # Fail-loud on zero or negative volatility
             if annual_vol <= Decimal("0"):
-                annual_vol = Decimal("0.0001")
+                raise ValueError(f"Zero or negative volatility computed for {ticker}: {annual_vol}")
             vols[ticker] = annual_vol
 
         # 2. Rank assets by 9M momentum descending (deterministic tie-break alphabetically)
@@ -205,11 +254,11 @@ class VAR117Strategy:
             if self.cash_filter:
                 # Must have positive trailing return (> 0)
                 if moms[t] > Decimal("0"):
-                    weights[t] = raw_w.quantize(Decimal("0.0001"))
+                    weights[t] = raw_w.quantize(Decimal("0.0001"), rounding=ROUND_HALF_EVEN)
                 else:
                     weights[t] = Decimal("0.0000")
             else:
-                weights[t] = raw_w.quantize(Decimal("0.0001"))
+                weights[t] = raw_w.quantize(Decimal("0.0001"), rounding=ROUND_HALF_EVEN)
 
         # Zero out non-top assets
         for t in self.universe:
@@ -227,7 +276,7 @@ class VAR117Strategy:
         # Cash gets whatever is unallocated
         cash_weight = max(Decimal("0.0000"), Decimal("1.0000") - invested_sum)
 
-        # 5. Build detailed score records for radar & reporting
+        # Build detailed 12-ticker radar scores
         scores: list[TickerScore] = []
         for t in sorted_tickers:
             is_top = t in top_assets
@@ -252,10 +301,10 @@ class VAR117Strategy:
                 )
             )
 
-        # Canonical hash for immutability & audit logging
+        # Canonical SHA-256 signal hash for journal audit trail
         canonical_payload = json.dumps(
             {
-                "date": str(eval_date),
+                "date": str(as_of_date),
                 "weights": {k: str(weights[k]) for k in sorted(weights.keys())},
                 "cash": str(cash_weight),
             },
@@ -264,10 +313,13 @@ class VAR117Strategy:
         sig_hash = hashlib.sha256(canonical_payload.encode("utf-8")).hexdigest()
 
         return PortfolioAllocationSignal(
-            as_of_date=eval_date,
+            as_of_date=as_of_date,
             target_weights=weights,
             cash_weight=cash_weight,
             top_assets=top_assets,
             scores=scores,
             signal_hash=sig_hash,
         )
+
+
+VAR117Signal = PortfolioAllocationSignal

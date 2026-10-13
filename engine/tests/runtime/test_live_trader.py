@@ -38,7 +38,7 @@ def mock_broker() -> AlpacaBroker:
 
 @pytest.fixture
 def feed() -> AlpacaFeed:
-    return AlpacaFeed()
+    return AlpacaFeed(data_dir=Path("engine/data/etf_cache"))
 
 
 def test_trader_initialization_and_snapshot(
@@ -92,12 +92,15 @@ async def test_rebalance_execution_allowed_when_killswitch_armed(
     mock_broker: AlpacaBroker,
     risk_cfg: RiskConfig,
 ) -> None:
+    seed_as_of = dt.datetime(2025, 12, 31, 16, 0, 0, tzinfo=dt.UTC)
     trader = LiveTrader(
         feed=feed,
         broker=mock_broker,
         risk_config=risk_cfg,
         enable_journal=False,
+        current_time=seed_as_of,
     )
+    feed.set_mock_quotes({t: Decimal("500.00") for t in trader.strategy.universe})
 
     orders = await trader.execute_rebalance()
     assert len(orders) > 0

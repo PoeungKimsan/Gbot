@@ -294,6 +294,8 @@ class JournalWriter:
             return False
         return True
 
+    append = submit
+
     def request_checkpoint(self) -> None:
         """Ask the worker to run a PASSIVE checkpoint at the next group boundary."""
         if not self._started:

@@ -24,6 +24,7 @@ dev = [
     "hypothesis",
     "ruff",
     "httpx2>=2.13.1",
+    "exchange-calendars>=4.13.2",
 ]
 
 [build-system]
@@ -71,6 +72,7 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 "engine/tests/**/*.py" = [
     "S101",    # asserts are the point of tests
+    "S106",    # fake credentials in test fixtures
     "ANN201",  # test functions return None implicitly
     "ANN202",  # private test helpers return None implicitly
     "ANN001",  # fixture/argument types are inferred from the signature

@@ -11,3 +11,14 @@ risk_per_trade: "0.01"
 # Daily loss limit, in R. Reaching -3R for the trading day trips the kill-switch,
 # which latches until the day rolls over at 17:00 America/New_York.
 daily_loss_limit_r: "3"
+
+# Drawdown threshold (fraction of equity, e.g. 10% peak-to-trough)
+max_account_drawdown: "0.10"
+
+# Rebalance cash buffer to absorb slippage / price movements during fills
+cash_buffer_min: "50.00"
+cash_buffer_pct: "0.005"
+
+# Maximum wait time in seconds for sell fills before timing out
+fill_timeout_seconds: "120"
+

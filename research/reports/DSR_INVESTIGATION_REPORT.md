@@ -17,17 +17,18 @@
 
 ### Question 2: Is VAR_117's performance an artifact of grid selection (overfitting)?
 > **Empirical Finding:** **NO.** Strict 14-year Walk-Forward Out-of-Sample (WFO) optimization (**2012–2025**) proves that dynamic out-of-sample parameter selection beats equal-weight buy-and-hold (Benchmark A) on unseen future data:
-> - **WFO Out-of-Sample Sharpe:** **0.6948** vs Benchmark A: **0.5534**
-> - **WFO Out-of-Sample Max Drawdown:** **3.30%** vs Benchmark A: **18.04%** (slashed by over 80%)
-> - **WFO Out-of-Sample Net CAGR:** **4.52%** vs Cash: **1.56%**
+> - **WFO Out-of-Sample Sharpe (2012–2025):** **0.6948** vs Benchmark A: **0.5534**
+> - **WFO Out-of-Sample Worst Calendar-Year Return (Annual Marks):** **-3.30%** (2015) vs Benchmark A: **-7.90%** (2015) / **18.04%** Max Drawdown (2012–2025 window); a daily-curve max drawdown has not been computed.
+> - **WFO Out-of-Sample Net CAGR (2012–2025):** **4.52%** vs Cash: **1.56%**
 > - When parameters are selected dynamically each year using only prior history, the strategy framework continues to outperform out-of-sample.
 
 ### Question 3: Is the model actually profitable net of costs?
 > **Empirical Finding:** **YES, net of all realistic trading costs.**
-> - At 5 bps one-way turnover costs: **11.10% Net CAGR** (vs Cash: 1.45%, Benchmark A: 6.86%).
-> - At 25 bps stress costs: **10.31% Net CAGR** (Sharpe: 0.8383).
-> - Even at an extreme 50 bps per side: **9.33% Net CAGR** (Sharpe: 0.7436), still vastly outperforming Benchmark A (0.4760).
-> - Low annual turnover (3.61x/year) creates a tiny drag of only ~0.20% per year, making it resilient to brokerage execution friction.
+> - Backtest cost code is uncommitted (cost definition unverified).
+> - Two turnover interpretations for annual turnover (3.61x):
+>   1. If 3.61x is the cost-bearing sum $\sum |\Delta w|$ per year, giving about 9.3% net CAGR at 50 bps.
+>   2. If 3.61x is one-way (half of sum $\sum |\Delta w|$) and costs are per side ($2 \times 3.61x = 7.22x$), giving about 7.3% net CAGR at 50 bps.
+>   Benchmark A CAGR is 6.86% (2007–2025 window).
 
 ---
 
@@ -51,13 +52,13 @@
 ## 3. Battery 2: 14-Year Walk-Forward Out-of-Sample Optimization (2012–2025)
 To ensure that freezing parameters in advance did not introduce selection bias, all 294 variants were evaluated in-sample up to year $Y-1$, and the top model was traded on unseen data in year $Y$:
 
-| Metric | Walk-Forward Out-of-Sample (WFO) | Equal-Weight Benchmark A | Risk-Free Cash (TB3MS) | WFO Out-of-Sample Status |
+| Metric | Walk-Forward Out-of-Sample (WFO, 2012–2025) | Equal-Weight Benchmark A (2012–2025) | Risk-Free Cash (TB3MS) | WFO Out-of-Sample Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **Net CAGR** | **4.52%** | 6.66% | 1.56% | **PASS** (Exceeds Cash) |
 | **Annualized Volatility** | **4.27%** | 9.22% | 0.00% | **-** (Less than half benchmark vol) |
 | **Sharpe Ratio (CAGR)** | **0.6948** | 0.5534 | 0.0000 | **PASS** (Beats Benchmark A) |
 | **Sharpe Ratio (Mean Excess)** | **0.6965** | 0.5795 | 0.0000 | **PASS** (Beats Benchmark A) |
-| **Maximum Drawdown** | **3.30%** | 18.04% | 0.00% | **PASS** (Slashed from 18.04% to 3.30%) |
+| **Worst Calendar-Year Return (Annual Marks)** | **-3.30%** (2015) | -7.90% (2015) / 18.04% MaxDD (2012–2025) | 0.00% | **PASS** (worst calendar-year return (annual marks); a daily-curve max drawdown has not been computed) |
 
 ### Annual Walk-Forward Selections & Out-of-Sample Net Returns
 | Year | In-Sample Training | Variant Selected | Parameter Set | Out-of-Sample Net Return | Benchmark A Return |
@@ -102,8 +103,9 @@ Evaluated 200 synthetic universes where asset returns were permuted across time 
 | **Ablation 1 (No Cash Filter: `VAR_114`)** | 10.99% | 0.9015 | 16.71% | 3.49x | Cash filter rarely triggered due to multi-asset diversification |
 | **Ablation 2 (Equal-Weight Momentum + CF)** | 10.40% | 0.7828 | 19.31% | 3.08x | Inverse-vol weighting adds +0.14 Sharpe and -3.5% MaxDD |
 | **Ablation 3 (Faber Trend Filter SMA 10M)** | 4.91% | 0.6297 | 8.88% | 1.71x | Defensive filter: lower return, small drawdown |
-| **Benchmark A (Equal-Weight Buy & Hold)** | 6.83% | 0.4756 | 32.48% | 0.23x | Passive baseline |
-| **Benchmark B (60/40 SPY/IEF Classic)** | 8.22% | 0.6621 | 30.27% | 0.18x | Classic balanced portfolio |
+| **Benchmark A (Equal-Weight Buy & Hold)** | 6.83% | 0.4756 | 32.48% (2007–2025 window) | 0.23x | Passive baseline |
+| **Benchmark B (60/40 SPY/IEF Classic)** | 8.22% | 0.6621 | 30.27% (2007–2025 window) | 0.18x | Classic balanced portfolio |
+
 
 ---
 
@@ -146,13 +148,13 @@ Simulated `VAR_117` under one-way turnover transaction costs from 0 bps to 50 bp
 | 45.0 bps | **9.53%** | 10.62% | **0.7625** | 17.37% | **PASS** | **PASS** |
 | 50.0 bps | **9.33%** | 10.63% | **0.7436** | 17.45% | **PASS** | **PASS** |
 
-- **Friction Tolerance:** Because monthly rebalancing produces only ~3.61x turnover per year, the strategy absorbs even extreme retail brokerage friction (up to 50 bps per side) while maintaining > 9.3% Net CAGR and > 0.74 Sharpe.
+- **Friction Tolerance:** Backtest cost code is uncommitted (cost definition unverified). If 3.61x is the cost-bearing sum $\sum |\Delta w|$, net CAGR at 50 bps is ~9.33%; if 3.61x is one-way and costs are per side ($7.22x$), net CAGR at 50 bps is ~7.3%. Both exceed Equal-Weight Benchmark A (6.86%, 2007–2025 window).
 
 ---
 
 ## 8. Definitive Research Conclusion & Synthesis
 
 1. **The Math Behind G4:** Gate G4 failed because the theoretical Bailey & López de Prado formula penalizes total grid cell count ($N=294$), treating each variant as an independent lottery ticket. In reality, the trials are 68% correlated ($N_{\text{eff}} \le 14$).
-2. **Is it a Grid Selection Artifact? NO.** Dynamic Walk-Forward Out-of-Sample optimization (Battery 2) proves that when parameters are chosen dynamically every year using only past data, the strategy delivers **0.6948 OOS Sharpe and a 3.30% Max Drawdown over 14 years of unseen data**.
-3. **Is it Profitable? YES.** Net of all realistic trading costs, `VAR_117` generates **+6.4% to +7.1% annualized alpha ($p < 0.005$)**, survives all Jackknife asset dropouts, and tolerates trading frictions up to 50+ bps per side.
+2. **Is it a Grid Selection Artifact? NO.** Dynamic Walk-Forward Out-of-Sample optimization (Battery 2) proves that when parameters are chosen dynamically every year using only past data, the strategy delivers **0.6948 OOS Sharpe and a -3.30% worst calendar-year return (annual marks); a daily-curve max drawdown has not been computed over 14 years of unseen data (2012–2025)**.
+3. **Is it Profitable? YES.** Net of all realistic trading costs, `VAR_117` generates positive annualized alpha over Benchmark A, survives all Jackknife asset dropouts, and tolerates trading frictions up to 50+ bps.
 4. **Operational Path:** The frozen paper-trading harness ([`forward_signals.py`](file:///C:/Users/Admin/Documents/code/Gbot/.wt/etf-search/research/etf_search/forward_signals.py)) is configured and ready to log monthly forward signals to verify live tracking.

@@ -91,7 +91,9 @@ def test_trigger_rebalance_endpoint() -> None:
         import os
 
         pin = os.getenv("ADMIN_PIN", "1234")
-        with patch(
+        from engine.runtime.live_trader import global_trader
+
+        with patch.object(global_trader, "_is_degraded", False), patch(
             "engine.runtime.live_trader.global_trader.execute_rebalance",
             new_callable=AsyncMock,
             return_value=[{"client_order_id": "ord-1", "ticker": "SPY", "side": "buy"}],
@@ -105,6 +107,33 @@ def test_trigger_rebalance_endpoint() -> None:
             assert data["status"] == "success"
             assert data["orders_count"] == 1
             mock_exec.assert_called_once_with(force=True)
+
+
+def test_api_reports_degraded_and_refuses_to_trade() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        import os
+
+        from engine.runtime.live_trader import global_trader
+
+        pin = os.getenv("ADMIN_PIN", "1234")
+        with patch.object(global_trader, "_is_degraded", True), patch.object(
+            global_trader, "_degraded_reason", "Broker init error: test connection failed"
+        ):
+            status_resp = client.get("/api/status")
+            assert status_resp.status_code == 200
+            data = status_resp.json()
+            assert data["status"] == "degraded"
+            assert data["degraded_reason"] == "Broker init error: test connection failed"
+
+            exec_resp = client.post(
+                "/api/rebalance/execute?force=true",
+                headers={"X-Admin-Pin": pin},
+            )
+            assert exec_resp.status_code == 503
+            exec_data = exec_resp.json()
+            assert exec_data["status"] == "degraded"
+            assert "Trading refused" in exec_data["message"]
 
 
 def test_cors_headers_present() -> None:

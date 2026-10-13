@@ -71,6 +71,7 @@ config/*.cache.yaml
 *.arrow
 data/raw/
 data/cache/
+data/etf_cache/
 
 # --- Web dashboard --------------------------------------------------------
 web/node_modules/

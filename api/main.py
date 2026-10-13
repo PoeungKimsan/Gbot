@@ -19,6 +19,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 from engine.runtime.live_trader import global_trader
 
 logger = logging.getLogger(__name__)
@@ -138,7 +145,20 @@ def create_app() -> FastAPI:
                 },
             )
 
-        # 2. Check force flag
+        # 2. Check degraded state
+        if global_trader.is_degraded:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "degraded",
+                    "message": (
+                        f"Trading refused: engine is in degraded state "
+                        f"({global_trader.degraded_reason})."
+                    ),
+                },
+            )
+
+        # 3. Check force flag
         force_str = request.query_params.get("force", "false").lower()
         force = force_str in ("true", "1", "yes")
 
@@ -152,10 +172,18 @@ def create_app() -> FastAPI:
                 }
             )
         except RuntimeError as exc:
+            if "cooldown" in str(exc).lower():
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "status": "cooldown",
+                        "message": str(exc),
+                    },
+                )
             return JSONResponse(
-                status_code=429,
+                status_code=400,
                 content={
-                    "status": "cooldown",
+                    "status": "refused",
                     "message": str(exc),
                 },
             )

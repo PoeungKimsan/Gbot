@@ -19,16 +19,27 @@
 > **Verdict Rationale:** While Candidate `VAR_117` passes standard historical gates G1, G2, G3, G5, and G6, it **FAILS Gate G4 (Deflated Sharpe Ratio = 0.3057 < 0.9500)**. After adjusting for multiple testing across the 294 explored variants and the dispersion of tested Sharpes ($\sigma = 0.1827$), the expected maximum Sharpe under pure selection bias is 1.0386, exceeding the candidate's observed Sharpe (0.9166). Per the pre-registered protocol, any gate failure yields a final verdict of **FAIL**.
 
 ### Pre-Registered Gate Evaluation Table
-| Gate | Condition Description | Required Threshold | Empirical Value | Verdict |
-| :--- | :--- | :--- | :--- | :---: |
-| **Gate G1** | Absolute Return Hurdle (Net CAGR > Cash CAGR) | $> 1.45\%$ | **11.15\%** (vs Cash: 1.45\%) | **PASS** |
-| **Gate G2** | Risk-Adjusted Edge (Net Sharpe CAGR > Bench A) | $> 0.4760$ | **0.9166** (Bench A: 0.4760) | **PASS** |
-| | *Dual Metric: Mean Monthly Excess Sharpe* | $> 0.5132$ | **0.9153** (Bench A: 0.5132) | *PASS* |
-| **Gate G3** | Downside Protection (Net MaxDD < Bench A) | $< 32.48\%$ | **16.71\%** (Bench A: 32.48\%) | **PASS** |
-| **Gate G4** | Multiple Testing Adjustment (Deflated Sharpe Ratio) | $\ge 0.9500$ ($N=294$) | **0.3057** (z = -0.51) | **FAIL** |
-| **Gate G5** | Parameter Plateau Stability (Neighbours Pass G1–G3) | $\ge 70.0\%$ | **83.3\%** (5/6 neighbours pass) | **PASS** |
-| **Gate G6** | Sub-Period Consistency (Both Halves Pass G1–G3) | P1 & P2 Pass | **P1: PASS** | **P2: PASS** | **PASS** |
-| **Gate G7** | Forward Paper-Trading Verification (6 Months) | 6 Months Logged | **PENDING (Phase 4)** | **N/A** |
+| Gate | Condition Description | Evaluation Window | Required Threshold | Empirical Value | Verdict |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+| **Gate G1** | Absolute Return Hurdle (Net CAGR > Cash) | 2007-03-01 to 2025-12-31 (18.8y) | $> 1.45\%$ | **11.15\%** (vs Cash: 1.45\%) | **PASS** |
+| **Gate G2** | Risk-Adjusted Edge (Net Sharpe CAGR > Bench A) | 2007-03-01 to 2025-12-31 (18.8y) | $> 0.4760$ | **0.9166** (Bench A: 0.4760) | **PASS** |
+| | *Dual Metric: Mean Monthly Excess Sharpe* | 2007-03-01 to 2025-12-31 (18.8y) | $> 0.5132$ | **0.9153** (Bench A: 0.5132) | *PASS* |
+| **Gate G3** | Downside Protection (Net MaxDD < Bench A) | 2007-03-01 to 2025-12-31 (18.8y) | $< 32.48\%$ | **16.71\%** (Bench A: 32.48\% [2007–2025 window]) | **PASS** |
+| **Gate G4** | Multiple Testing Adjustment (Deflated Sharpe Ratio) | 2007-03-01 to 2025-12-31 (227m) | $\ge 0.9500$ ($N=294$) | **0.3057** (z = -0.51) | **FAIL** |
+| **Gate G5** | Parameter Plateau Stability (Neighbours Pass G1–G3) | Grid neighbours | $\ge 70.0\%$ | **83.3\%** (5/6 neighbours pass) | **PASS** |
+| **Gate G6** | Sub-Period Consistency (Both Halves Pass G1–G3) | P1 (07-16) & P2 (16-25) | P1 & P2 Pass | **P1: PASS** (0.8563), **P2: PASS** (0.9887) | **PASS** |
+| **Gate G7** | Forward Paper-Trading Verification (6 Months) | Forward 6-month paper run | 6 Months Logged | **NOT STARTED** | **NOT STARTED** |
+
+> [!NOTE]
+> **Sharpe Difference vs Benchmark A Confidence Interval:**
+> analytic (Memmel 2003), rho=0.55 (assumed, unverified), T=226, SE 0.2226, CI [0.004, 0.877], p=0.048, conditional on VAR_117 being the best of 294 variants.
+> 
+> **Turnover & Cost Attribution:**
+> Backtest cost code is uncommitted (definition unverified). Two turnover interpretations for annual turnover (3.61x):
+> - 3.61x is the cost-bearing sum $|\Delta w|$ per year, giving about 9.3% net CAGR at 50 bps.
+> - 3.61x is one-way (half of sum $|\Delta w|$) and costs are per side ($2 \times 3.61x = 7.22x$), giving about 7.3% net CAGR at 50 bps.
+> Benchmark A is 6.86% (2007–2025 full sample).
+
 
 ---
 
@@ -40,7 +51,7 @@
 - **Top Assets Selected ($K$):** Top 3 assets ranked by trailing 9-month total return
 - **Cash Filter ($CF$):** ON (Assets in Top 3 only held if 9M return > 0; non-qualifying weight held in cash)
 - **Volatility Window ($V$):** 12 Months (252 trading days)
-- **Weighting Scheme:** $w_i \propto 1/\sigma_i(12\text{M})$ normalized among qualified top-3 assets; unallocated weight in TB3MS cash
+- **Weighting Scheme:** Inverse-volatility weighting computed across the selected top 3, then zeroed on failure; failed share held in cash (survivors do not re-expand)
 
 ### Full Evaluation Period Performance (2007-03-01 to 2025-12-31, 18.8 Years)
 | Metric | Gross (0 bps) | Primary Net (5 bps) | Stress Net (25 bps) | Equal-Weight (Bench A) | 60/40 (SPY/IEF) | Cash (TB3MS) |

@@ -11,17 +11,16 @@ the invariants in Section 2 win — raise the conflict instead of silently viola
 An automated **Multi-Asset ETF Momentum Rotation Engine (VAR_117)** that trades **live/paper via Alpaca Markets**
 and shows real-time portfolio allocation and metrics on a web dashboard.
 
-- **Strategy (`engine/src/engine/strategy/etf_momentum.py`)** — Pre-registered winner model `VAR_117`:
+- **Strategy (`engine/src/engine/strategy/etf_momentum.py`)** — Candidate model `VAR_117` (from 294-variant grid search):
   - **Universe (12 US ETFs):** `SPY`, `QQQ`, `IWM`, `EFA`, `EEM`, `IEF`, `TLT`, `SHY`, `LQD`, `VNQ`, `GLD`, `DBC`.
   - **Cash Proxy:** FRED 3-Month T-Bill (`TB3MS`) / Account Cash Balance.
   - **Momentum Lookback:** Trailing 9 months (189 trading days).
   - **Selection:** Top $K=3$ assets by 9-month return.
+  - **Inverse-Volatility Weighting:** 12-month (252 trading days) inverse-volatility weighting computed across selected top-3 assets ($w_i \propto 1/\sigma_i$), normalized so total invested weight $\le 1.0$.
   - **Cash Filter:** Absolute momentum hurdle ($R_{9\text{M}} > 0$). If an asset in the top 3 has $R_{9\text{M}} \le 0$,
-    its allocation is redirected to cash.
-  - **Weighting:** 12-month (252 trading days) inverse-volatility weighting among passing assets ($w_i \propto 1/\sigma_i$),
-    normalized so total invested weight $\le 1.0$.
-  - **Execution Timing:** Rebalance signal evaluated at month-end market close; rebalancing executed at market open/close
-    of the first trading day of the next month (1-day implementation delay).
+    its allocation is redirected to cash (surviving assets do not re-expand).
+  - **Execution Timing:** Rebalance signal evaluated at month-end market close ($t$); rebalancing executed at market close
+    of the first trading day of the next month ($t+1$, 1-day implementation delay).
 - **Execution (`engine/src/engine/execution/alpaca_broker.py`)** — Connects to Alpaca Markets (Paper / Live) via async REST API.
   Calculates delta rebalancing orders against current portfolio holdings, supports fractional shares, and includes an automatic
   in-memory mock paper broker fallback when API keys are not configured.

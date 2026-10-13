@@ -24,7 +24,7 @@ async def test_telegram_notifier_disabled_without_credentials() -> None:
 
 @pytest.mark.asyncio
 async def test_telegram_notifier_send_message_success() -> None:
-    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")  # noqa: S106
+    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")
     assert notifier.is_enabled is True
 
     mock_resp = MagicMock()
@@ -44,7 +44,7 @@ async def test_telegram_notifier_send_message_success() -> None:
 
 @pytest.mark.asyncio
 async def test_telegram_notify_order_opened() -> None:
-    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")  # noqa: S106
+    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")
 
     with patch.object(notifier, "send_message", new_callable=AsyncMock) as mock_send:
         mock_send.return_value = True
@@ -74,7 +74,7 @@ async def test_telegram_notify_order_opened() -> None:
 
 @pytest.mark.asyncio
 async def test_telegram_notify_order_closed() -> None:
-    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")  # noqa: S106
+    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")
 
     with patch.object(notifier, "send_message", new_callable=AsyncMock) as mock_send:
         mock_send.return_value = True
@@ -98,7 +98,7 @@ async def test_telegram_notify_order_closed() -> None:
 
 @pytest.mark.asyncio
 async def test_telegram_notify_killswitch_tripped() -> None:
-    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")  # noqa: S106
+    notifier = TelegramNotifier(bot_token="fake_token", chat_id="123456789")
 
     with patch.object(notifier, "send_message", new_callable=AsyncMock) as mock_send:
         mock_send.return_value = True

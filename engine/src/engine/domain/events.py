@@ -69,6 +69,9 @@ class EventType(StrEnum):
     EQUITY_SNAPSHOT = "equity_snapshot"
     FEED_STATE_CHANGED = "feed_state_changed"
     RISK_KILLSWITCH = "risk_killswitch"
+    STRATEGY_SIGNAL = "strategy_signal"
+    REBALANCE_EXECUTED = "rebalance_executed"
+    EXECUTION_REFUSED = "execution_refused"
 
     @classmethod
     def from_value(cls, value: Any) -> EventType | None:

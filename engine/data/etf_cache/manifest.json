@@ -1,0 +1,141 @@
+{
+  "adjustment": "split_and_dividend_adjusted",
+  "fetched_at": "2026-01-01T00:00:00+00:00",
+  "requested_feed": "seed",
+  "source": "Seed Data (commit 26084f1)",
+  "symbols": {
+    "DBC": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "DBC_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "a0eb4df91e47f89042b30400b540288d1ca7c406d38d4113777fda85982d9348",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "EEM": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "EEM_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "ee8d878f8006787bace6646ee8e41e839875165845efdc0a62ce2349e7ac34f1",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "EFA": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "EFA_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "840301f398e85692aaea0e0027d7bc275614553a07ebcb2988123e6eb2386ae4",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "GLD": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "GLD_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "397352d3dfd525c8a0f02aaad341a2b34fb331f845993d8a9339bd52729d4205",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "IEF": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "IEF_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "d5963ba6b31c64d0b00d9d151548e6a4d5f3fb9fc8978097baf886e11169f7be",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "IWM": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "IWM_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "a1564ae7fd08dc8d5114b4ea99bf2d6a7ec2ca387bcb6c0fbb705e881eee0107",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "LQD": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "LQD_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "d578d9b10dd9a7e6f52af7f925e10832cc290f816212ceadab5dfee728250366",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "QQQ": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "QQQ_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "0511e12523c93e918c824b5d234ee092d2ce84a66d9aea5ee7f1c94195a1bd99",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "SHY": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "SHY_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "a7e5c63bb8af5e2865511886b20d778bd8fcb2f6d927ae294db5e269b4bb50da",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "SPY": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "SPY_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "e69c53835877434955656407834ba6a0a421d34d1eef8adf75cdac4603d90f8f",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "TLT": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "TLT_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "d60ee24d731384adf563f8cabaa1667a43db24f784b98b81b63261e2eb971ee9",
+      "source": "Seed Data (commit 26084f1)"
+    },
+    "VNQ": {
+      "adjustment": "split_and_dividend_adjusted",
+      "fetched_at": "2026-01-01T00:00:00+00:00",
+      "filename": "VNQ_daily.csv",
+      "first_date": "2024-01-04",
+      "last_date": "2025-12-31",
+      "requested_feed": "seed",
+      "rows": 500,
+      "sha256": "0765a46f548b56bfa0d7948837f4e04cd5997b71c721edb99a7410b70a4c2b50",
+      "source": "Seed Data (commit 26084f1)"
+    }
+  },
+  "symbols_count": 12
+}
