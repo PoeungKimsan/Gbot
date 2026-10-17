@@ -18,7 +18,8 @@ export function PortfolioSummaryCards({ snapshot }: PortfolioSummaryCardsProps):
   const cash = snapshot?.cash_balance ? parseFloat(snapshot.cash_balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "100,000.00";
   const invested = snapshot?.invested_value ? parseFloat(snapshot.invested_value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
   const unrealized = snapshot?.unrealized_pnl || "+0.00";
-  const drawdown = snapshot?.drawdown_pct ? `${snapshot.drawdown_pct}%` : "0.00%";
+  const ddNum = parseFloat(snapshot?.drawdown_pct || "0");
+  const drawdown = `${(isNaN(ddNum) ? 0 : ddNum).toFixed(2)}%`;
   const isTripped = snapshot?.killswitch?.is_tripped ?? false;
   const killswitchState = snapshot?.killswitch?.state ?? "ARMED";
 

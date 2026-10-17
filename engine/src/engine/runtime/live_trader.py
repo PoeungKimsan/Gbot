@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from engine.domain.events import DomainEvent, EventType
 from engine.execution.alpaca_broker import AlpacaBroker
-from engine.feed.alpaca_feed import AlpacaFeed, Quote
+from engine.feed.alpaca_feed import AlpacaFeed, AlpacaFeedError, Quote
 from engine.feed.refresh_data import get_manifest
 from engine.journal.writer import JournalWriter
 from engine.market.instrument import InstrumentSpec
@@ -197,9 +197,9 @@ class LiveTrader:
                     exc,
                 )
                 self.risk_config = RiskConfig(
-                    max_account_drawdown=Decimal("0.10"),
+                    risk_per_trade=Decimal("0.01"),
                     daily_loss_limit_r=Decimal("3.0"),
-                    instrument=self.instrument_spec,
+                    max_account_drawdown=Decimal("0.10"),
                 )
 
         # Restore kill-switch from journal or injectable parameter
@@ -237,7 +237,7 @@ class LiveTrader:
         self._task: asyncio.Task[None] | None = None
 
         # State storage
-        self._latest_quotes: dict[str, Quote | Decimal] = {}
+        self._latest_quotes: dict[str, Quote] = {}
         self._latest_signal: PortfolioAllocationSignal | None = None
         self._account_summary: dict[str, Decimal] = {
             "equity": Decimal("100000.00"),
@@ -313,7 +313,10 @@ class LiveTrader:
 
         equity = self._account_summary.get("equity", Decimal("100000.00"))
         cash = self._account_summary.get("cash", Decimal("100000.00"))
-        invested = self._account_summary.get("portfolio_value", Decimal("0.00"))
+        invested = sum(
+            (Decimal(str(p.get("market_value", "0.00"))) for p in self._open_positions.values()),
+            Decimal("0.00"),
+        )
 
         # Calculate floating PnL across open positions
         unrealized = sum(
@@ -322,10 +325,10 @@ class LiveTrader:
         )
 
         drawdown_pct = (
-            (equity - self._high_water_mark) / self._high_water_mark
+            ((equity - self._high_water_mark) / self._high_water_mark * Decimal("100"))
             if self._high_water_mark > Decimal("0")
             else Decimal("0.00")
-        )
+        ).quantize(Decimal("0.01"))
 
         # Format holdings list
         holdings: list[dict[str, Any]] = []
@@ -336,6 +339,15 @@ class LiveTrader:
             val = pos.get("market_value", qty * cur_p)
             unreal = pos.get("unrealized_pnl", Decimal("0.00"))
             w = (val / equity) if equity > Decimal("0") else Decimal("0.0000")
+            target_w = (
+                self._latest_signal.target_weights.get(sym, Decimal("0.0000"))
+                if self._latest_signal
+                else Decimal("0.0000")
+            )
+            drift_w = w - target_w
+            w_pct = (w * Decimal("100")).quantize(Decimal("0.01"))
+            target_w_pct = (target_w * Decimal("100")).quantize(Decimal("0.01"))
+            drift_pct = (drift_w * Decimal("100")).quantize(Decimal("0.01"))
 
             meta = ETF_METADATA.get(sym, {})
             holdings.append(
@@ -344,16 +356,18 @@ class LiveTrader:
                     "name": meta.get("name", sym),
                     "category": meta.get("category", ""),
                     "shares": str(qty),
+                    "qty": str(qty),
                     "avg_cost": str(avg_p.quantize(Decimal("0.01"))),
+                    "avg_entry_price": str(avg_p.quantize(Decimal("0.01"))),
                     "current_price": str(cur_p.quantize(Decimal("0.01"))),
                     "market_value": str(val.quantize(Decimal("0.01"))),
                     "unrealized_pnl": f"{unreal:+.2f}",
+                    "unrealized_pl": str(unreal.quantize(Decimal("0.01"))),
                     "current_weight": str(w.quantize(Decimal("0.0001"))),
-                    "target_weight": str(
-                        self._latest_signal.target_weights.get(sym, Decimal("0.0000"))
-                        if self._latest_signal
-                        else "0.0000"
-                    ),
+                    "current_weight_pct": str(w_pct),
+                    "target_weight": str(target_w),
+                    "target_weight_pct": str(target_w_pct),
+                    "drift_pct": str(drift_pct),
                 }
             )
 
@@ -398,8 +412,19 @@ class LiveTrader:
                 "rebalance_count": len(self._completed_rebalances),
                 "latest_orders": self._recent_orders[:10],
                 "signal_hash": self._latest_signal.signal_hash if self._latest_signal else None,
+                "top_assets": self._latest_signal.top_assets if self._latest_signal else [],
+                "cash_weight_pct": (
+                    str(
+                        (self._latest_signal.cash_weight * Decimal("100")).quantize(
+                            Decimal("0.01")
+                        )
+                    )
+                    if self._latest_signal
+                    else "100.00"
+                ),
             },
             "recent_orders": self._recent_orders,
+            "equity_history": list(self._equity_history),
             "equity_curve": list(self._equity_history),
         }
 
@@ -465,13 +490,28 @@ class LiveTrader:
         try:
             if self.feed is None:
                 self.feed = AlpacaFeed()
-            prices = self.feed.load_historical_prices(
-                min_bars=self.strategy.min_required_days,
-                expected_as_of_date=as_of_date,
+            try:
+                prices = self.feed.load_historical_prices(
+                    min_bars=self.strategy.min_required_days,
+                    expected_as_of_date=as_of_date,
+                )
+                effective_as_of = as_of_date
+            except AlpacaFeedError as feed_err:
+                logger.info(
+                    "Exact date match failed during priming (%s); fallback to cached bars.",
+                    feed_err,
+                )
+                prices = self.feed.load_historical_prices(
+                    min_bars=self.strategy.min_required_days,
+                )
+                effective_as_of = max(p[0] for p in next(iter(prices.values())))
+
+            with contextlib.suppress(AlpacaFeedError):
+                self._latest_quotes = await self.feed.fetch_latest_quotes(current_time=now_ny)
+            self._latest_signal = self.strategy.compute_allocation(
+                prices, as_of_date=effective_as_of
             )
-            self._latest_quotes = await self.feed.fetch_latest_quotes(current_time=now_ny)
-            self._latest_signal = self.strategy.compute_allocation(prices, as_of_date=as_of_date)
-            self._journal_strategy_signal(prices, as_of_date, now_utc)
+            self._journal_strategy_signal(prices, effective_as_of, now_utc)
             logger.info(
                 "Primed VAR_117 Strategy: Top Assets=%s, Cash Weight=%s",
                 self._latest_signal.top_assets,
@@ -484,7 +524,7 @@ class LiveTrader:
         # Sync account balances and existing open positions from Alpaca
         try:
             if self.broker is None:
-                if getattr(self, "_broker_init_error", None) is not None:
+                if self._broker_init_error is not None:
                     raise self._broker_init_error
                 self.broker = AlpacaBroker()
             self._account_summary = await self.broker.get_account_summary()
@@ -492,6 +532,22 @@ class LiveTrader:
             raw_pos = await self.broker.get_open_positions()
             self._open_positions = {p["symbol"]: p for p in raw_pos}
             self._recent_orders = await self.broker.get_orders(status="all", limit=50)
+
+            # Seed real historical equity curve from broker (2-day 5-minute bars)
+            with contextlib.suppress(Exception):
+                broker_history = await self.broker.get_portfolio_history(
+                    period="2D", timeframe="5Min"
+                )
+                if broker_history:
+                    cash_val = float(self._account_summary.get("cash", Decimal("0.00")))
+                    self._equity_history = [
+                        {
+                            "time": int(pt["timestamp"]),
+                            "equity": float(pt["equity"]),
+                            "cash": cash_val,
+                        }
+                        for pt in broker_history
+                    ]
         except Exception as exc:
             self.mark_degraded(f"Broker account sync failed: {exc}")
             logger.warning("Could not sync account from broker: %s", exc)
@@ -558,6 +614,11 @@ class LiveTrader:
         self._journal_strategy_signal(prices, as_of_date, now_utc)
 
         # Submit delta rebalance orders via AlpacaBroker
+        if self.broker is None:
+            if self._broker_init_error is not None:
+                raise self._broker_init_error
+            self.broker = AlpacaBroker()
+
         executed_orders = await self.broker.rebalance_portfolio(
             target_weights=self._latest_signal.target_weights,
             current_prices=self._latest_quotes,
@@ -759,10 +820,16 @@ class LiveTrader:
             )
 
         if self.feed is not None:
+            if not self.feed._cached_daily_prices:
+                with contextlib.suppress(Exception):
+                    self.feed.load_historical_prices(
+                        min_bars=self.strategy.min_required_days,
+                        expected_as_of_date=signal_date,
+                    )
             self._latest_quotes = await self.feed.fetch_latest_quotes(current_time=ny_time)
 
         if self.broker is None:
-            if getattr(self, "_broker_init_error", None) is not None:
+            if self._broker_init_error is not None:
                 raise self._broker_init_error
             self.broker = AlpacaBroker()
 
@@ -782,16 +849,27 @@ class LiveTrader:
         self._last_rebalance_time = utc_time
         self._completed_rebalances.extend(executed)
         self._recent_orders = executed
+        with contextlib.suppress(Exception):
+            raw_pos = await self.broker.get_open_positions()
+            self._open_positions = {p["symbol"]: p for p in raw_pos}
+            self._account_summary = await self.broker.get_account_summary()
         return executed
 
     async def _run_loop(self) -> None:
         """Periodic monitoring loop updating quotes, portfolio NAV, and risk checks."""
         while self._running:
             try:
+                equity = self._account_summary.get("equity", Decimal("100000.00"))
+                cash = self._account_summary.get("cash", Decimal("100000.00"))
+                portfolio_val = self._account_summary.get("portfolio_value", Decimal("0.00"))
+
                 if self.feed is not None:
                     # 1. Update live quotes
-                    quotes = await self.feed.fetch_latest_quotes()
-                    self._latest_quotes.update(quotes)
+                    try:
+                        quotes = await self.feed.fetch_latest_quotes()
+                        self._latest_quotes.update(quotes)
+                    except AlpacaFeedError as feed_err:
+                        logger.debug("Live quotes unavailable outside market hours: %s", feed_err)
 
                 if self.broker is not None:
                     # 2. Update open positions and calculate total equity
@@ -804,7 +882,9 @@ class LiveTrader:
                         if broker_orders:
                             self._recent_orders = broker_orders
 
-                    equity = acc["equity"]
+                    equity = acc.get("equity", equity)
+                    cash = acc.get("cash", cash)
+                    portfolio_val = acc.get("portfolio_value", portfolio_val)
                     if equity > self._high_water_mark:
                         self._high_water_mark = equity
 
@@ -842,14 +922,21 @@ class LiveTrader:
 
                 # 4. Record equity curve snapshot for chart
                 now_ts = int(now_utc.timestamp())
-                self._equity_history.append(
-                    {
+                if not self._equity_history or (now_ts - self._equity_history[-1]["time"]) >= 5:
+                    self._equity_history.append(
+                        {
+                            "time": now_ts,
+                            "equity": float(equity),
+                            "cash": float(cash),
+                        }
+                    )
+                else:
+                    self._equity_history[-1] = {
                         "time": now_ts,
                         "equity": float(equity),
-                        "cash": float(acc["cash"]),
+                        "cash": float(cash),
                     }
-                )
-                if len(self._equity_history) > 300:
+                if len(self._equity_history) > 2000:
                     self._equity_history.pop(0)
 
                 # 5. Broadcast live portfolio snapshot to WebSockets
@@ -857,17 +944,20 @@ class LiveTrader:
                     "portfolio_update",
                     {
                         "equity": str(equity.quantize(Decimal("0.01"))),
-                        "cash": str(acc["cash"].quantize(Decimal("0.01"))),
-                        "invested": str(acc["portfolio_value"].quantize(Decimal("0.01"))),
+                        "cash": str(cash.quantize(Decimal("0.01"))),
+                        "invested": str(portfolio_val.quantize(Decimal("0.01"))),
                         "drawdown_pct": str(
                             (
-                                ((equity - self._high_water_mark) / self._high_water_mark)
+                                (equity - self._high_water_mark)
+                                / self._high_water_mark
+                                * Decimal("100")
                                 if self._high_water_mark > Decimal("0")
                                 else Decimal("0.00")
-                            ).quantize(Decimal("0.0001"))
+                            ).quantize(Decimal("0.01"))
                         ),
                         "high_water_mark": str(self._high_water_mark.quantize(Decimal("0.01"))),
                         "timestamp": now_utc.isoformat(),
+                        "time": now_ts,
                     },
                 )
             except asyncio.CancelledError:
@@ -907,7 +997,7 @@ def run_oneshot_rebalance(
             journal_path=journal_path,
             current_time=now_ny,
         )
-        if getattr(trader, "_broker_init_error", None) is not None:
+        if trader is not None and trader._broker_init_error is not None:
             raise trader._broker_init_error
         if trader.is_degraded:
             raise RuntimeError(f"Trader is degraded: {trader.degraded_reason}")
@@ -927,11 +1017,10 @@ def run_oneshot_rebalance(
         logger.error("One-shot rebalance execution failed: %s", exc)
         return 1
     finally:
-        has_active_writer = (
+        if (
             trader is not None
             and trader.journal_writer is not None
             and trader.journal_writer.started
-        )
-        if has_active_writer:
+        ):
             trader.journal_writer.stop()
             trader.journal_writer.drain(timeout=dt.timedelta(seconds=2))

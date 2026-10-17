@@ -142,7 +142,7 @@ it is given: it never talks to the broker, the journal or the clock. Only `runti
 uv sync                                                  # install / sync Python env
 uv run pytest                                            # full test suite
 uv run ruff check .                                      # lint
-uv run uvicorn api.main:app --host 127.0.0.1 --port 8080 # run engine + API
+uv run python -m uvicorn api.main:app --host 127.0.0.1 --port 8080 # run engine + API
 
 cd web && npm ci && npm run dev                          # dashboard dev server on :5173
 cd web && npm run build                                  # typecheck + build to web/dist

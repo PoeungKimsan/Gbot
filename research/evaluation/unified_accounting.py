@@ -93,6 +93,9 @@ def main() -> None:
             bars_23_25.append(b)
 
     all_bars = bars_20_22 + bars_23_25
+    if not all_bars:
+        print("No historical bars found in cache (local bar cache pruned). Exiting gracefully.")
+        return
 
     runner_0x = BacktestRunner(base_spread=Decimal("0.0"), base_slippage=Decimal("0.0"), cost_multiplier=Decimal("0.0"))
 

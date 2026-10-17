@@ -129,7 +129,7 @@ Recommended during active development for instant code reloading:
 
 1. **Start the Engine & API Gateway** (Terminal 1):
    ```bash
-   uv run uvicorn api.main:app --host 127.0.0.1 --port 8080 --reload
+   uv run python -m uvicorn api.main:app --host 127.0.0.1 --port 8080 --reload
    ```
 2. **Start the Vite Dev Server** (Terminal 2):
    ```bash
@@ -152,9 +152,19 @@ Builds the frontend production bundle and lets FastAPI serve both API endpoints 
    ```
 2. **Launch the Production Server**:
    ```bash
-   uv run uvicorn api.main:app --host 127.0.0.1 --port 8080
+   uv run python -m uvicorn api.main:app --host 127.0.0.1 --port 8080
    ```
 3. **View Dashboard**: Open your browser directly to [http://127.0.0.1:8080](http://127.0.0.1:8080).
+
+---
+
+#### Option C: 1-Click Desktop Launcher (`SanAlgo.exe`)
+
+For quick 1-click startup without opening any terminals:
+
+- Double-click the **`SanAlgo`** shortcut on your **Desktop** (or double-click [`SanAlgo.exe`](SanAlgo.exe) / [`SanAlgo.bat`](SanAlgo.bat) in the project root).
+- The launcher starts the engine and automatically opens your web browser to `http://127.0.0.1:8080`.
+- Closing the launcher window safely stops the engine.
 
 ---
 

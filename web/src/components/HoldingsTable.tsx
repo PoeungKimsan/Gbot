@@ -57,24 +57,30 @@ export function HoldingsTable({ holdings, className = "" }: HoldingsTableProps):
               </tr>
             ) : (
               holdings.map((h) => {
-                const drift = parseFloat(h.drift_pct);
-                const pl = parseFloat(h.unrealized_pl);
+                const qtyRaw = h.qty || h.shares || "0";
+                const sharesNum = parseFloat(qtyRaw) || 0;
+                const driftNum = parseFloat(h.drift_pct || "0") || 0;
+                const plNum = parseFloat(h.unrealized_pl || h.unrealized_pnl || "0") || 0;
+                const curWeightStr = h.current_weight_pct || (h.current_weight ? (parseFloat(h.current_weight) * 100).toFixed(2) : "0.00");
+                const targetWeightStr = h.target_weight_pct || (h.target_weight ? (parseFloat(h.target_weight) * 100).toFixed(2) : "0.00");
+                const driftStr = !isNaN(driftNum) ? (driftNum > 0 ? `+${driftNum.toFixed(2)}` : driftNum.toFixed(2)) : "0.00";
+
                 return (
                   <tr key={h.symbol} className="hover:bg-[#202020] transition-colors">
                     <td className="py-3">
                       <div className="font-semibold text-[#ededed]">{h.symbol}</div>
-                      <div className="font-sans text-[11px] text-[#707070]">{h.name}</div>
+                      <div className="font-sans text-[11px] text-[#707070]">{h.name || h.category}</div>
                     </td>
-                    <td className="py-3 text-right text-[#ededed]">{parseFloat(h.qty).toFixed(4)}</td>
+                    <td className="py-3 text-right text-[#ededed]">{sharesNum.toFixed(4)}</td>
                     <td className="py-3 text-right text-[#9a9a9a]">${h.current_price}</td>
                     <td className="py-3 text-right text-[#ededed] font-medium">${h.market_value}</td>
-                    <td className="py-3 text-right text-[#ededed]">{h.current_weight_pct}%</td>
-                    <td className="py-3 text-right text-[#3ecf8e] font-semibold">{h.target_weight_pct}%</td>
-                    <td className={`py-3 text-right ${Math.abs(drift) > 2 ? "text-[#f59e0b]" : "text-[#707070]"}`}>
-                      {drift > 0 ? `+${h.drift_pct}%` : `${h.drift_pct}%`}
+                    <td className="py-3 text-right text-[#ededed]">{curWeightStr}%</td>
+                    <td className="py-3 text-right text-[#3ecf8e] font-semibold">{targetWeightStr}%</td>
+                    <td className={`py-3 text-right ${Math.abs(driftNum) > 2 ? "text-[#f59e0b]" : "text-[#707070]"}`}>
+                      {driftStr}%
                     </td>
-                    <td className={`py-3 text-right font-medium ${pl >= 0 ? "text-[#3ecf8e]" : "text-[#f43f5e]"}`}>
-                      {pl >= 0 ? `+$${pl.toFixed(2)}` : `-$${Math.abs(pl).toFixed(2)}`}
+                    <td className={`py-3 text-right font-medium ${plNum >= 0 ? "text-[#3ecf8e]" : "text-[#f43f5e]"}`}>
+                      {plNum >= 0 ? `+$${plNum.toFixed(2)}` : `-$${Math.abs(plNum).toFixed(2)}`}
                     </td>
                   </tr>
                 );

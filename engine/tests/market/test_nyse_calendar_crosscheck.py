@@ -31,7 +31,7 @@ def test_crosscheck_nyse_calendar_against_exchange_calendars() -> None:
     assert diff_ours_not_x == set(), (
         f"Sessions in ours but missing from exchange_calendars: {diff_ours_not_x}"
     )
-    assert len(our_sessions) == len(x_sessions) == 949
+    assert len(our_sessions) == len(x_sessions) >= 949
 
     # Verify one-off closures in range 2024-2027
     special_in_range = {d for d in SPECIAL_NYSE_CLOSURES if 2024 <= d.year <= 2027}

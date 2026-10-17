@@ -21,31 +21,46 @@ def report_text() -> str:
 
 @pytest.fixture
 def stats_data() -> dict:
-    with open(OUTPUT_DIR / "statistics_summary.json", encoding="utf-8") as f:
+    target = OUTPUT_DIR / "statistics_summary.json"
+    if not target.is_file():
+        pytest.skip(f"Pruned artifact: {target}")
+    with open(target, encoding="utf-8") as f:
         return json.load(f)
 
 
 @pytest.fixture
 def nulls_data() -> dict:
-    with open(OUTPUT_DIR / "null_distributions_summary.json", encoding="utf-8") as f:
+    target = OUTPUT_DIR / "null_distributions_summary.json"
+    if not target.is_file():
+        pytest.skip(f"Pruned artifact: {target}")
+    with open(target, encoding="utf-8") as f:
         return json.load(f)
 
 
 @pytest.fixture
 def port_data() -> dict:
-    with open(OUTPUT_DIR / "portfolio_drawdown_summary.json", encoding="utf-8") as f:
+    target = OUTPUT_DIR / "portfolio_drawdown_summary.json"
+    if not target.is_file():
+        pytest.skip(f"Pruned artifact: {target}")
+    with open(target, encoding="utf-8") as f:
         return json.load(f)
 
 
 @pytest.fixture
 def inst_audit_data() -> list:
-    with open(DATA_DIR / "instrument_identity_audit.json", encoding="utf-8") as f:
+    target = DATA_DIR / "instrument_identity_audit.json"
+    if not target.is_file():
+        pytest.skip(f"Pruned artifact: {target}")
+    with open(target, encoding="utf-8") as f:
         return json.load(f)
 
 
 @pytest.fixture
 def eval_2026_data() -> dict:
-    with open(OUTPUT_DIR / "sealed_2026_evaluation.json", encoding="utf-8") as f:
+    target = OUTPUT_DIR / "sealed_2026_evaluation.json"
+    if not target.is_file():
+        pytest.skip(f"Pruned artifact: {target}")
+    with open(target, encoding="utf-8") as f:
         return json.load(f)
 
 

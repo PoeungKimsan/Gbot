@@ -9,14 +9,15 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 try:
@@ -38,6 +39,9 @@ __all__ = [
 
 API_HOST: Final[str] = "127.0.0.1"
 API_PORT: Final[int] = 8080
+
+_HISTORY_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_CACHE_TTL_SECONDS: Final[float] = 120.0
 
 
 @asynccontextmanager
@@ -122,9 +126,76 @@ def create_app() -> FastAPI:
 
     @app.get("/api/bars")
     async def get_bars() -> JSONResponse:
-        """Historical portfolio NAV / equity curve data."""
+        """Historical portfolio NAV / equity curve data (raw list)."""
         snapshot = global_trader.get_snapshot()
         return JSONResponse(content=snapshot.get("equity_history", []))
+
+    @app.get("/api/portfolio/history")
+    async def get_portfolio_history(
+        period: str = "2D",
+        timeframe: str = "5Min",
+    ) -> JSONResponse:
+        """Historical portfolio NAV / equity curve data matching requested period and timeframe."""
+        cache_key = f"{period.upper()}:{timeframe}"
+        now_mono = time.monotonic()
+        if cache_key in _HISTORY_CACHE:
+            cached_time, cached_payload = _HISTORY_CACHE[cache_key]
+            if now_mono - cached_time < _CACHE_TTL_SECONDS:
+                return JSONResponse(content=cached_payload)
+
+        if global_trader.broker is not None:
+            try:
+                tf_map = {
+                    "1D": "5Min",
+                    "2D": "5Min",
+                    "1W": "15Min",
+                    "1M": "1D",
+                    "3M": "1D",
+                    "1Y": "1D",
+                    "ALL": "1D",
+                }
+                actual_tf = tf_map.get(period.upper(), timeframe)
+                broker_history = await global_trader.broker.get_portfolio_history(
+                    period=period,
+                    timeframe=actual_tf,
+                )
+                if broker_history:
+                    formatted = [
+                        {
+                            "time": int(pt["timestamp"]),
+                            "equity": float(pt["equity"]),
+                            "profit_loss": float(pt.get("profit_loss", 0)),
+                            "profit_loss_pct": float(pt.get("profit_loss_pct", 0)),
+                        }
+                        for pt in broker_history
+                    ]
+                    payload = {
+                        "period": period,
+                        "timeframe": actual_tf,
+                        "data": formatted,
+                    }
+                    _HISTORY_CACHE[cache_key] = (now_mono, payload)
+                    return JSONResponse(content=payload)
+            except Exception as exc:
+                logger.warning("Could not fetch portfolio history from broker: %s", exc)
+
+        # Fallback to LiveTrader in-memory recorded equity history
+        snapshot = global_trader.get_snapshot()
+        raw_hist = snapshot.get("equity_history", [])
+        return JSONResponse(
+            content={
+                "period": period,
+                "timeframe": timeframe,
+                "data": [
+                    {
+                        "time": int(pt["time"]),
+                        "equity": float(pt["equity"]),
+                        "cash": float(pt.get("cash", 0)),
+                    }
+                    for pt in raw_hist
+                ],
+            }
+        )
 
     @app.post("/api/rebalance/execute")
     async def trigger_rebalance(request: Request) -> JSONResponse:
@@ -221,6 +292,42 @@ def create_app() -> FastAPI:
             logger.debug("WebSocket client disconnected: %s", exc)
         finally:
             global_trader.unsubscribe(queue)
+
+    @app.get("/robots.txt", response_class=PlainTextResponse)
+    async def get_robots_txt() -> PlainTextResponse:
+        """Serve robots.txt for search engine crawlers."""
+        robots_file = Path("web/dist/robots.txt")
+        if not robots_file.is_file():
+            robots_file = Path("web/public/robots.txt")
+        if robots_file.is_file():
+            return PlainTextResponse(content=robots_file.read_text(encoding="utf-8"))
+        return PlainTextResponse(
+            content="User-agent: *\nAllow: /\n\nSitemap: https://sanalgo.kimsan.dev/sitemap.xml\n"
+        )
+
+    @app.get("/sitemap.xml")
+    async def get_sitemap_xml() -> Response:
+        """Serve sitemap.xml for search engine crawlers."""
+        sitemap_file = Path("web/dist/sitemap.xml")
+        if not sitemap_file.is_file():
+            sitemap_file = Path("web/public/sitemap.xml")
+        if sitemap_file.is_file():
+            return Response(
+                content=sitemap_file.read_text(encoding="utf-8"),
+                media_type="application/xml",
+            )
+        xml_content = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            '  <url>\n'
+            '    <loc>https://sanalgo.kimsan.dev/</loc>\n'
+            '    <lastmod>2026-10-17</lastmod>\n'
+            '    <changefreq>daily</changefreq>\n'
+            '    <priority>1.0</priority>\n'
+            '  </url>\n'
+            '</urlset>\n'
+        )
+        return Response(content=xml_content, media_type="application/xml")
 
     # Mount static dashboard build if present
     web_dist = Path("web/dist")

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sanalgo.kimsan.dev/sitemap.xml

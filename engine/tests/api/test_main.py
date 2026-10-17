@@ -60,6 +60,17 @@ def test_get_bars_endpoint() -> None:
         assert isinstance(data, list)
 
 
+def test_get_portfolio_history_endpoint() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        resp = client.get("/api/portfolio/history?period=2D&timeframe=5Min")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "period" in data
+        assert "data" in data
+        assert isinstance(data["data"], list)
+
+
 def test_get_positions_endpoint() -> None:
     app = create_app()
     with TestClient(app) as client:
@@ -184,3 +195,26 @@ def test_lifespan_starts_and_stops_trader() -> None:
         with TestClient(app):
             m_start.assert_called_once()
         m_stop.assert_called_once()
+
+
+def test_robots_txt_endpoint() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        resp = client.get("/robots.txt")
+        assert resp.status_code == 200
+        assert "text/plain" in resp.headers["content-type"]
+        body = resp.text
+        assert "User-agent: *" in body
+        assert "Allow: /" in body
+        assert "Sitemap: https://sanalgo.kimsan.dev/sitemap.xml" in body
+
+
+def test_sitemap_xml_endpoint() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        resp = client.get("/sitemap.xml")
+        assert resp.status_code == 200
+        assert "xml" in resp.headers["content-type"]
+        body = resp.text
+        assert "<loc>https://sanalgo.kimsan.dev/</loc>" in body
+        assert "http://www.sitemaps.org/schemas/sitemap/0.9" in body

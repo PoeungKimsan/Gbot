@@ -197,6 +197,7 @@ def _no_real_io(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
     monkeypatch.delenv("APCA_API_KEY_ID", raising=False)
     monkeypatch.delenv("APCA_API_SECRET_KEY", raising=False)
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *args, **kwargs: False)
 
     original = socket.getaddrinfo
 

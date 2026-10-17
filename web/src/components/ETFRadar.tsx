@@ -57,7 +57,7 @@ export function ETFRadar({
 
   return (
     <div
-      className={`rounded-lg border border-[#282828] bg-[#1c1c1c] p-6 shadow-sm flex flex-col gap-4 relative ${className}`}
+      className={`rounded-lg border border-[#282828] bg-[#1c1c1c] p-6 shadow-sm flex flex-col justify-between gap-4 relative ${className}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#282828] pb-4">
@@ -115,7 +115,7 @@ export function ETFRadar({
       )}
 
       {/* Radar Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto flex-1">
         <table className="w-full text-left font-sans text-xs">
           <thead>
             <tr className="border-b border-[#282828] text-[#707070]">
@@ -207,6 +207,15 @@ export function ETFRadar({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Footer Universe Status Bar */}
+      <div className="mt-auto pt-3 border-t border-[#282828] flex items-center justify-between text-[11px] font-mono text-[#707070]">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#3ecf8e]" />
+          <span>VAR_117 Multi-Asset Universe (12 ETFs)</span>
+        </div>
+        <span className="hidden sm:inline">Lookback: 9M Mom • 12M Vol</span>
       </div>
 
       {/* Admin Authorization Modal */}

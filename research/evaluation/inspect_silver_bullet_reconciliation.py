@@ -30,7 +30,10 @@ wins_val = sum(1 for t in trades_val if t.r_multiple > 0)
 losses_val = sum(1 for t in trades_val if t.r_multiple < 0)
 
 print(f"Data file: research/data/cache/m5_bars_2020_2021_2022.pkl")
-print(f"Date range of bars: {bars_val[0].timestamp_utc.isoformat()} to {bars_val[-1].timestamp_utc.isoformat()}")
+if bars_val:
+    print(f"Date range of bars: {bars_val[0].timestamp_utc.isoformat()} to {bars_val[-1].timestamp_utc.isoformat()}")
+else:
+    print("Date range of bars: None (bars cache pruned)")
 print(f"Total bars: {len(bars_val)}")
 print(f"Trades count N: {len(trades_val)}")
 print(f"Wins: {wins_val}, Losses: {losses_val}")
@@ -56,7 +59,10 @@ wins_disc = sum(1 for t in trades_disc if t.r_multiple > 0)
 losses_disc = sum(1 for t in trades_disc if t.r_multiple < 0)
 
 print(f"Data file: research/data/cache/m5_bars_2023_2024_2025.pkl")
-print(f"Date range of bars: {bars_disc[0].timestamp_utc.isoformat()} to {bars_disc[-1].timestamp_utc.isoformat()}")
+if bars_disc:
+    print(f"Date range of bars: {bars_disc[0].timestamp_utc.isoformat()} to {bars_disc[-1].timestamp_utc.isoformat()}")
+else:
+    print("Date range of bars: None (bars cache pruned)")
 print(f"Total bars: {len(bars_disc)}")
 print(f"Trades count N: {len(trades_disc)}")
 print(f"Wins: {wins_disc}, Losses: {losses_disc}")

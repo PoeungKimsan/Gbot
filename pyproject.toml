@@ -37,7 +37,7 @@ packages = ["engine/src/engine", "api"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["engine/tests"]
-addopts = "--strict-markers"
+addopts = "--strict-markers --basetemp=.pytest_tmp"
 asyncio_mode = "auto"
 markers = [
     "posix_only: POSIX-only test. Automatically skipped on Windows (see engine/tests/conftest.py).",

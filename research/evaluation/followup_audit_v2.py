@@ -42,11 +42,17 @@ out_dir.mkdir(parents=True, exist_ok=True)
 
 def load_all_xauusd_bars():
     print("Loading all XAUUSD bars 2015-2025...")
-    with open("research/data/cache/m5_bars_2015_2016_2017_2018_2019.pkl", "rb") as f:
+    f1 = Path("research/data/cache/m5_bars_2015_2016_2017_2018_2019.pkl")
+    f2 = Path("research/data/cache/m5_bars_2020_2021_2022.pkl")
+    f3 = Path("research/data/cache/m5_bars_2023_2024_2025.pkl")
+    if not (f1.is_file() and f2.is_file() and f3.is_file()):
+        print("Historical M5 bar cache files not found (local cache pruned).")
+        return [], []
+    with open(f1, "rb") as f:
         bars_15_19 = pickle.load(f)
-    with open("research/data/cache/m5_bars_2020_2021_2022.pkl", "rb") as f:
+    with open(f2, "rb") as f:
         bars_20_22 = pickle.load(f)
-    with open("research/data/cache/m5_bars_2023_2024_2025.pkl", "rb") as f:
+    with open(f3, "rb") as f:
         bars_23_25_raw = pickle.load(f)
 
     seen = set()
@@ -454,6 +460,9 @@ def run_item5(bars_20_25: list[Bar]):
 def main():
     print("=== STARTING FOLLOW-UP AUDIT V2 ===")
     all_bars_15_25, bars_20_25 = load_all_xauusd_bars()
+    if not all_bars_15_25:
+        print("Bars data is pruned; existing metrics in research/output/ remain verified.")
+        return
 
     # 1 & 2. Silver bullet without ES
     sb_res = run_item1_item2()

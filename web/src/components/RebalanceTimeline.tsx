@@ -22,7 +22,7 @@ export function RebalanceTimeline({
 }: RebalanceTimelineProps): ReactElement {
   return (
     <div
-      className={`rounded-lg border border-[#282828] bg-[#1c1c1c] p-6 shadow-sm flex flex-col gap-5 ${className}`}
+      className={`rounded-lg border border-[#282828] bg-[#1c1c1c] p-6 shadow-sm flex flex-col justify-between gap-4 ${className}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#282828] pb-4">
@@ -39,25 +39,25 @@ export function RebalanceTimeline({
 
       {/* Schedule Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded bg-[#202020] border border-[#282828] p-3 flex items-center gap-3">
-          <div className="p-2 rounded bg-[#242424] text-[#3ecf8e]">
+        <div className="rounded bg-[#202020] border border-[#282828] px-3.5 py-2.5 flex items-center gap-3">
+          <div className="p-1.5 rounded bg-[#242424] text-[#3ecf8e]">
             <Calendar className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-[11px] text-[#707070] uppercase tracking-wider font-sans">Next Rebalance Date</div>
-            <div className="font-mono text-sm font-semibold text-[#ededed]">
+            <div className="text-[10px] text-[#707070] uppercase tracking-wider font-sans">Next Rebalance Date</div>
+            <div className="font-mono text-xs font-semibold text-[#ededed]">
               {rebalanceInfo?.next_rebalance_date || "First Trading Day of Month"}
             </div>
           </div>
         </div>
 
-        <div className="rounded bg-[#202020] border border-[#282828] p-3 flex items-center gap-3">
-          <div className="p-2 rounded bg-[#242424] text-[#9a9a9a]">
+        <div className="rounded bg-[#202020] border border-[#282828] px-3.5 py-2.5 flex items-center gap-3">
+          <div className="p-1.5 rounded bg-[#242424] text-[#9a9a9a]">
             <Clock className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-[11px] text-[#707070] uppercase tracking-wider font-sans">Implementation Delay</div>
-            <div className="font-mono text-sm font-semibold text-[#ededed]">
+            <div className="text-[10px] text-[#707070] uppercase tracking-wider font-sans">Implementation Delay</div>
+            <div className="font-mono text-xs font-semibold text-[#ededed]">
               1 Trading Day (Market Close)
             </div>
           </div>
@@ -74,7 +74,7 @@ export function RebalanceTimeline({
       )}
 
       {/* Order Execution History */}
-      <div>
+      <div className="flex-1 flex flex-col min-h-0">
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs font-medium text-[#9a9a9a] uppercase tracking-wider font-sans">
             Execution Order History
@@ -83,7 +83,7 @@ export function RebalanceTimeline({
             US Market Hours: 9:30 AM - 4:00 PM ET
           </div>
         </div>
-        <div className="overflow-x-auto max-h-64 overflow-y-auto">
+        <div className="overflow-x-auto max-h-[175px] overflow-y-auto">
           <table className="w-full text-left font-mono text-xs">
             <thead>
               <tr className="border-b border-[#282828] text-[#707070]">

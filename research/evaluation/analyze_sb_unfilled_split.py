@@ -265,6 +265,9 @@ def run_market_entry_silver_bullet(bars, label=""):
     m = compute_trade_metrics(t_dicts, seed=42)
     print(f"\n{label} Market-Entry Silver Bullet:")
     print(f"  N Trades: {m['n_trades']}")
+    if m['n_trades'] == 0:
+        print("  No trades generated (local bar cache pruned).")
+        return m
     print(f"  Win Rate: {m['win_rate'] * 100:.2f}% (Wins: {sum(1 for t in t_dicts if t['r_multiple'] > 0)}, Losses: {sum(1 for t in t_dicts if t['r_multiple'] < 0)})")
     print(f"  Expectancy: {m['expectancy']:.4f}R")
     print(f"  95% Bootstrap CI: [{m['ci_95_lower']:.4f}, {m['ci_95_upper']:.4f}]")

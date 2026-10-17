@@ -30,6 +30,9 @@ runner_1x = BacktestRunner(base_spread=Decimal("0.20"), base_slippage=Decimal("0
 core_strat = JudasSwingStrategy()
 trades_core_1x, _ = runner_1x.run_judas_backtest(bars_val, judas_strategy=core_strat)
 core_dicts_1x = [_trade_to_dict(t) for t in trades_core_1x]
+if not core_dicts_1x:
+    print("No bars found in cache (local bar cache pruned). Exiting gracefully.")
+    sys.exit(0)
 m_core_1x = compute_trade_metrics(core_dicts_1x, seed=42)
 
 # Save core trades to CSV for verify.py

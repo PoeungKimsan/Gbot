@@ -154,3 +154,16 @@ def test_mode_url_mismatch() -> None:
             api_secret="fake_secret",
         )
 
+
+@pytest.mark.asyncio
+async def test_get_portfolio_history() -> None:
+    broker = AlpacaBroker(paper_mode=True, initial_mock_cash=Decimal("100000.00"))
+    history = await broker.get_portfolio_history(period="2D", timeframe="5Min")
+    assert len(history) > 0
+    for pt in history:
+        assert isinstance(pt["timestamp"], int)
+        assert isinstance(pt["equity"], Decimal)
+        assert isinstance(pt["profit_loss"], Decimal)
+        assert isinstance(pt["profit_loss_pct"], Decimal)
+
+

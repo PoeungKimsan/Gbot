@@ -21,6 +21,10 @@ strat = EnhancedJudasStrategy()
 trades_val, _ = runner.run_judas_backtest(bars_val, judas_strategy=strat)
 t_dicts_val = [_trade_to_dict(t) for t in trades_val]
 
+if not t_dicts_val:
+    print("No trades found (bars cache pruned). Exiting gracefully.")
+    sys.exit(0)
+
 wins_val = sum(1 for t in t_dicts_val if t["r_multiple"] > 0)
 losses_val = sum(1 for t in t_dicts_val if t["r_multiple"] < 0)
 neutral_val = sum(1 for t in t_dicts_val if t["r_multiple"] == 0)

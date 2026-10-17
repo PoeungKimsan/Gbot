@@ -29,7 +29,8 @@ class TelegramNotifier:
         bot_token: str | None = None,
         chat_id: str | None = None,
     ) -> None:
-        load_dotenv()
+        if not os.getenv("PYTEST_CURRENT_TEST"):
+            load_dotenv()
         self.bot_token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN")
         self.chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID")
         self._enabled = bool(self.bot_token and self.chat_id)

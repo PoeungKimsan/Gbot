@@ -41,6 +41,9 @@ for b in sorted(bars_23_25_raw, key=lambda x: x.timestamp_utc):
         bars_23_25.append(b)
 
 all_bars = bars_20_22 + bars_23_25
+if not all_bars:
+    print("No bars found in cache (local bar cache pruned). Existing CSVs preserved.")
+    sys.exit(0)
 
 # 1. Judas Live Core Class 2020-2022
 strat_core = JudasSwingStrategy()

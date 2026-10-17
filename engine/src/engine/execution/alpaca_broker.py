@@ -14,6 +14,7 @@ import datetime as dt
 import logging
 import os
 import uuid
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any
 
@@ -126,6 +127,7 @@ class AlpacaBroker:
         self._mock_cash = initial_mock_cash
         self._mock_positions: dict[str, dict[str, Decimal]] = {}  # ticker -> {qty, avg_price}
         self._mock_orders: list[dict[str, Any]] = []
+        self._account_created_ts: int | None = None
 
         if not self.is_connected_mode:
             logger.info(
@@ -169,12 +171,123 @@ class AlpacaBroker:
                     f"Alpaca get_account failed ({resp.status_code}): {resp.text}"
                 )
             data = resp.json()
+            if self._account_created_ts is None and "created_at" in data:
+                try:
+                    c_str = str(data["created_at"]).replace("Z", "+00:00")
+                    self._account_created_ts = int(dt.datetime.fromisoformat(c_str).timestamp())
+                except Exception as exc:
+                    logger.debug("Failed parsing created_at from account: %s", exc)
             return {
                 "equity": Decimal(str(data.get("equity", "0"))),
                 "cash": Decimal(str(data.get("cash", "0"))),
                 "buying_power": Decimal(str(data.get("buying_power", "0"))),
                 "portfolio_value": Decimal(str(data.get("portfolio_value", "0"))),
             }
+
+    async def get_portfolio_history(
+        self,
+        period: str = "2D",
+        timeframe: str = "5Min",
+        date_end: dt.date | None = None,
+        extended_hours: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Fetch historical equity curve points for the portfolio from Alpaca.
+
+        Returns list of dicts:
+        [{"timestamp": int, "equity": Decimal, "profit_loss": Decimal}, ...]
+        Strictly zero float: all numeric values parsed into exact Decimal.
+        """
+        if not self.is_connected_mode:
+            summary = await self.get_account_summary()
+            current_eq = summary["equity"]
+            now_sec = int(dt.datetime.now(dt.UTC).timestamp())
+            interval = 300 if "5" in timeframe else (900 if "15" in timeframe else 86400)
+            points_count = 50
+            start_ts = now_sec - (points_count * interval)
+            return [
+                {
+                    "timestamp": start_ts + (i * interval),
+                    "equity": current_eq,
+                    "profit_loss": Decimal("0.00"),
+                    "profit_loss_pct": Decimal("0.00"),
+                }
+                for i in range(points_count + 1)
+            ]
+
+        acc_summary = await self.get_account_summary()
+        current_eq = acc_summary["equity"]
+
+        params: dict[str, str] = {
+            "period": period,
+            "timeframe": timeframe,
+            "extended_hours": "true" if extended_hours else "false",
+        }
+        if date_end is not None:
+            params["date_end"] = date_end.isoformat()
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{self.base_url}/v2/account/portfolio/history",
+                headers=self._get_headers(),
+                params=params,
+            )
+            if resp.status_code != 200:
+                raise AlpacaBrokerError(
+                    f"Alpaca portfolio history failed ({resp.status_code}): {resp.text}"
+                )
+            data = resp.json()
+            timestamps = data.get("timestamp", [])
+            equities = data.get("equity", [])
+            pls = data.get("profit_loss", [])
+            pl_pcts = data.get("profit_loss_pct", [])
+
+            history: list[dict[str, Any]] = []
+            for i in range(len(timestamps)):
+                eq = equities[i] if i < len(equities) else None
+                if eq is None:
+                    continue
+                eq_dec = Decimal(str(eq))
+                if eq_dec <= Decimal("0"):
+                    continue
+                ts = int(timestamps[i])
+                if self._account_created_ts is not None and ts < (self._account_created_ts - 3600):
+                    continue
+                pl = pls[i] if i < len(pls) and pls[i] is not None else 0
+                pl_pct = pl_pcts[i] if i < len(pl_pcts) and pl_pcts[i] is not None else 0
+                history.append({
+                    "timestamp": ts,
+                    "equity": eq_dec,
+                    "profit_loss": Decimal(str(pl)),
+                    "profit_loss_pct": Decimal(str(pl_pct)),
+                })
+
+            if not history and len(timestamps) > 0:
+                for i in range(len(timestamps)):
+                    eq = equities[i] if i < len(equities) else None
+                    if eq is not None:
+                        eq_dec = Decimal(str(eq))
+                        if eq_dec > Decimal("0"):
+                            pl = pls[i] if i < len(pls) and pls[i] is not None else 0
+                            pl_pct = (
+                                pl_pcts[i] if i < len(pl_pcts) and pl_pcts[i] is not None else 0
+                            )
+                            history.append({
+                                "timestamp": int(timestamps[i]),
+                                "equity": eq_dec,
+                                "profit_loss": Decimal(str(pl)),
+                                "profit_loss_pct": Decimal(str(pl_pct)),
+                            })
+
+            # Reconcile duplicate deposit offset (Alpaca paper trading doubling artifact)
+            if history:
+                last_eq = history[-1]["equity"]
+                if (last_eq - current_eq) > Decimal("80000.00"):
+                    deposit_offset = Decimal("100000.00")
+                    for pt in history:
+                        pt["equity"] = pt["equity"] - deposit_offset
+                history = [pt for pt in history if pt["equity"] > Decimal("0")]
+
+            return history
 
     async def get_open_positions(self) -> list[dict[str, Any]]:
         """Fetch current open positions."""
@@ -337,7 +450,7 @@ class AlpacaBroker:
     async def rebalance_portfolio(
         self,
         target_weights: dict[str, Decimal],
-        current_prices: dict[str, Quote | Decimal],
+        current_prices: Mapping[str, Quote | Decimal],
         rebalance_date: dt.date | str | None = None,
         cash_buffer: Decimal = Decimal("0.00"),
         fill_timeout_seconds: int = 120,
